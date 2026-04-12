@@ -1,0 +1,74 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pgvector(map: "vector")]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  nama      String
+  email     String   @unique
+  password  String
+  role      Role     @default(MAHASISWA)
+  createdAt DateTime @default(now())
+  soal      Soal[]
+}
+
+model MataKuliah {
+  id        String   @id @default(uuid())
+  nama      String
+  kode      String   @unique
+  createdAt DateTime @default(now())
+  soal      Soal[]
+}
+
+model Soal {
+  id           String     @id @default(uuid())
+  pertanyaan   String
+  tipesoal     TipeSoal
+  mataKuliahId String
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  dibuatOleh   String
+  pembuat      User       @relation(fields: [dibuatOleh], references: [id])
+  createdAt    DateTime   @default(now())
+  evaluasi     Evaluasi[]
+  vector       SoalVector?
+}
+
+model Evaluasi {
+  id           String   @id @default(uuid())
+  soalId       String
+  soal         Soal     @relation(fields: [soalId], references: [id])
+  skorKualitas Float
+  tingkatKesulitan String
+  isDuplikat   Boolean  @default(false)
+  saranPerbaikan String?
+  createdAt    DateTime @default(now())
+}
+
+enum Role {
+  MAHASISWA
+  DOSEN
+  ADMIN
+}
+
+enum TipeSoal {
+  PILIHAN_GANDA
+  ESSAY
+  BENAR_SALAH
+}
+
+model SoalVector {
+  id           String                      @id @default(uuid())
+  soalId       String                      @unique
+  soal         Soal                        @relation(fields: [soalId], references: [id])
+  mataKuliahId String
+  content      String
+  embedding    Unsupported("vector(1536)")
+  metadata     Json?
+  createdAt    DateTime                    @default(now())
+}
