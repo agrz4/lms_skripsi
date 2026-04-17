@@ -12,6 +12,9 @@ const indexSoal = async (soalId, content, mataKuliahId, metadata = {}) => {
   try {
     const embedding = await generateEmbedding(content);
     
+    // Debug: Cek jumlah dimensi
+    console.log(`Debug Vector: Menghasilkan ${embedding.length} dimensi`);
+    
     // Konversi array embedding ke format string vector untuk PostgreSQL
     const vectorString = `[${embedding.join(',')}]`;
 

@@ -68,7 +68,7 @@ model SoalVector {
   soal         Soal                        @relation(fields: [soalId], references: [id])
   mataKuliahId String
   content      String
-  embedding    Unsupported("vector(1536)")
+  embedding    Unsupported("vector(768)")
   metadata     Json?
   createdAt    DateTime                    @default(now())
 }

@@ -1,24 +1,32 @@
-const OpenAI = require('openai');
+const { GoogleGenAI } = require('@google/genai');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 /**
- * Mengubah teks soal menjadi vector embedding
+ * Mengubah teks soal menjadi vector embedding menggunakan Google Gemini
  * @param {string} text - Teks soal
- * @returns {Array} - Array vector embedding (1536 dimensi)
+ * @returns {Array} - Array vector embedding (768 dimensi)
  */
 const generateEmbedding = async (text) => {
   try {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text,
+    const result = await ai.models.embedContent({
+      model: 'models/gemini-embedding-001',
+      contents: [{ parts: [{ text }] }],
+      config: {
+        outputDimensionality: 768
+      }
     });
-    return response.data[0].embedding;
+    
+    if (!result.embeddings || result.embeddings.length === 0) {
+      throw new Error('No embeddings returned from Gemini');
+    }
+    
+    return result.embeddings[0].values;
   } catch (error) {
-    console.error('Error generating embedding:', error);
-    throw new Error('Gagal membuat embedding untuk soal');
+    console.error('Error generating embedding with Gemini:', error);
+    throw new Error('Gagal membuat embedding: ' + error.message);
   }
 };
 
