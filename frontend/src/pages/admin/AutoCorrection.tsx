@@ -5,11 +5,10 @@ import {
   HiOutlineEye, 
   HiOutlineCheckBadge, 
   HiOutlineClock,
-  HiOutlineChartPie,
-  HiOutlineBeaker
+  HiOutlineCpuChip,
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -23,7 +22,7 @@ import { Progress } from "@/components/ui/progress";
 
 const AutoCorrection: React.FC = () => {
   const correctionData = [
-    { id: 1, materi: 'Introduction to Figma', kursus: 'UI/UX Design', type: 'Ujian', score: 87, result: '26/30', status: 'Selesai' },
+    { id: 1, materi: 'Introduction to figma', kursus: 'UI/UX Design', type: 'Ujian', score: 87, result: '26/30', status: 'Selesai' },
     { id: 2, materi: 'React Hooks Deep Dive', kursus: 'Web Dev', type: 'Tugas', score: 70, result: '7/10', status: 'Selesai' },
     { id: 3, materi: 'Advanced Typography', kursus: 'UI/UX Design', type: 'Ujian', score: 0, result: '0/30', status: 'Menunggu' },
     { id: 4, materi: 'Database Normalization', kursus: 'Backend Mastery', type: 'Tugas', score: 90, result: '9/10', status: 'Selesai' },
@@ -32,169 +31,164 @@ const AutoCorrection: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         
-        {/* Title Section */}
-        <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl text-purple-600 rotate-12">
-            <HiOutlineSparkles />
+        {/* Header Card */}
+        <div className="bg-gradient-to-r from-slate-100 to-slate-50 p-6 rounded-[1.5rem] border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-slate-800 text-white rounded-xl shadow-lg">
+            <HiOutlineCpuChip className="text-2xl" />
           </div>
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="p-4 bg-purple-600 text-white rounded-2xl shadow-xl shadow-purple-200">
-              <HiOutlineSparkles className="text-3xl animate-pulse" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-gray-900">Auto Correction AI</h1>
-              <p className="text-sm text-muted-foreground font-medium">Validasi otomatis jawaban ujian dan tugas pilihan ganda menggunakan SLM.</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Auto Correction AI</h1>
+            <p className="text-xs text-slate-400 font-medium">Validasi Otomatis Jawaban Ujian dan tugas pilihan ganda menggunakan slm</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-8">
+        <div className="grid grid-cols-12 gap-6">
           {/* Main Table */}
           <div className="col-span-9">
-            <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+            <Card className="border border-slate-200 shadow-sm rounded-[1.5rem] overflow-hidden bg-white">
               <Table>
-                <TableHeader className="bg-gray-50/50">
-                  <TableRow>
-                    <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest">Nama Materi</TableHead>
-                    <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">Jenis</TableHead>
-                    <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">Skor AI</TableHead>
-                    <TableHead className="px-6 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Benar/Total</TableHead>
-                    <TableHead className="px-6 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Status</TableHead>
-                    <TableHead className="px-8 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Detail</TableHead>
+                <TableHeader className="bg-white border-b border-slate-100">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="px-6 py-4 font-bold text-slate-900 text-sm">Nama Materi</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-slate-900 text-sm">Jenis</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-slate-900 text-sm">Skor AI</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-slate-900 text-sm text-center">Benar/Total</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-slate-900 text-sm text-center">Status</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-slate-900 text-sm text-center">Detail</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {correctionData.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50/30 transition-colors group border-b last:border-0 border-gray-100">
-                      <td className="px-8 py-6">
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">{item.materi}</div>
-                          <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">{item.kursus}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6">
-                        <Badge variant="outline" className={`font-bold text-[9px] px-2.5 py-0.5 rounded-md uppercase border-none ${
-                          item.type === 'Ujian' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
+                    <TableRow key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="px-6 py-5">
+                        <div className="text-sm font-bold text-slate-900">{item.materi}</div>
+                        <div className="text-[10px] font-bold text-slate-400 mt-0.5">{item.kursus}</div>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        <Badge variant="outline" className={`rounded-full px-3 py-0.5 text-[10px] font-bold border-none ${
+                          item.type === 'Ujian' ? 'bg-orange-400/20 text-orange-600' : 'bg-blue-400/20 text-blue-600'
                         }`}>
                           {item.type}
                         </Badge>
-                      </td>
-                      <td className="px-6 py-6 min-w-[160px]">
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      </TableCell>
+                      <TableCell className="px-6 py-5 min-w-[140px]">
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                             <span>Koreksi AI</span>
-                            <span className={item.score >= 80 ? 'text-emerald-500' : 'text-amber-500'}>{item.score}%</span>
+                            <span className="text-emerald-500">{item.score}%</span>
                           </div>
                           <Progress 
                             value={item.score} 
-                            className={`h-1.5 ${item.score >= 80 ? '[&>div]:bg-emerald-500' : '[&>div]:bg-amber-500'}`} 
+                            className={`h-1.5 ${item.score >= 80 ? '[&>div]:bg-emerald-400' : '[&>div]:bg-orange-400'}`} 
                           />
                         </div>
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        <span className="text-sm font-black text-gray-900 tracking-tighter">{item.result}</span>
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        <Badge variant={item.status === 'Selesai' ? 'default' : 'secondary'} className="rounded-full px-3 py-1 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit mx-auto">
-                          {item.status === 'Selesai' ? <HiOutlineCheckBadge className="text-lg" /> : <HiOutlineClock className="text-lg" />}
+                      </TableCell>
+                      <TableCell className="px-6 py-5 text-center">
+                        <span className="text-lg font-bold text-slate-900">{item.result}</span>
+                      </TableCell>
+                      <TableCell className="px-6 py-5 text-center">
+                        <Badge 
+                          variant="outline" 
+                          className={`rounded-full px-3 py-1 text-[9px] font-bold uppercase border border-slate-200 flex items-center gap-1.5 w-fit mx-auto ${
+                            item.status === 'Selesai' ? 'bg-emerald-500 text-white border-none' : 'bg-white text-slate-900'
+                          }`}
+                        >
+                          {item.status === 'Selesai' ? (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+                          ) : (
+                            <HiOutlineClock className="text-sm" />
+                          )}
                           {item.status}
                         </Badge>
-                      </td>
-                      <td className="px-8 py-6 text-center">
-                        <Button variant="ghost" size="icon" className="rounded-full text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 h-10 w-10">
-                          <HiOutlineEye className="text-2xl" />
+                      </TableCell>
+                      <TableCell className="px-6 py-5 text-center">
+                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900">
+                          <HiOutlineEye className="text-xl" />
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </Card>
           </div>
 
-          {/* Sidebar Stats & Engine Info */}
+          {/* Sidebar Area */}
           <div className="col-span-3 space-y-6">
-            <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <span className="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
-                  Statistik Harian
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 gap-4">
-                  <StatItem label="Total Pengumpulan" value="45" />
-                  <StatItem label="Selesai AI" value="38" highlight color="emerald" />
-                  <StatItem label="Menunggu" value="7" highlight color="amber" />
-                </div>
-                <div className="pt-6 border-t border-gray-50 text-center">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rata-Rata Skor</p>
-                  <div className="text-5xl font-black text-gray-900 tracking-tighter">
-                    74<span className="text-xl font-normal text-gray-300 ml-1">%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            
+            {/* Daily Stats Card */}
+            <div className="bg-[#4682B4] rounded-[1.5rem] p-6 shadow-sm relative overflow-hidden text-white">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1.5 h-5 bg-slate-900 rounded-full"></div>
+                <h3 className="font-bold text-slate-900">Statistik Harian</h3>
+              </div>
 
-            <Card className="rounded-[2.5rem] bg-gray-900 border-none shadow-2xl shadow-gray-200 text-white relative overflow-hidden p-8">
-              <div className="absolute top-0 right-0 p-8 opacity-10 text-8xl rotate-12">
-                <HiOutlineBeaker />
-              </div>
-              <div className="relative z-10 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
-                    <HiOutlineBeaker className="text-2xl" />
-                  </div>
-                  <h3 className="text-lg font-black tracking-tight">AI Engine</h3>
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded-xl text-slate-900">
+                  <p className="text-[10px] font-bold text-slate-400 mb-1">Total Pengumpulan</p>
+                  <p className="text-4xl font-black">45</p>
                 </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
-                      <span>Inference Load</span>
-                      <span className="text-emerald-400">Stable</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full w-2/3 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                    </div>
+                <div className="bg-white/40 p-4 rounded-xl backdrop-blur-sm">
+                  <p className="text-[10px] font-bold text-emerald-100 mb-1">Selesai AI</p>
+                  <p className="text-4xl font-black text-emerald-900">38</p>
+                </div>
+              </div>
+
+              <div className="mt-8 text-center border-t border-white/20 pt-6">
+                <p className="text-[10px] font-bold text-slate-900/60 uppercase tracking-widest mb-1">Rata-Rata Skor</p>
+                <div className="text-5xl font-black text-slate-900 tracking-tighter">
+                  74
+                </div>
+              </div>
+            </div>
+
+            {/* AI Engine Status Card */}
+            <div className="bg-[#1e293b] rounded-[1.5rem] p-8 shadow-lg relative overflow-hidden text-white min-h-[300px] flex flex-col">
+              {/* Brain Icon Background SVG overlay */}
+              <div className="absolute top-4 right-4 opacity-10">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="currentColor" strokeWidth="2"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                </svg>
+              </div>
+
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl">
+                  <HiOutlineCpuChip className="text-2xl" />
+                </div>
+                <h3 className="text-lg font-bold">AI Engine</h3>
+              </div>
+
+              <div className="space-y-6 flex-1">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>Inference Load</span>
+                    <span className="text-emerald-400">Stable</span>
                   </div>
-                  
-                  <div className="space-y-1 mt-6">
-                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Architecture</p>
-                    <p className="text-xs font-bold text-gray-100 leading-relaxed uppercase">
-                      RAG + NVIDIA NIM + SLM
-                    </p>
+                  <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-full w-2/3 bg-emerald-500 rounded-full"></div>
                   </div>
                 </div>
-                
-                <Button className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-2xl py-6 font-bold text-[10px] uppercase tracking-widest transition-all">
-                  Optimize Weights
-                </Button>
+
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Architecture</p>
+                  <p className="text-xs font-bold text-slate-300">RAG+NVIDIA NIM+SLM</p>
+                </div>
               </div>
-            </Card>
+
+              <Button className="w-full bg-[#7ca3b5]/40 hover:bg-[#7ca3b5]/60 text-white rounded-xl py-6 font-bold text-xs shadow-none">
+                Optimize Wight
+              </Button>
+            </div>
+
           </div>
         </div>
       </div>
     </AdminLayout>
   );
 };
-
-// Helper Components
-const StatItem: React.FC<{ label: string, value: string, highlight?: boolean, color?: 'emerald' | 'amber' }> = ({ label, value, highlight, color }) => (
-  <div className={`p-4 rounded-2xl border ${
-    highlight 
-      ? color === 'emerald' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'
-      : 'bg-white border-gray-50 shadow-sm'
-  }`}>
-    <p className={`text-[9px] font-bold uppercase tracking-widest mb-1 ${
-      highlight ? color === 'emerald' ? 'text-emerald-600' : 'text-amber-600' : 'text-gray-400'
-    }`}>{label}</p>
-    <p className={`text-2xl font-black ${
-      highlight ? color === 'emerald' ? 'text-emerald-700' : 'text-amber-700' : 'text-gray-900'
-    }`}>{value}</p>
-  </div>
-);
 
 export default AutoCorrection;
