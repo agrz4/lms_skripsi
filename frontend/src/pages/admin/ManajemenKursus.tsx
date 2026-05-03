@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
+
 import { 
   HiOutlinePencilSquare, 
   HiOutlineTrash, 
@@ -41,7 +41,7 @@ const ManajemenKursus: React.FC = () => {
   const stepIndex = steps.indexOf(currentStep);
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-6xl mx-auto pb-20 overflow-hidden px-4">
         
         {/* Step Header */}
@@ -340,7 +340,7 @@ const ManajemenKursus: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

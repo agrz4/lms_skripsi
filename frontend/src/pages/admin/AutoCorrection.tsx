@@ -1,5 +1,5 @@
 import React from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
+
 import { 
   HiOutlineSparkles, 
   HiOutlineEye, 
@@ -30,7 +30,7 @@ const AutoCorrection: React.FC = () => {
   ];
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-[1400px] mx-auto space-y-6">
         
         {/* Header Card */}
@@ -187,7 +187,7 @@ const AutoCorrection: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

@@ -2,6 +2,8 @@ import React from 'react';
 import { HiOutlineMagnifyingGlass, HiOutlineBell, HiOutlineBars3BottomLeft } from 'react-icons/hi2';
 
 const Navbar: React.FC = () => {
+  const role = localStorage.getItem('userRole') || 'admin';
+
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
       <div className="flex items-center gap-6 flex-1">
@@ -29,12 +31,13 @@ const Navbar: React.FC = () => {
         <div className="h-8 w-px bg-gray-200 mx-2"></div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-sm font-bold text-gray-900">Admin</div>
-            <div className="text-[10px] text-gray-400">admin@lms.id</div>
+            <div className="text-sm font-bold text-gray-900 capitalize">{role}</div>
+            <div className="text-[10px] text-gray-400">{role}@lms.id</div>
           </div>
           <div className="w-10 h-10 bg-emerald-100 border-2 border-emerald-500 rounded-full overflow-hidden">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="avatar" />
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${role === 'admin' ? 'Admin' : (role === 'asisten' ? 'Asisten' : 'User')}`} alt="avatar" />
           </div>
+
         </div>
       </div>
     </div>
@@ -42,3 +45,4 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
+

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
+
 import { usePengajarStore, type Pengajar } from '../../store/usePengajarStore';
 import { HiOutlinePlus, HiOutlineMagnifyingGlass, HiOutlinePencilSquare, HiOutlineTrash, HiOutlineEnvelope } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ const ManajemenPengajar: React.FC = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -251,7 +251,7 @@ const ManajemenPengajar: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </>
   );
 };
 

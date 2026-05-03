@@ -1,5 +1,5 @@
 import React from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
+
 import { 
   HiOutlineCheckCircle, 
   HiOutlineClock, 
@@ -32,7 +32,7 @@ const AIKnowledge: React.FC = () => {
   ];
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Title Section */}
@@ -164,7 +164,7 @@ const AIKnowledge: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

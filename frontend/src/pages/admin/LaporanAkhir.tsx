@@ -1,5 +1,5 @@
 import React from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
+
 import { 
   HiOutlineDocumentChartBar, 
   HiOutlineChevronLeft, 
@@ -40,7 +40,7 @@ const LaporanAkhir: React.FC = () => {
   ];
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-7xl mx-auto space-y-8 pb-10">
         
         {/* Header Section */}
@@ -188,7 +188,7 @@ const LaporanAkhir: React.FC = () => {
           </div>
         </Card>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

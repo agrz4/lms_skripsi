@@ -1,26 +1,73 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
 import ManajemenPengajar from './pages/admin/ManajemenPengajar';
 import ManajemenKursus from './pages/admin/ManajemenKursus';
 import AIKnowledge from './pages/admin/AIKnowledge';
 import AutoCorrection from './pages/admin/AutoCorrection';
 import LaporanAkhir from './pages/admin/LaporanAkhir';
+import DashboardAsisten from './pages/asisten/DashboardAsisten';
+import HalamanKoreksi from './pages/asisten/HalamanKoreksi';
+import AutoCorrectionAsisten from './pages/asisten/AutoCorrectionAsisten';
+import MonitoringMahasiswa from './pages/asisten/MonitoringMahasiswa';
+import AddMateri from './pages/asisten/AddMateri';
+import KursusTersedia from './pages/user/KursusTersedia';
+import DetailKursus from './pages/user/DetailKursus';
+import UjianPage from './pages/user/UjianPage';
+import AdminLayout from './layouts/AdminLayout';
+
+
+
+const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; allowedRole: string }) => {
+  const role = localStorage.getItem('userRole');
+  if (!role) return <Navigate to="/login" replace />;
+  if (role !== allowedRole) {
+    const defaultPath = role === 'admin' ? '/admin/pengajar' : (role === 'asisten' ? '/asisten/dashboard' : '/user/dashboard');
+    return <Navigate to={defaultPath} replace />;
+  }
+  return <AdminLayout>{children}</AdminLayout>;
+};
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/admin/pengajar" replace />} />
-        <Route path="/admin/pengajar" element={<ManajemenPengajar />} />
-        <Route path="/admin/kursus" element={<ManajemenKursus />} />
-        <Route path="/admin/ai-knowledge" element={<AIKnowledge />} />
-        <Route path="/admin/auto-correction" element={<AutoCorrection />} />
-        <Route path="/admin/end-kursus" element={<LaporanAkhir />} />
+        <Route path="/login" element={<Login />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/pengajar" element={<ProtectedRoute allowedRole="admin"><ManajemenPengajar /></ProtectedRoute>} />
+        <Route path="/admin/kursus" element={<ProtectedRoute allowedRole="admin"><ManajemenKursus /></ProtectedRoute>} />
+        <Route path="/admin/ai-knowledge" element={<ProtectedRoute allowedRole="admin"><AIKnowledge /></ProtectedRoute>} />
+        <Route path="/admin/auto-correction" element={<ProtectedRoute allowedRole="admin"><AutoCorrection /></ProtectedRoute>} />
+        <Route path="/admin/end-kursus" element={<ProtectedRoute allowedRole="admin"><LaporanAkhir /></ProtectedRoute>} />
+
+        {/* Asisten Routes */}
+        <Route path="/asisten/dashboard" element={<ProtectedRoute allowedRole="asisten"><DashboardAsisten /></ProtectedRoute>} />
+        <Route path="/asisten/koreksi" element={<ProtectedRoute allowedRole="asisten"><HalamanKoreksi /></ProtectedRoute>} />
+        <Route path="/asisten/auto-correction" element={<ProtectedRoute allowedRole="asisten"><AutoCorrectionAsisten /></ProtectedRoute>} />
+        <Route path="/asisten/monitoring" element={<ProtectedRoute allowedRole="asisten"><MonitoringMahasiswa /></ProtectedRoute>} />
+        <Route path="/asisten/add-materi" element={<ProtectedRoute allowedRole="asisten"><AddMateri /></ProtectedRoute>} />
+        <Route path="/asisten/jadwal" element={<ProtectedRoute allowedRole="asisten"><div className="p-8"><h1 className="text-2xl font-bold">Jadwal Asisten</h1><p className="text-gray-500">Halaman jadwal asisten sedang dalam pengembangan.</p></div></ProtectedRoute>} />
+
+        {/* User (Mahasiswa) Routes */}
+        <Route path="/user/dashboard" element={<ProtectedRoute allowedRole="user"><KursusTersedia /></ProtectedRoute>} />
+        <Route path="/user/kursus-saya" element={<ProtectedRoute allowedRole="user"><div className="p-8"><h1 className="text-2xl font-bold">Kursus Saya</h1><p className="text-gray-500">Halaman kursus yang telah Anda ambil.</p></div></ProtectedRoute>} />
+        <Route path="/user/detail-kursus" element={<ProtectedRoute allowedRole="user"><DetailKursus /></ProtectedRoute>} />
+        <Route path="/user/ujian" element={<ProtectedRoute allowedRole="user"><UjianPage /></ProtectedRoute>} />
+        <Route path="/user/materi" element={<ProtectedRoute allowedRole="user"><div className="p-8"><h1 className="text-2xl font-bold">Materi</h1><p className="text-gray-500">Daftar materi pembelajaran.</p></div></ProtectedRoute>} />
+
+
+
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/admin/pengajar" replace />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );
 }
 
+
 export default App;
+
+
+
