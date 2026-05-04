@@ -45,13 +45,18 @@ function App() {
         <Route path="/admin/auto-correction" element={<ProtectedRoute allowedRole="admin"><AutoCorrection /></ProtectedRoute>} />
         <Route path="/admin/end-kursus" element={<ProtectedRoute allowedRole="admin"><LaporanAkhir /></ProtectedRoute>} />
 
+        {/* Pengajar Routes */}
+        <Route path="/pengajar/dashboard" element={<ProtectedRoute allowedRole="pengajar"><DashboardAsisten /></ProtectedRoute>} />
+        <Route path="/pengajar/monitoring" element={<ProtectedRoute allowedRole="pengajar"><MonitoringMahasiswa /></ProtectedRoute>} />
+        <Route path="/pengajar/add-materi" element={<ProtectedRoute allowedRole="pengajar"><AddMateri /></ProtectedRoute>} />
+        <Route path="/pengajar/jadwal" element={<ProtectedRoute allowedRole="pengajar"><div className="p-8"><h1 className="text-2xl font-bold">Jadwal Pengajar</h1><p className="text-gray-500">Halaman jadwal pengajar sedang dalam pengembangan.</p></div></ProtectedRoute>} />
+
         {/* Asisten Routes */}
         <Route path="/asisten/dashboard" element={<ProtectedRoute allowedRole="asisten"><DashboardAsisten /></ProtectedRoute>} />
         <Route path="/asisten/koreksi" element={<ProtectedRoute allowedRole="asisten"><HalamanKoreksi /></ProtectedRoute>} />
         <Route path="/asisten/auto-correction" element={<ProtectedRoute allowedRole="asisten"><AutoCorrectionAsisten /></ProtectedRoute>} />
-        <Route path="/asisten/monitoring" element={<ProtectedRoute allowedRole="asisten"><MonitoringMahasiswa /></ProtectedRoute>} />
-        <Route path="/asisten/add-materi" element={<ProtectedRoute allowedRole="asisten"><AddMateri /></ProtectedRoute>} />
         <Route path="/asisten/jadwal" element={<ProtectedRoute allowedRole="asisten"><div className="p-8"><h1 className="text-2xl font-bold">Jadwal Asisten</h1><p className="text-gray-500">Halaman jadwal asisten sedang dalam pengembangan.</p></div></ProtectedRoute>} />
+
 
         {/* User (Mahasiswa) Routes */}
         <Route path="/user/dashboard" element={<ProtectedRoute allowedRole="user"><KursusTersedia /></ProtectedRoute>} />

@@ -49,14 +49,22 @@ const Sidebar: React.FC = () => {
     { name: 'Dashboard', icon: <HiOutlineSquares2X2 />, path: '/asisten/dashboard' },
     { name: 'Koreksi Manual', icon: <HiOutlinePencilSquare />, path: '/asisten/koreksi' },
     { name: 'Auto Correction AI', icon: <HiOutlineSparkles />, path: '/asisten/auto-correction' },
-    { name: 'Monitoring', icon: <HiOutlineChartBar />, path: '/asisten/monitoring' },
-    { name: 'Add Materi', icon: <HiOutlinePlus />, path: '/asisten/add-materi' },
     { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/asisten/jadwal' },
   ];
 
+  const pengajarMenuItems = [
+    { name: 'Dashboard', icon: <HiOutlineSquares2X2 />, path: '/pengajar/dashboard' },
+    { name: 'Monitoring', icon: <HiOutlineChartBar />, path: '/pengajar/monitoring' },
+    { name: 'Add Materi', icon: <HiOutlinePlus />, path: '/pengajar/add-materi' },
+    { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/pengajar/jadwal' },
+  ];
 
+  const menuItems = 
+    role === 'admin' ? adminMenuItems : 
+    role === 'pengajar' ? pengajarMenuItems :
+    role === 'asisten' ? asistenMenuItems : 
+    userMenuItems;
 
-  const menuItems = role === 'admin' ? adminMenuItems : (role === 'asisten' ? asistenMenuItems : userMenuItems);
   const aiItems = role === 'admin' ? adminAiItems : [];
 
   const handleLogout = () => {

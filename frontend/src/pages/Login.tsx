@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiOutlineUserCircle, HiOutlineAcademicCap, HiOutlineArrowRight } from 'react-icons/hi2';
+import { HiOutlineUserCircle, HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBookOpen } from 'react-icons/hi2';
+
 
 const Login: React.FC = () => {
   const [role, setRole] = useState<'admin' | 'asisten' | 'user' | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (selectedRole: 'admin' | 'asisten' | 'user') => {
-    // For now, just simulate login and redirect
+  const handleLogin = (selectedRole: string) => {
     localStorage.setItem('userRole', selectedRole);
-    if (selectedRole === 'admin') {
-      navigate('/admin/pengajar');
-    } else if (selectedRole === 'asisten') {
-      navigate('/asisten/dashboard');
-    } else {
-      navigate('/user/dashboard');
-    }
+    if (selectedRole === 'admin') navigate('/admin/pengajar');
+
+    else if (selectedRole === 'pengajar') navigate('/pengajar/dashboard');
+    else if (selectedRole === 'asisten') navigate('/asisten/dashboard');
+    else if (selectedRole === 'user') navigate('/user/dashboard');
   };
 
 
@@ -56,6 +54,8 @@ const Login: React.FC = () => {
             <p className="text-gray-500">Silakan pilih akses masuk Anda</p>
           </div>
 
+
+
           <div className="space-y-4">
             {/* Admin Role Card */}
             <button
@@ -75,7 +75,25 @@ const Login: React.FC = () => {
               <div className="absolute bottom-0 left-0 h-1 w-0 bg-emerald-500 group-hover:w-full transition-all duration-500"></div>
             </button>
 
+            {/* Pengajar Role Card */}
+            <button
+              onClick={() => handleLogin('pengajar')}
+              className="group w-full p-6 bg-white border-2 border-gray-100 rounded-2xl flex items-center gap-5 hover:border-yellow-500 hover:bg-yellow-50/30 transition-all duration-300 text-left relative overflow-hidden"
+            >
+              <div className="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 text-3xl group-hover:bg-yellow-500 group-hover:text-white transition-colors duration-300">
+                <HiOutlineBookOpen />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 text-lg">Login Pengajar</h3>
+                <p className="text-gray-500 text-sm">Kelola materi, konten, dan monitor mahasiswa</p>
+              </div>
+              <HiOutlineArrowRight className="text-gray-300 group-hover:text-yellow-500 group-hover:translate-x-1 transition-all" />
+              
+              <div className="absolute bottom-0 left-0 h-1 w-0 bg-yellow-500 group-hover:w-full transition-all duration-500"></div>
+            </button>
+
             {/* Asisten Role Card */}
+
             <button
               onClick={() => handleLogin('asisten')}
               className="group w-full p-6 bg-white border-2 border-gray-100 rounded-2xl flex items-center gap-5 hover:border-purple-500 hover:bg-purple-50/30 transition-all duration-300 text-left relative overflow-hidden"

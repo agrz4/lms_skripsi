@@ -32,11 +32,22 @@ const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <div className="text-sm font-bold text-gray-900 capitalize">{role}</div>
-            <div className="text-[10px] text-gray-400">{role}@lms.id</div>
+            <div className="text-[10px] text-gray-400 font-medium">Role: {role.charAt(0).toUpperCase() + role.slice(1)}</div>
           </div>
-          <div className="w-10 h-10 bg-emerald-100 border-2 border-emerald-500 rounded-full overflow-hidden">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${role === 'admin' ? 'Admin' : (role === 'asisten' ? 'Asisten' : 'User')}`} alt="avatar" />
+          <div className={`w-10 h-10 border-2 rounded-full overflow-hidden ${
+            role === 'admin' ? 'bg-emerald-100 border-emerald-500' : 
+            role === 'pengajar' ? 'bg-yellow-100 border-yellow-500' :
+            role === 'asisten' ? 'bg-purple-100 border-purple-500' : 
+            'bg-blue-100 border-blue-500'
+          }`}>
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
+              role === 'admin' ? 'Admin' : 
+              role === 'pengajar' ? 'Teacher' : 
+              role === 'asisten' ? 'Asisten' : 
+              'User'
+            }`} alt="avatar" />
           </div>
+
 
         </div>
       </div>
