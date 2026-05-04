@@ -14,7 +14,11 @@ import AddMateri from './pages/asisten/AddMateri';
 import KursusTersedia from './pages/user/KursusTersedia';
 import DetailKursus from './pages/user/DetailKursus';
 import UjianPage from './pages/user/UjianPage';
+import HasilSkorAI from './pages/user/HasilSkorAI';
+import UserProfile from './pages/user/UserProfile';
 import AdminLayout from './layouts/AdminLayout';
+
+
 
 
 
@@ -54,7 +58,11 @@ function App() {
         <Route path="/user/kursus-saya" element={<ProtectedRoute allowedRole="user"><div className="p-8"><h1 className="text-2xl font-bold">Kursus Saya</h1><p className="text-gray-500">Halaman kursus yang telah Anda ambil.</p></div></ProtectedRoute>} />
         <Route path="/user/detail-kursus" element={<ProtectedRoute allowedRole="user"><DetailKursus /></ProtectedRoute>} />
         <Route path="/user/ujian" element={<ProtectedRoute allowedRole="user"><UjianPage /></ProtectedRoute>} />
+        <Route path="/user/hasil-skor" element={<ProtectedRoute allowedRole="user"><HasilSkorAI /></ProtectedRoute>} />
+        <Route path="/user/profile" element={<ProtectedRoute allowedRole="user"><UserProfile /></ProtectedRoute>} />
         <Route path="/user/materi" element={<ProtectedRoute allowedRole="user"><div className="p-8"><h1 className="text-2xl font-bold">Materi</h1><p className="text-gray-500">Daftar materi pembelajaran.</p></div></ProtectedRoute>} />
+
+
 
 
 

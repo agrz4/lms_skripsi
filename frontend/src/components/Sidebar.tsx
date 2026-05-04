@@ -14,8 +14,10 @@ import {
   HiOutlineArrowLeftOnRectangle,
   HiOutlinePlus,
   HiOutlineHome,
-  HiOutlineQueueList
+  HiOutlineQueueList,
+  HiOutlineUser
 } from 'react-icons/hi2';
+
 
 
 
@@ -38,8 +40,10 @@ const Sidebar: React.FC = () => {
     { name: 'Dashboard', icon: <HiOutlineHome />, path: '/user/dashboard' },
     { name: 'Kursus Saya', icon: <HiOutlineBookOpen />, path: '/user/kursus-saya' },
     { name: 'Materi', icon: <HiOutlineQueueList />, path: '/user/materi' },
+    { name: 'Profile', icon: <HiOutlineUser />, path: '/user/profile' },
     { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/user/jadwal' },
   ];
+
 
   const asistenMenuItems = [
     { name: 'Dashboard', icon: <HiOutlineSquares2X2 />, path: '/asisten/dashboard' },

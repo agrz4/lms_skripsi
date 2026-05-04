@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   HiOutlineSparkles, 
   HiOutlineCheckCircle, 
@@ -183,9 +184,10 @@ const UjianPage: React.FC = () => {
                   </p>
                </div>
 
-               <button className="w-full py-5 bg-emerald-500 text-white rounded-3xl font-extrabold text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+               <Link to="/user/hasil-skor" className="w-full py-5 bg-emerald-500 text-white rounded-3xl font-extrabold text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
                   Kumpulkan Ujian <HiOutlineChevronRight />
-               </button>
+               </Link>
+
             </div>
           </div>
         </div>
