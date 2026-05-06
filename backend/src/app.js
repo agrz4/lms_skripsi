@@ -4,6 +4,10 @@ dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const aiRoutes = require('./routes/aiRoutes');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const mataKuliahRoutes = require('./routes/mataKuliahRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
@@ -12,6 +16,10 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/ai', aiRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/matakuliah', mataKuliahRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Root Route
 app.get('/', (req, res) => {
