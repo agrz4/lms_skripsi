@@ -3,17 +3,43 @@ import { useNavigate } from 'react-router-dom';
 import { HiOutlineUserCircle, HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBookOpen } from 'react-icons/hi2';
 
 
+import api from '../lib/api';
+
 const Login: React.FC = () => {
   const [role, setRole] = useState<'admin' | 'asisten' | 'user' | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (selectedRole: string) => {
-    localStorage.setItem('userRole', selectedRole);
-    if (selectedRole === 'admin') navigate('/admin/pengajar');
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
-    else if (selectedRole === 'pengajar') navigate('/pengajar/dashboard');
-    else if (selectedRole === 'asisten') navigate('/asisten/dashboard');
-    else if (selectedRole === 'user') navigate('/user/dashboard');
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response.data;
+      
+      localStorage.setItem('token', token);
+      
+      let roleToStore = 'user';
+      if (user.role === 'ADMIN') roleToStore = 'admin';
+      else if (user.role === 'DOSEN') roleToStore = 'pengajar';
+      else if (user.role === 'MAHASISWA') roleToStore = 'user';
+
+      localStorage.setItem('userRole', roleToStore);
+      localStorage.setItem('userName', user.nama);
+
+      if (roleToStore === 'admin') navigate('/admin/pengajar');
+      else if (roleToStore === 'pengajar') navigate('/pengajar/dashboard');
+      else if (roleToStore === 'user') navigate('/user/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -56,78 +82,86 @@ const Login: React.FC = () => {
 
 
 
-          <div className="space-y-4">
-            {/* Admin Role Card */}
-            <button
-              onClick={() => handleLogin('admin')}
-              className="group w-full p-6 bg-white border-2 border-gray-100 rounded-2xl flex items-center gap-5 hover:border-emerald-500 hover:bg-emerald-50/30 transition-all duration-300 text-left relative overflow-hidden"
-            >
-              <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 text-3xl group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                <HiOutlineUserCircle />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-lg">Login Admin</h3>
-                <p className="text-gray-500 text-sm">Kelola pengajar, kursus, dan laporan sistem</p>
-              </div>
-              <HiOutlineArrowRight className="text-gray-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
-              
-              {/* Subtle accent line */}
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-emerald-500 group-hover:w-full transition-all duration-500"></div>
-            </button>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 ml-1">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@lms.com"
+                className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:outline-none transition-all"
+                required
+              />
+            </div>
 
-            {/* Pengajar Role Card */}
-            <button
-              onClick={() => handleLogin('pengajar')}
-              className="group w-full p-6 bg-white border-2 border-gray-100 rounded-2xl flex items-center gap-5 hover:border-yellow-500 hover:bg-yellow-50/30 transition-all duration-300 text-left relative overflow-hidden"
-            >
-              <div className="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 text-3xl group-hover:bg-yellow-500 group-hover:text-white transition-colors duration-300">
-                <HiOutlineBookOpen />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-lg">Login Pengajar</h3>
-                <p className="text-gray-500 text-sm">Kelola materi, konten, dan monitor mahasiswa</p>
-              </div>
-              <HiOutlineArrowRight className="text-gray-300 group-hover:text-yellow-500 group-hover:translate-x-1 transition-all" />
-              
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-yellow-500 group-hover:w-full transition-all duration-500"></div>
-            </button>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:outline-none transition-all"
+                required
+              />
+            </div>
 
-            {/* Asisten Role Card */}
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
+                {error}
+              </div>
+            )}
 
             <button
-              onClick={() => handleLogin('asisten')}
-              className="group w-full p-6 bg-white border-2 border-gray-100 rounded-2xl flex items-center gap-5 hover:border-purple-500 hover:bg-purple-50/30 transition-all duration-300 text-left relative overflow-hidden"
+              type="submit"
+              disabled={isLoading}
+              className="w-full p-4 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 text-3xl group-hover:bg-purple-500 group-hover:text-white transition-colors duration-300">
-                <HiOutlineAcademicCap />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-lg">Login Asisten</h3>
-                <p className="text-gray-500 text-sm">Koreksi tugas, refleksi, dan bantu mahasiswa</p>
-              </div>
-              <HiOutlineArrowRight className="text-gray-300 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
-              
-              {/* Subtle accent line */}
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-purple-500 group-hover:w-full transition-all duration-500"></div>
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  Masuk Sekarang
+                  <HiOutlineArrowRight />
+                </>
+              )}
             </button>
+          </form>
 
-            {/* Mahasiswa Role Card */}
-            <button
-              onClick={() => handleLogin('user')}
-              className="group w-full p-6 bg-white border-2 border-gray-100 rounded-2xl flex items-center gap-5 hover:border-blue-500 hover:bg-blue-50/30 transition-all duration-300 text-left relative overflow-hidden"
-            >
-              <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 text-3xl group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
-                <HiOutlineUserCircle />
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100"></div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-lg">Login Mahasiswa</h3>
-                <p className="text-gray-500 text-sm">Akses kursus, materi, dan kerjakan tugas Anda</p>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-4 text-gray-400 font-bold tracking-widest">Atau Masuk Sebagai</span>
               </div>
-              <HiOutlineArrowRight className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
-              
-              {/* Subtle accent line */}
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-blue-500 group-hover:w-full transition-all duration-500"></div>
-            </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <button 
+                type="button"
+                onClick={() => { setEmail('admin@lms.com'); setPassword('admin123'); }}
+                className="p-3 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-gray-100"
+              >
+                ADMIN
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setEmail('dosen@lms.com'); setPassword('dosen123'); }}
+                className="p-3 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 transition-all border border-gray-100"
+              >
+                DOSEN
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setEmail('mhs@lms.com'); setPassword('mhs123'); }}
+                className="p-3 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all border border-gray-100"
+              >
+                MHS
+              </button>
+            </div>
           </div>
 
           <div className="mt-12 text-center">

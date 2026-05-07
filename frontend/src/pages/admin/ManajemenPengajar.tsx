@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { usePengajarStore, type Pengajar } from '../../store/usePengajarStore';
+import DashboardSummary from '../../components/DashboardSummary';
 import { HiOutlinePlus, HiOutlineMagnifyingGlass, HiOutlinePencilSquare, HiOutlineTrash, HiOutlineEnvelope } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,19 +31,22 @@ import {
 } from "@/components/ui/select";
 
 const ManajemenPengajar: React.FC = () => {
-  const { pengajarList, addPengajar, removePengajar } = usePengajarStore();
+  const { pengajarList, isLoading, fetchPengajar, addPengajar, removePengajar, updatePengajar } = usePengajarStore();
   
   // UI State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
-  // Form State
-  const [formData, setFormData] = useState<Omit<Pengajar, 'id' | 'status'>>({
+  const [formData, setFormData] = useState({
     nama: '',
-    instansi: '',
     email: '',
-    pelatihan: '',
-    jadwal: '',
+    password: 'password123',
+    role: 'DOSEN' as 'DOSEN' | 'MAHASISWA' | 'ADMIN' | 'ASISTEN',
   });
+
+  useEffect(() => {
+    fetchPengajar();
+  }, [fetchPengajar]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,29 +57,42 @@ const ManajemenPengajar: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nama || !formData.email) return;
     
-    addPengajar({
-      ...formData,
-      status: 'Aktif'
-    });
+    if (editingId) {
+      await updatePengajar(editingId, formData);
+    } else {
+      await addPengajar(formData);
+    }
     
     // Reset and Close
     setFormData({
       nama: '',
-      instansi: '',
       email: '',
-      pelatihan: '',
-      jadwal: '',
+      password: 'password123',
+      role: 'DOSEN',
     });
+    setEditingId(null);
     setIsModalOpen(false);
+  };
+
+  const handleEdit = (p: Pengajar) => {
+    setEditingId(p.id);
+    setFormData({
+      nama: p.nama,
+      email: p.email,
+      password: '', // Don't show password or allow changing it easily here
+      role: p.role as any,
+    });
+    setIsModalOpen(true);
   };
 
   return (
     <>
       <div className="max-w-6xl mx-auto space-y-6">
+        <DashboardSummary />
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manajemen Pengajar</h1>
@@ -104,44 +121,54 @@ const ManajemenPengajar: React.FC = () => {
               <TableHeader className="bg-gray-50/30">
                 <TableRow>
                   <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Nama</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Instansi</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Email</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6 text-emerald-600">Pelatihan</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Jadwal</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6 text-center">Status</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Role</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6 text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pengajarList.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <TableCell className="px-6 py-4 font-semibold text-gray-900">{item.nama}</TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600">{item.instansi}</TableCell>
-                    <TableCell className="px-6 py-4 text-gray-400 italic font-medium">{item.email}</TableCell>
-                    <TableCell className="px-6 py-4 font-bold text-emerald-600">{item.pelatihan}</TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600">{item.jadwal}</TableCell>
-                    <TableCell className="px-6 py-4 text-center">
-                      <Badge variant={item.status === 'Aktif' ? 'default' : 'secondary'} className="rounded-full px-3 py-0.5 text-[10px] font-bold">
-                        {item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-center">
-                      <div className="flex justify-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
-                          <HiOutlinePencilSquare className="text-lg" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-600 hover:bg-red-50"
-                          onClick={() => removePengajar(item.id)}
-                        >
-                          <HiOutlineTrash className="text-lg" />
-                        </Button>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-32 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                        <p className="text-sm text-gray-500 font-medium">Memuat data...</p>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  pengajarList.map((item) => (
+                    <TableRow key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <TableCell className="px-6 py-4 font-semibold text-gray-900">{item.nama}</TableCell>
+                      <TableCell className="px-6 py-4 text-gray-400 italic font-medium">{item.email}</TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge variant="outline" className="rounded-full px-3 py-0.5 text-[10px] font-bold">
+                          {item.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                            onClick={() => handleEdit(item)}
+                          >
+                            <HiOutlinePencilSquare className="text-lg" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-600 hover:bg-red-50"
+                            onClick={() => removePengajar(item.id)}
+                          >
+                            <HiOutlineTrash className="text-lg" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
                 {pengajarList.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="h-32 text-center text-muted-foreground italic">
@@ -158,35 +185,22 @@ const ManajemenPengajar: React.FC = () => {
       {/* Modal Add Pengajar using Shadcn Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-lg rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="p-8 bg-gray-50/80 border-b">
-            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              <span className="w-2 h-8 bg-emerald-500 rounded-full"></span>
-              Tambah Pengajar
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black px-8 pt-8">
+              {editingId ? 'Edit Data Pengguna' : 'Tambah Pengajar Baru'}
             </DialogTitle>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-2">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
                 <Input
                   name="nama"
                   value={formData.nama}
                   onChange={handleInputChange}
                   className="rounded-xl border-gray-200 py-6"
-                  placeholder="Nama Lengkap Pengajar..."
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Instansi</label>
-                <Input
-                  name="instansi"
-                  value={formData.instansi}
-                  onChange={handleInputChange}
-                  className="rounded-xl border-gray-200 py-6"
-                  placeholder="Asal Instansi..."
+                  placeholder="Nama Lengkap..."
                   required
                 />
               </div>
@@ -199,35 +213,22 @@ const ManajemenPengajar: React.FC = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="rounded-xl border-gray-200 py-6"
-                  placeholder="email@instansi.ac.id"
+                  placeholder="email@lms.com"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Pelatihan</label>
-                <Select onValueChange={(val) => handleSelectChange('pelatihan', val)} required>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Role</label>
+                <Select onValueChange={(val) => handleSelectChange('role', val)} defaultValue={formData.role} value={formData.role}>
                   <SelectTrigger className="rounded-xl border-gray-200 py-6">
-                    <SelectValue placeholder="Pilih Pelatihan" />
+                    <SelectValue placeholder="Pilih Role" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="Data Science">Data Science</SelectItem>
-                    <SelectItem value="Web Development">Web Development</SelectItem>
-                    <SelectItem value="Cyber Security">Cyber Security</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Jadwal</label>
-                <Select onValueChange={(val) => handleSelectChange('jadwal', val)} required>
-                  <SelectTrigger className="rounded-xl border-gray-200 py-6">
-                    <SelectValue placeholder="Pilih Jadwal" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="Senin, 09:00">Senin, 09:00</SelectItem>
-                    <SelectItem value="Selasa, 13:00">Selasa, 13:00</SelectItem>
-                    <SelectItem value="Rabu, 10:00">Rabu, 10:00</SelectItem>
+                    <SelectItem value="DOSEN">DOSEN</SelectItem>
+                    <SelectItem value="ASISTEN">ASISTEN</SelectItem>
+                    <SelectItem value="MAHASISWA">MAHASISWA</SelectItem>
+                    <SelectItem value="ADMIN">ADMIN</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -241,11 +242,25 @@ const ManajemenPengajar: React.FC = () => {
             </div>
 
             <DialogFooter className="gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="rounded-2xl py-6 flex-1 border-gray-200">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingId(null);
+                  setFormData({
+                    nama: '',
+                    email: '',
+                    password: 'password123',
+                    role: 'DOSEN',
+                  });
+                }} 
+                className="rounded-2xl py-6 flex-1 border-gray-200"
+              >
                 Batal
               </Button>
               <Button type="submit" className="rounded-2xl py-6 flex-[2] font-bold uppercase tracking-widest shadow-xl shadow-emerald-200">
-                Simpan Pengajar
+                {editingId ? 'Update Data' : 'Simpan Pengajar'}
               </Button>
             </DialogFooter>
           </form>

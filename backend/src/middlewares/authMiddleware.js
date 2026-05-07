@@ -42,4 +42,12 @@ const dosenOnly = (req, res, next) => {
   }
 };
 
-module.exports = { authMiddleware, adminOnly, dosenOnly };
+const asistenOnly = (req, res, next) => {
+  if (req.user && (req.user.role === 'ASISTEN' || req.user.role === 'ADMIN')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied: Asisten only' });
+  }
+};
+
+module.exports = { authMiddleware, adminOnly, dosenOnly, asistenOnly };

@@ -49,6 +49,15 @@ const Navbar: React.FC = () => {
           </div>
 
 
+          <button 
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = '/login';
+            }}
+            className="ml-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all text-sm font-bold flex items-center gap-2"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>

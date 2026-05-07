@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useMataKuliahStore, type MataKuliah } from '../../store/useMataKuliahStore';
 
 import { 
   HiOutlinePencilSquare, 
@@ -30,15 +31,50 @@ import {
 } from "@/components/ui/select";
 
 const ManajemenKursus: React.FC = () => {
+  const { mataKuliahList, isLoading, fetchMataKuliah, addMataKuliah, removeMataKuliah, updateMataKuliah } = useMataKuliahStore();
   const [currentStep, setCurrentStep] = useState("step1");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    nama: '',
+    kode: '',
+  });
 
   const steps = ["step1", "step2", "step3", "step4"];
+  const handleStepChange = (newStep: string) => setCurrentStep(newStep);
+  const stepIndex = steps.indexOf(currentStep);
 
-  const handleStepChange = (newStep: string) => {
-    setCurrentStep(newStep);
+  useEffect(() => {
+    fetchMataKuliah();
+  }, [fetchMataKuliah]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const stepIndex = steps.indexOf(currentStep);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.nama || !formData.kode) return;
+    
+    if (editingId) {
+      await updateMataKuliah(editingId, formData);
+      setEditingId(null);
+    } else {
+      await addMataKuliah(formData);
+    }
+    
+    setFormData({ nama: '', kode: '' });
+  };
+
+  const handleEdit = (mk: MataKuliah) => {
+    setEditingId(mk.id);
+    setFormData({ nama: mk.nama, kode: mk.kode });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({ nama: '', kode: '' });
+  };
 
   return (
     <>
@@ -98,18 +134,42 @@ const ManajemenKursus: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <form className="space-y-6">
+                      <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nama Kursus</label>
-                          <Input className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all" placeholder="Contoh: Web Development Dasar" />
+                          <Input 
+                            name="nama"
+                            value={formData.nama}
+                            onChange={handleInputChange}
+                            className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all" 
+                            placeholder="Contoh: Web Development Dasar" 
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Deskripsi</label>
-                          <textarea className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none h-36 transition-all" placeholder="Jelaskan mengenai kursus ini..."></textarea>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kode Kursus</label>
+                          <Input 
+                            name="kode"
+                            value={formData.kode}
+                            onChange={handleInputChange}
+                            className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all" 
+                            placeholder="Contoh: IF101" 
+                          />
                         </div>
                         <div className="flex gap-4 pt-2">
-                          <Button variant="outline" className="flex-1 rounded-2xl py-7 font-bold text-gray-500 border-gray-100">Batal</Button>
-                          <Button className="flex-1 rounded-2xl py-7 font-bold shadow-xl shadow-emerald-100 bg-emerald-500 hover:bg-emerald-600" onClick={(e) => { e.preventDefault(); handleStepChange("step2"); }}>Buat Kursus</Button>
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            className="flex-1 rounded-2xl py-7 font-bold text-gray-500 border-gray-100"
+                            onClick={handleCancelEdit}
+                          >
+                            {editingId ? 'Batal' : 'Reset'}
+                          </Button>
+                          <Button 
+                            type="submit"
+                            className="flex-1 rounded-2xl py-7 font-bold shadow-xl shadow-emerald-100 bg-emerald-500 hover:bg-emerald-600"
+                          >
+                            {editingId ? 'Update Kursus' : 'Simpan Kursus'}
+                          </Button>
                         </div>
                       </form>
                     </CardContent>
@@ -130,19 +190,46 @@ const ManajemenKursus: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow className="hover:bg-gray-50/30 border-gray-50 transition-colors">
-                          <TableCell className="px-8 py-7 font-bold text-gray-800">UI/UX Design for Beginners</TableCell>
-                          <TableCell className="px-8 py-7 text-center text-gray-600 font-medium">32 Orang</TableCell>
-                          <TableCell className="px-8 py-7 text-center">
-                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 rounded-full px-4 py-1 font-bold text-[9px] uppercase tracking-wider">Aktif</Badge>
-                          </TableCell>
-                          <TableCell className="px-8 py-7">
-                            <div className="flex justify-center gap-2">
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><HiOutlinePencilSquare className="text-xl" /></Button>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><HiOutlineTrash className="text-xl" /></Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        {isLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="h-32 text-center text-gray-400">Loading...</TableCell>
+                          </TableRow>
+                        ) : (
+                          mataKuliahList.map((mk) => (
+                            <TableRow key={mk.id} className="hover:bg-gray-50/30 border-gray-50 transition-colors">
+                              <TableCell className="px-8 py-7 font-bold text-gray-800">{mk.nama} ({mk.kode})</TableCell>
+                              <TableCell className="px-8 py-7 text-center text-gray-600 font-medium">-</TableCell>
+                              <TableCell className="px-8 py-7 text-center">
+                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 rounded-full px-4 py-1 font-bold text-[9px] uppercase tracking-wider">Aktif</Badge>
+                              </TableCell>
+                              <TableCell className="px-8 py-7">
+                                <div className="flex justify-center gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className={`h-10 w-10 rounded-xl transition-all ${editingId === mk.id ? 'text-emerald-600 bg-emerald-50' : 'text-gray-300 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                                    onClick={() => handleEdit(mk)}
+                                  >
+                                    <HiOutlinePencilSquare className="text-xl" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-10 w-10 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                    onClick={() => removeMataKuliah(mk.id)}
+                                  >
+                                    <HiOutlineTrash className="text-xl" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                        {!isLoading && mataKuliahList.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="h-32 text-center text-gray-400 italic">Belum ada kursus.</TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </Card>

@@ -53,6 +53,7 @@ model Evaluasi {
 enum Role {
   MAHASISWA
   DOSEN
+  ASISTEN
   ADMIN
 }
 
