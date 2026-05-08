@@ -27,6 +27,7 @@ const Login: React.FC = () => {
       let roleToStore = 'user';
       if (user.role === 'ADMIN') roleToStore = 'admin';
       else if (user.role === 'DOSEN') roleToStore = 'pengajar';
+      else if (user.role === 'ASISTEN') roleToStore = 'asisten';
       else if (user.role === 'MAHASISWA') roleToStore = 'user';
 
       localStorage.setItem('userRole', roleToStore);
@@ -34,6 +35,7 @@ const Login: React.FC = () => {
 
       if (roleToStore === 'admin') navigate('/admin/pengajar');
       else if (roleToStore === 'pengajar') navigate('/pengajar/dashboard');
+      else if (roleToStore === 'asisten') navigate('/asisten/dashboard');
       else if (roleToStore === 'user') navigate('/user/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -139,7 +141,7 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-4 gap-2 mt-6">
               <button 
                 type="button"
                 onClick={() => { setEmail('admin@lms.com'); setPassword('admin123'); }}
@@ -149,14 +151,21 @@ const Login: React.FC = () => {
               </button>
               <button 
                 type="button"
-                onClick={() => { setEmail('dosen@lms.com'); setPassword('dosen123'); }}
+                onClick={() => { setEmail('dosen@lms.com'); setPassword('password123'); }}
                 className="p-3 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 transition-all border border-gray-100"
               >
                 DOSEN
               </button>
               <button 
                 type="button"
-                onClick={() => { setEmail('mhs@lms.com'); setPassword('mhs123'); }}
+                onClick={() => { setEmail('asisten@lms.com'); setPassword('password123'); }}
+                className="p-3 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all border border-gray-100"
+              >
+                ASISTEN
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setEmail('mhs@lms.com'); setPassword('password123'); }}
                 className="p-3 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all border border-gray-100"
               >
                 MHS

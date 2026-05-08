@@ -1,55 +1,68 @@
-# 📈 Laporan Progress Pengembangan - LMS Hybrid AI
+# Progress Proyek: LMS Hybrid Berbasis AI
 
-Dokumen ini mencatat tahapan pengembangan yang telah diselesaikan dan rencana pengembangan selanjutnya untuk proyek Tugas Akhir/Skripsi LMS Hybrid.
+Dokumen ini dibuat untuk menyimpan konteks pengerjaan proyek agar asisten AI dapat melanjutkan pekerjaan dengan pemahaman yang sama di sesi berikutnya.
 
----
-
-## 📅 Status Terakhir: 12 April 2026
-
-### ✅ Yang Telah Diselesaikan (Completed)
-
-#### **1. Infrastruktur Backend**
-- [x] Inisialisasi Express.js dengan arsitektur modular (Controllers, Services, Routes).
-- [x] Konfigurasi environment variabel (`.env`) untuk keamanan API Key.
-- [x] Integrasi Prisma ORM dengan PostgreSQL (Local/pgAdmin).
-- [x] Setup CORS untuk komunikasi antar origin.
-
-#### **2. Database & Vector Storage**
-- [x] Definisi schema database untuk User, Mata Kuliah, Soal, dan Evaluasi.
-- [x] Setup pgvector di Database Lokal.
-- [x] Migrasi schema RAG dari Supabase ke Prisma model.
-
-#### **3. Core AI Integration (RAG)**
-- [x] **Embedding Service**: Berhasil terhubung ke OpenAI `text-embedding-3-small`.
-- [x] **RAG Retrieval**: Implementasi fungsi pencarian soal serupa berdasarkan context database.
-- [x] **LLM Evaluator**: Integrasi GPT-4o-mini untuk analisis kualitas soal, tingkat kesulitan, dan deteksi duplikasi.
-
-#### **4. API Endpoints**
-- [x] `POST /api/ai/evaluasi`: Endpoint utama evaluasi soal.
-- [x] `POST /api/ai/index`: Endpoint untuk mendaftarkan soal ke vector database.
+## 📌 Status Terakhir
+*   **Peran Fokus Saat Ini**: Admin Kursus (Manajemen Kurikulum & Pengguna).
+*   **Fitur Terbaru**: Penyelesaian alur 4-Step di Manajemen Kursus (Step 1: Buat Kursus, Step 2: Jadwal & Assign Role, Step 3: Materi, Step 4: Publish).
 
 ---
 
-### 🚧 Sedang Dikerjakan (In Progress)
-- [ ] Implementasi sistem autentikasi JWT pada backend.
-- [ ] Integrasi middleware `authMiddleware` dan `dosenOnly` pada route AI.
+## 🛠️ Arsitektur & Teknologi
+
+### Backend (Folder: `backend`)
+*   **Runtime**: Node.js with Express.
+*   **Database**: PostgreSQL dengan ekstensi `pgvector` (Berjalan di dalam **WSL**).
+*   **ORM**: Prisma 7.
+*   **Autentikasi**: JWT & Bcryptjs.
+*   **Catatan Penting**: Karena `pgvector` diinstal di WSL, semua perintah Prisma (`prisma db push`, `prisma generate`, dll.) **HARUS dijalankan di dalam terminal WSL** agar tidak error.
+
+### Frontend (Folder: `frontend`)
+*   **Framework**: React dengan Vite & TypeScript.
+*   **State Management**: Zustand (Setiap modul memiliki store terpisah seperti `useMataKuliahStore`, `useJadwalStore`, dll).
+*   **Styling**: Tailwind CSS & Shadcn UI.
 
 ---
 
-### 📋 Rencana Selanjutnya (Future Roadmap)
+## 🚀 Fitur yang Sudah Selesai (Done)
 
-#### **Fase 2: Autentikasi & Authorization**
-- Implementasi Register, Login, dan Logout.
-- Role Based Access Control (Mahasiswa, Dosen, Admin).
+### 1. Autentikasi & Role
+*   Mendukung 4 Role: `ADMIN`, `DOSEN`, `ASISTEN`, `MAHASISWA`.
+*   Login flow sudah memetakan role dari database ke rute frontend.
+*   Logout sudah berfungsi membersihkan local storage.
 
-#### **Fase 3: Frontend Development**
-- Inisialisasi React + Vite + Tailwind CSS.
-- Pembuatan Dashboard Dosen untuk input dan evaluasi soal.
-- Integrasi Dashboard ke API AI Backend.
-
-#### **Fase 4: Modul Mahasiswa**
-- Fitur pengerjaan soal dan tampilan skor.
-- Integrasi riwayat evaluasi.
+### 2. Dashboard Admin
+*   **Statistik**: Menampilkan jumlah Dosen, Asisten, Mahasiswa, dan Kursus secara real-time dari database.
+*   **Manajemen Pengajar/User**: CRUD (Create, Read, Update, Delete) untuk Dosen dan Asisten sudah terintegrasi backend.
+*   **Manajemen Kursus**:
+    *   **Step 1 (Kursus)**: CRUD Mata Kuliah.
+    *   **Step 2 (Jadwal)**: Input hari, tanggal, dan assign Dosen + Asisten.
+    *   **Step 3 (Materi)**: Input nama materi dan relasi ke kursus.
+    *   **Step 4 (Publish)**: Mengubah status `published` menjadi `true`.
 
 ---
-*Catatan: Progress ini diperbarui secara berkala sesuai dengan tahap pengembangan tugas akhir.*
+
+## 📝 Data Dummy / Akun Tes
+*   **Admin**: `admin@lms.com` / `admin123`
+*   **Dosen**: `dosen@lms.com` / `password123`
+*   **Asisten**: `asisten@lms.com` / `password123`
+*   **Mahasiswa**: `mhs@lms.com` / `password123`
+
+---
+
+## ⏳ Pekerjaan Rumah (To-Do List)
+
+### Prioritas Tinggi
+1.  **AI Knowledge (`AIKnowledge.tsx`)**: Saat ini masih menggunakan data bohongan (mock). Perlu diintegrasikan dengan fitur RAG / Vector DB yang ada di backend.
+2.  **Auto Correction (`AutoCorrection.tsx`)**: Masih menggunakan data mock. Perlu dihubungkan dengan endpoint penilaian otomatis.
+
+### Skala Menengah/Panjang
+3.  **Dashboard Dosen & Asisten**: Memastikan mereka bisa melihat jadwal dan materi yang di-assign oleh Admin.
+4.  **Fitur Pendaftaran (Enrollment)**: Menghubungkan Mahasiswa ke Kursus yang sudah di-publish agar mereka bisa melihat jadwalnya.
+
+---
+
+## ⚠️ Gotchas & Solusi Masalah Lalu
+*   **Error "useState is not defined"**: Terjadi karena lupa import React hooks di file TSX.
+*   **Error "pgvector not found" di Windows**: Karena Postgres di host Windows tidak punya ekstensi tersebut. Solusi: Selalu gunakan database di WSL.
+*   **Error "Cannot read properties of undefined (reading 'create')"**: Terjadi karena lupa menjalankan `npx prisma generate` setelah melakukan `prisma db push`.
