@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useMataKuliahStore, type MataKuliah } from '../../store/useMataKuliahStore';
+import { useJadwalStore } from '../../store/useJadwalStore';
+import { useMateriStore } from '../../store/useMateriStore';
+import { usePengajarStore } from '../../store/usePengajarStore';
 
 import { 
   HiOutlinePencilSquare, 
@@ -32,11 +35,30 @@ import {
 
 const ManajemenKursus: React.FC = () => {
   const { mataKuliahList, isLoading, fetchMataKuliah, addMataKuliah, removeMataKuliah, updateMataKuliah } = useMataKuliahStore();
+  const { addJadwal } = useJadwalStore();
+  const { addMateri } = useMateriStore();
+  const { pengajarList, fetchPengajar } = usePengajarStore();
+
   const [currentStep, setCurrentStep] = useState("step1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nama: '',
     kode: '',
+  });
+
+  const [jadwalData, setJadwalData] = useState({
+    mataKuliahId: '',
+    hari: [] as string[],
+    tglMulai: '',
+    tglSelesai: '',
+    dosenId: '',
+    asistenId: '',
+  });
+
+  const [materiData, setMateriData] = useState({
+    nama: '',
+    mataKuliahId: '',
+    fileUrl: '',
   });
 
   const steps = ["step1", "step2", "step3", "step4"];
@@ -45,7 +67,8 @@ const ManajemenKursus: React.FC = () => {
 
   useEffect(() => {
     fetchMataKuliah();
-  }, [fetchMataKuliah]);
+    fetchPengajar();
+  }, [fetchMataKuliah, fetchPengajar]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -251,12 +274,14 @@ const ManajemenKursus: React.FC = () => {
                     <CardContent className="space-y-8">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Pilih Kursus</label>
-                        <Select>
+                        <Select onValueChange={(val) => setJadwalData(prev => ({ ...prev, mataKuliahId: val }))} value={jadwalData.mataKuliahId}>
                           <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
-                            <SelectValue placeholder="UI/UX Design for Beginners" />
+                            <SelectValue placeholder="Pilih Kursus" />
                           </SelectTrigger>
                           <SelectContent className="rounded-2xl border-gray-100">
-                            <SelectItem value="uiux">UI/UX Design for Beginners</SelectItem>
+                            {mataKuliahList.map(mk => (
+                              <SelectItem key={mk.id} value={mk.id}>{mk.nama}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -265,7 +290,18 @@ const ManajemenKursus: React.FC = () => {
                         <div className="flex flex-wrap gap-3">
                           {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map(day => (
                             <label key={day} className="flex items-center gap-3 px-6 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-all hover:border-blue-200 group bg-gray-50/30">
-                              <input type="checkbox" className="w-5 h-5 accent-blue-500 rounded-md" />
+                              <input 
+                                type="checkbox" 
+                                className="w-5 h-5 accent-blue-500 rounded-md" 
+                                checked={jadwalData.hari.includes(day)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setJadwalData(prev => ({ ...prev, hari: [...prev.hari, day] }));
+                                  } else {
+                                    setJadwalData(prev => ({ ...prev, hari: prev.hari.filter(d => d !== day) }));
+                                  }
+                                }}
+                              />
                               <span className="text-sm font-bold text-gray-600 group-hover:text-blue-700">{day}</span>
                             </label>
                           ))}
@@ -274,11 +310,11 @@ const ManajemenKursus: React.FC = () => {
                       <div className="grid grid-cols-2 gap-6 pt-2">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tgl Mulai</label>
-                          <Input type="date" className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" />
+                          <Input type="date" className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" value={jadwalData.tglMulai} onChange={(e) => setJadwalData(prev => ({ ...prev, tglMulai: e.target.value }))} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tgl Selesai</label>
-                          <Input type="date" className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" />
+                          <Input type="date" className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" value={jadwalData.tglSelesai} onChange={(e) => setJadwalData(prev => ({ ...prev, tglSelesai: e.target.value }))} />
                         </div>
                       </div>
                     </CardContent>
@@ -294,34 +330,50 @@ const ManajemenKursus: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-8">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nama Materi</label>
-                        <Input className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" placeholder="Judul Materi..." />
-                      </div>
-                      <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Pilih Pengajar</label>
-                        <Select>
+                        <Select onValueChange={(val) => setJadwalData(prev => ({ ...prev, dosenId: val }))} value={jadwalData.dosenId}>
                           <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
                             <SelectValue placeholder="Pilih Pengajar" />
                           </SelectTrigger>
                           <SelectContent className="rounded-2xl">
-                            <SelectItem value="ahmad">Dr. Ahmad Subarjo</SelectItem>
+                            {pengajarList.filter(u => u.role === 'DOSEN').map(u => (
+                              <SelectItem key={u.id} value={u.id}>{u.nama}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Pilih Asisten</label>
-                        <Select>
+                        <Select onValueChange={(val) => setJadwalData(prev => ({ ...prev, asistenId: val }))} value={jadwalData.asistenId}>
                           <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
                             <SelectValue placeholder="Pilih Asisten" />
                           </SelectTrigger>
                           <SelectContent className="rounded-2xl">
-                            <SelectItem value="budi">Budi Santoso</SelectItem>
+                            {pengajarList.filter(u => u.role === 'ASISTEN').map(u => (
+                              <SelectItem key={u.id} value={u.id}>{u.nama}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="flex gap-4 pt-6">
                         <Button variant="outline" className="flex-1 rounded-2xl py-7 font-bold text-gray-500 border-gray-100" onClick={() => handleStepChange("step1")}>Batal</Button>
-                        <Button className="flex-1 rounded-2xl py-7 font-bold bg-gray-900 hover:bg-black shadow-xl shadow-gray-200 tracking-widest uppercase text-xs" onClick={() => handleStepChange("step3")}>Simpan Jadwal</Button>
+                        <Button 
+                          className="flex-1 rounded-2xl py-7 font-bold bg-gray-900 hover:bg-black shadow-xl shadow-gray-200 tracking-widest uppercase text-xs" 
+                          onClick={async () => {
+                            if (!jadwalData.mataKuliahId || !jadwalData.dosenId || !jadwalData.asistenId || !jadwalData.tglMulai || !jadwalData.tglSelesai || jadwalData.hari.length === 0) {
+                              alert('Harap isi semua field (Kursus, Hari, Tanggal, Pengajar, dan Asisten)!');
+                              return;
+                            }
+                            try {
+                              await addJadwal(jadwalData);
+                              handleStepChange("step3");
+                            } catch (error) {
+                              alert('Gagal menyimpan jadwal. Pastikan semua ID valid.');
+                            }
+                          }}
+                        >
+                          Simpan Jadwal
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -342,8 +394,21 @@ const ManajemenKursus: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-8">
                       <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Pilih Kursus</label>
+                        <Select onValueChange={(val) => setMateriData(prev => ({ ...prev, mataKuliahId: val }))} value={materiData.mataKuliahId}>
+                          <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
+                            <SelectValue placeholder="Pilih Kursus" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-gray-100">
+                            {mataKuliahList.map(mk => (
+                              <SelectItem key={mk.id} value={mk.id}>{mk.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nama Materi</label>
-                        <Input className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" placeholder="Judul Materi..." />
+                        <Input className="rounded-2xl border-gray-100 bg-gray-50/50 py-7" placeholder="Judul Materi..." value={materiData.nama} onChange={(e) => setMateriData(prev => ({ ...prev, nama: e.target.value }))} />
                       </div>
                       <div className="p-12 border-2 border-dashed border-gray-100 rounded-[2.5rem] text-center hover:border-emerald-300 transition-all group cursor-pointer bg-gray-50/30">
                         <HiOutlineCloudArrowUp className="text-6xl mx-auto mb-4 text-gray-300 group-hover:text-emerald-500 transition-all duration-500" />
@@ -368,7 +433,19 @@ const ManajemenKursus: React.FC = () => {
                       </div>
                       <div className="flex gap-4 pt-4">
                           <Button variant="outline" className="flex-1 rounded-2xl py-8 font-bold text-gray-500 border-gray-100" onClick={() => handleStepChange("step2")}>Kembali</Button>
-                          <Button className="flex-[2] rounded-2xl py-8 font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-100" onClick={() => handleStepChange("step4")}>Lanjutkan ke Publish</Button>
+                          <Button 
+                            className="flex-[2] rounded-2xl py-8 font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-100" 
+                            onClick={async () => {
+                              if (!materiData.mataKuliahId || !materiData.nama) {
+                                alert('Harap isi semua field');
+                                return;
+                              }
+                              await addMateri(materiData);
+                              handleStepChange("step4");
+                            }}
+                          >
+                            Simpan Materi & Lanjutkan
+                          </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -410,14 +487,38 @@ const ManajemenKursus: React.FC = () => {
                     <HiOutlineRocketLaunch />
                   </div>
                   <h2 className="text-5xl font-black text-gray-900 mb-8 tracking-tight">Siap Untuk Di-Publish?</h2>
-                  <p className="text-gray-500 mb-20 max-w-lg mx-auto font-medium text-lg leading-relaxed">
+                  <p className="text-gray-500 mb-8 max-w-lg mx-auto font-medium text-lg leading-relaxed">
                     Semua kurikulum, jadwal, dan materi telah divalidasi oleh sistem. Pastikan untuk memeriksa kembali bobot nilai sebelum mempublikasikannya ke peserta.
                   </p>
+                  <div className="max-w-lg mx-auto mb-12">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2 text-left">Pilih Kursus untuk Di-Publish</label>
+                    <Select onValueChange={(val) => setMateriData(prev => ({ ...prev, mataKuliahId: val }))} value={materiData.mataKuliahId}>
+                      <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
+                        <SelectValue placeholder="Pilih Kursus" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-gray-100">
+                        {mataKuliahList.filter(mk => !mk.published).map(mk => (
+                          <SelectItem key={mk.id} value={mk.id}>{mk.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex gap-6 max-w-lg mx-auto">
                     <Button variant="outline" onClick={() => handleStepChange("step1")} className="flex-1 rounded-[2rem] py-9 text-sm font-black text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-100 uppercase tracking-widest">
                       Batalkan
                     </Button>
-                    <Button className="flex-[2] rounded-[2rem] py-9 bg-emerald-500 hover:bg-emerald-600 text-white font-black shadow-2xl shadow-emerald-200 text-sm uppercase tracking-[0.25em] transform hover:scale-105 active:scale-95 transition-all">
+                    <Button 
+                      className="flex-[2] rounded-[2rem] py-9 bg-emerald-500 hover:bg-emerald-600 text-white font-black shadow-2xl shadow-emerald-200 text-sm uppercase tracking-[0.25em] transform hover:scale-105 active:scale-95 transition-all"
+                      onClick={async () => {
+                        if (!materiData.mataKuliahId) {
+                          alert('Harap pilih kursus yang akan di-publish');
+                          return;
+                        }
+                        await updateMataKuliah(materiData.mataKuliahId, { published: true });
+                        alert('Kursus berhasil di-publish!');
+                        handleStepChange("step1");
+                      }}
+                    >
                       Publish Sekarang
                     </Button>
                   </div>

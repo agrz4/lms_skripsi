@@ -9,21 +9,49 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  nama      String
-  email     String   @unique
-  password  String
-  role      Role     @default(MAHASISWA)
-  createdAt DateTime @default(now())
-  soal      Soal[]
+  id            String   @id @default(uuid())
+  nama          String
+  email         String   @unique
+  password      String
+  role          Role     @default(MAHASISWA)
+  createdAt     DateTime @default(now())
+  soal          Soal[]
+  jadwalDosen   Jadwal[] @relation("DosenJadwal")
+  jadwalAsisten Jadwal[] @relation("AsistenJadwal")
 }
 
 model MataKuliah {
   id        String   @id @default(uuid())
   nama      String
   kode      String   @unique
+  published Boolean  @default(false)
   createdAt DateTime @default(now())
   soal      Soal[]
+  jadwal    Jadwal[]
+  materi    Materi[]
+}
+
+model Jadwal {
+  id           String     @id @default(uuid())
+  mataKuliahId String
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  hari         String[]   // e.g. ["Senin", "Rabu"]
+  tglMulai     DateTime
+  tglSelesai   DateTime
+  dosenId      String
+  dosen        User       @relation("DosenJadwal", fields: [dosenId], references: [id])
+  asistenId    String
+  asisten      User       @relation("AsistenJadwal", fields: [asistenId], references: [id])
+  createdAt    DateTime   @default(now())
+}
+
+model Materi {
+  id           String     @id @default(uuid())
+  nama         String
+  mataKuliahId String
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  fileUrl      String?
+  createdAt    DateTime   @default(now())
 }
 
 model Soal {

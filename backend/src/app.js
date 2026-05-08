@@ -8,6 +8,8 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const mataKuliahRoutes = require('./routes/mataKuliahRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const jadwalRoutes = require('./routes/jadwalRoutes');
+const materiRoutes = require('./routes/materiRoutes');
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/matakuliah', mataKuliahRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/jadwal', jadwalRoutes);
+app.use('/api/materi', materiRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

@@ -5,6 +5,7 @@ export interface MataKuliah {
   id: string;
   nama: string;
   kode: string;
+  published: boolean;
   createdAt: string;
 }
 
