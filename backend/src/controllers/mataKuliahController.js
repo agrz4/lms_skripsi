@@ -2,32 +2,59 @@ const prisma = require('../config/db');
 
 const getAllMataKuliah = async (req, res) => {
   try {
-    const mataKuliah = await prisma.mataKuliah.findMany();
+    const mataKuliah = await prisma.mataKuliah.findMany({
+      include: {
+        _count: {
+          select: { pendaftaran: true }
+        }
+      }
+    });
     res.json(mataKuliah);
   } catch (error) {
+    console.error("Error in getAllMataKuliah:", error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 const createMataKuliah = async (req, res) => {
-  const { nama, kode } = req.body;
+  const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId } = req.body;
   try {
     const mataKuliah = await prisma.mataKuliah.create({
-      data: { nama, kode }
+      data: { 
+        nama, 
+        kode,
+        deskripsi: deskripsi || undefined,
+        kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
+        kategori: kategori || undefined,
+        statusPendaftaran: statusPendaftaran || undefined,
+        tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
+        pengajarId: pengajarId || undefined
+      }
     });
     res.status(201).json(mataKuliah);
   } catch (error) {
+    console.error("Error in createMataKuliah:", error);
     res.status(400).json({ message: error.message });
   }
 };
 
 const updateMataKuliah = async (req, res) => {
   const { id } = req.params;
-  const { nama, kode } = req.body;
+  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId } = req.body;
   try {
     const mataKuliah = await prisma.mataKuliah.update({
       where: { id },
-      data: { nama, kode }
+      data: { 
+        nama, 
+        kode, 
+        published,
+        deskripsi: deskripsi || undefined,
+        kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
+        kategori: kategori || undefined,
+        statusPendaftaran: statusPendaftaran || undefined,
+        tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
+        pengajarId: pengajarId || undefined
+      }
     });
     res.json(mataKuliah);
   } catch (error) {
@@ -45,4 +72,15 @@ const deleteMataKuliah = async (req, res) => {
   }
 };
 
-module.exports = { getAllMataKuliah, createMataKuliah, updateMataKuliah, deleteMataKuliah };
+const getPublishedMataKuliah = async (req, res) => {
+  try {
+    const mataKuliah = await prisma.mataKuliah.findMany({
+      where: { published: true }
+    });
+    res.json(mataKuliah);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getAllMataKuliah, createMataKuliah, updateMataKuliah, deleteMataKuliah, getPublishedMataKuliah };

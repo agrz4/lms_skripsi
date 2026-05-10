@@ -11,7 +11,11 @@ import {
   HiOutlineCloudArrowUp, 
   HiOutlineDocumentText, 
   HiOutlineRocketLaunch,
-  HiOutlineCheckCircle
+  HiOutlineCheckCircle,
+  HiOutlineComputerDesktop,
+  HiOutlineUserGroup,
+  HiOutlineArrowPathRoundedSquare,
+  HiOutlineMagnifyingGlass
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +48,12 @@ const ManajemenKursus: React.FC = () => {
   const [formData, setFormData] = useState({
     nama: '',
     kode: '',
+    pengajarId: '',
+    kapasitas: 29,
+    deskripsi: '',
+    kategori: '',
+    statusPendaftaran: '',
+    tipeKursus: 'Online'
   });
 
   const [jadwalData, setJadwalData] = useState({
@@ -77,26 +87,61 @@ const ManajemenKursus: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nama || !formData.kode) return;
+    
+    let finalKode = formData.kode;
+    if (!finalKode && formData.nama) {
+      finalKode = formData.nama.substring(0, 3).toUpperCase() + Math.random().toString(36).substring(2, 5).toUpperCase();
+    }
+
+    if (!formData.nama || !finalKode) return;
+    
+    const dataToSave = { ...formData, kode: finalKode, published: false };
     
     if (editingId) {
-      await updateMataKuliah(editingId, formData);
+      await updateMataKuliah(editingId, dataToSave);
       setEditingId(null);
     } else {
-      await addMataKuliah(formData);
+      await addMataKuliah(dataToSave);
     }
     
-    setFormData({ nama: '', kode: '' });
+    setFormData({ 
+      nama: '', 
+      kode: '',
+      pengajarId: '',
+      kapasitas: 29,
+      deskripsi: '',
+      kategori: '',
+      statusPendaftaran: '',
+      tipeKursus: 'Online'
+    });
   };
 
   const handleEdit = (mk: MataKuliah) => {
     setEditingId(mk.id);
-    setFormData({ nama: mk.nama, kode: mk.kode });
+    setFormData({ 
+      nama: mk.nama, 
+      kode: mk.kode,
+      pengajarId: '', 
+      kapasitas: 29,
+      deskripsi: '',
+      kategori: '',
+      statusPendaftaran: '',
+      tipeKursus: 'Online'
+    });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setFormData({ nama: '', kode: '' });
+    setFormData({ 
+      nama: '', 
+      kode: '',
+      pengajarId: '',
+      kapasitas: 29,
+      deskripsi: '',
+      kategori: '',
+      statusPendaftaran: '',
+      tipeKursus: 'Online'
+    });
   };
 
   return (
@@ -104,36 +149,42 @@ const ManajemenKursus: React.FC = () => {
       <div className="max-w-6xl mx-auto pb-20 overflow-hidden px-4">
         
         {/* Step Header */}
-        <div className="bg-white p-3 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between mb-12">
-          <div className="flex items-center gap-3 p-1">
+        <div className="bg-[#EAEFF4] p-4 rounded-2xl flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4 flex-1">
             {[
-              { id: "step1", label: "Kursus" },
-              { id: "step2", label: "Jadwal" },
-              { id: "step3", label: "Materi" },
-              { id: "step4", label: "Publish" }
+              { id: "step1", label: "Kursus", status: "Sedang Diisi" },
+              { id: "step2", label: "Jadwal", status: "Belum diisi" },
+              { id: "step3", label: "Materi", status: "Belum diisi" },
+              { id: "step4", label: "Publish", status: "Menunggu" }
             ].map((step, idx) => {
               const isActive = currentStep === step.id;
+              const isCompleted = idx < steps.indexOf(currentStep);
               return (
-                <button
-                  key={step.id}
-                  onClick={() => handleStepChange(step.id)}
-                  className={`flex items-center px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 ${
-                    isActive 
-                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-100 scale-105" 
-                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className={`mr-2 transition-opacity ${isActive ? "opacity-100" : "opacity-40"}`}>
-                    {idx + 1}
-                  </span>
-                  {step.label}
-                </button>
+                <div key={step.id} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                      isActive ? "bg-[#10B981] text-white" : 
+                      isCompleted ? "bg-[#10B981] text-white" : "bg-white text-gray-400 border border-gray-200"
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className={`text-sm font-bold ${isActive ? "text-gray-900" : "text-gray-500"}`}>
+                        {step.label}
+                      </div>
+                      <div className={`text-xs ${isActive ? "text-emerald-500" : "text-gray-400"}`}>
+                        {step.status}
+                      </div>
+                    </div>
+                  </div>
+                  {idx < 3 && (
+                    <div className="flex-1 mx-4 h-[2px] bg-gray-300"></div>
+                  )}
+                </div>
               );
             })}
           </div>
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] px-8 border-l border-gray-100 hidden md:block">
-            Manajemen Kurikulum
-          </div>
+
         </div>
 
         {/* Carousel Container */}
@@ -157,41 +208,123 @@ const ManajemenKursus: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1">
                           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nama Kursus</label>
                           <Input 
                             name="nama"
                             value={formData.nama}
                             onChange={handleInputChange}
-                            className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all" 
+                            className="rounded-xl border-gray-100 bg-gray-50/50 py-5 focus:bg-white transition-all" 
                             placeholder="Contoh: Web Development Dasar" 
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kode Kursus</label>
-                          <Input 
-                            name="kode"
-                            value={formData.kode}
-                            onChange={handleInputChange}
-                            className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all" 
-                            placeholder="Contoh: IF101" 
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Pilih Pengajar</label>
+                            <Select onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val }))} value={formData.pengajarId}>
+                              <SelectTrigger className="rounded-xl border-gray-100 bg-gray-50/50 py-5">
+                                <SelectValue placeholder="Pilih Pengajar">
+                                  {pengajarList.find(p => p.id === formData.pengajarId)?.nama}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                {pengajarList.map(p => (
+                                  <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kapasitas Peserta</label>
+                            <Input 
+                              type="number"
+                              name="kapasitas"
+                              value={formData.kapasitas}
+                              onChange={(e) => setFormData(prev => ({ ...prev, kapasitas: parseInt(e.target.value) }))}
+                              className="rounded-xl border-gray-100 bg-gray-50/50 py-5 focus:bg-white transition-all" 
+                              placeholder="29" 
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Deskripsi</label>
+                          <textarea 
+                            name="deskripsi"
+                            value={formData.deskripsi}
+                            onChange={(e) => setFormData(prev => ({ ...prev, deskripsi: e.target.value }))}
+                            className="w-full rounded-xl border-gray-100 bg-gray-50/50 p-3 focus:bg-white transition-all min-h-[100px] text-sm" 
+                            placeholder="Jelaskan Mengenai Kursus Ini..." 
                           />
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kategori</label>
+                            <Select onValueChange={(val) => setFormData(prev => ({ ...prev, kategori: val }))} value={formData.kategori}>
+                              <SelectTrigger className="rounded-xl border-gray-100 bg-gray-50/50 py-5">
+                                <SelectValue placeholder="Pilih Kategori" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="programming">Programming</SelectItem>
+                                <SelectItem value="design">Design</SelectItem>
+                                <SelectItem value="business">Business</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Status Pendaftaran</label>
+                            <Input 
+                              name="statusPendaftaran"
+                              value={formData.statusPendaftaran}
+                              onChange={(e) => setFormData(prev => ({ ...prev, statusPendaftaran: e.target.value }))}
+                              className="rounded-xl border-gray-100 bg-gray-50/50 py-5 focus:bg-white transition-all" 
+                              placeholder="Aktif" 
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tipe Kursus</label>
+                          <div className="flex gap-2">
+                            {[
+                              { id: 'Online', icon: <HiOutlineComputerDesktop className="text-xl" /> },
+                              { id: 'Offline', icon: <HiOutlineUserGroup className="text-xl" /> },
+                              { id: 'Hybrid', icon: <HiOutlineArrowPathRoundedSquare className="text-xl" /> }
+                            ].map(type => (
+                              <button
+                                key={type.id}
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, tipeKursus: type.id }))}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
+                                  formData.tipeKursus === type.id 
+                                    ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500" 
+                                    : "bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100"
+                                }`}
+                              >
+                                {type.icon}
+                                {type.id}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <div className="flex gap-4 pt-2">
                           <Button 
                             type="button"
                             variant="outline" 
-                            className="flex-1 rounded-2xl py-7 font-bold text-gray-500 border-gray-100"
+                            className="flex-1 rounded-xl py-6 font-bold text-gray-500 border-gray-100"
                             onClick={handleCancelEdit}
                           >
                             {editingId ? 'Batal' : 'Reset'}
                           </Button>
                           <Button 
                             type="submit"
-                            className="flex-1 rounded-2xl py-7 font-bold shadow-xl shadow-emerald-100 bg-emerald-500 hover:bg-emerald-600"
+                            className="flex-1 rounded-xl py-6 font-bold shadow-xl shadow-emerald-100 bg-emerald-500 hover:bg-emerald-600"
                           >
-                            {editingId ? 'Update Kursus' : 'Simpan Kursus'}
+                            {editingId ? 'Update Kursus' : 'Buat Kursus'}
                           </Button>
                         </div>
                       </form>
@@ -199,62 +332,76 @@ const ManajemenKursus: React.FC = () => {
                   </Card>
                 </div>
                 <div className="col-span-7">
-                  <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden h-full bg-white">
-                    <CardHeader className="bg-gray-50/50 border-b border-gray-100 py-6">
+                  <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden h-full bg-white p-6">
+                    <CardHeader className="p-0 mb-4">
                       <CardTitle className="text-xl font-bold">Daftar Kursus</CardTitle>
                     </CardHeader>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent border-gray-100">
-                          <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest text-gray-400">Nama Kursus</TableHead>
-                          <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest text-center text-gray-400">Peserta</TableHead>
-                          <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest text-center text-gray-400">Status</TableHead>
-                          <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest text-center text-gray-400">Aksi</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {isLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={4} className="h-32 text-center text-gray-400">Loading...</TableCell>
-                          </TableRow>
-                        ) : (
-                          mataKuliahList.map((mk) => (
-                            <TableRow key={mk.id} className="hover:bg-gray-50/30 border-gray-50 transition-colors">
-                              <TableCell className="px-8 py-7 font-bold text-gray-800">{mk.nama} ({mk.kode})</TableCell>
-                              <TableCell className="px-8 py-7 text-center text-gray-600 font-medium">-</TableCell>
-                              <TableCell className="px-8 py-7 text-center">
-                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 rounded-full px-4 py-1 font-bold text-[9px] uppercase tracking-wider">Aktif</Badge>
-                              </TableCell>
-                              <TableCell className="px-8 py-7">
-                                <div className="flex justify-center gap-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className={`h-10 w-10 rounded-xl transition-all ${editingId === mk.id ? 'text-emerald-600 bg-emerald-50' : 'text-gray-300 hover:text-emerald-600 hover:bg-emerald-50'}`}
-                                    onClick={() => handleEdit(mk)}
-                                  >
-                                    <HiOutlinePencilSquare className="text-xl" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-10 w-10 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                    onClick={() => removeMataKuliah(mk.id)}
-                                  >
-                                    <HiOutlineTrash className="text-xl" />
-                                  </Button>
+                    
+                    <div className="relative mb-4">
+                      <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Input 
+                        placeholder="Cari Kursus" 
+                        className="pl-10 rounded-xl border-gray-100 bg-gray-50/50 py-5 focus:bg-white transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-4 overflow-y-auto max-h-[500px]">
+                      {isLoading ? (
+                        <div className="text-center text-gray-400 py-10">Loading...</div>
+                      ) : mataKuliahList.length === 0 ? (
+                        <div className="text-center text-gray-400 py-10 italic">Belum ada kursus.</div>
+                      ) : (
+                        mataKuliahList.map((mk) => (
+                          <div key={mk.id} className="bg-[#F8FAFC] p-4 rounded-2xl border border-gray-100 hover:shadow-sm transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h3 className="font-bold text-gray-900">{mk.nama}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="flex -space-x-2">
+                                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">B</div>
+                                    <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">Z</div>
+                                    <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold">+29</div>
+                                  </div>
+                                  <span className="text-xs text-gray-500 font-medium">{mk._count?.pendaftaran || 0} / {mk.kapasitas || 0} Peserta</span>
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                        {!isLoading && mataKuliahList.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={4} className="h-32 text-center text-gray-400 italic">Belum ada kursus.</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={`rounded-full px-3 py-1 font-bold text-[10px] uppercase ${
+                                  mk.statusPendaftaran === "Aktif" ? "bg-emerald-100 text-emerald-700" : 
+                                  mk.statusPendaftaran === "Segera" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"
+                                }`}>
+                                  {mk.statusPendaftaran || "Segera"}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3 flex items-center justify-between gap-4">
+                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-[#10B981]" style={{ width: `${Math.min(((mk._count?.pendaftaran || 0) / (mk.kapasitas || 1)) * 100, 100)}%` }}></div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+                                  onClick={() => handleEdit(mk)}
+                                >
+                                  <HiOutlinePencilSquare className="text-lg" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                  onClick={() => removeMataKuliah(mk.id)}
+                                >
+                                  <HiOutlineTrash className="text-lg" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </Card>
                 </div>
               </div>

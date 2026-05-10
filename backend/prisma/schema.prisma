@@ -18,17 +18,27 @@ model User {
   soal          Soal[]
   jadwalDosen   Jadwal[] @relation("DosenJadwal")
   jadwalAsisten Jadwal[] @relation("AsistenJadwal")
+  mataKuliah    MataKuliah[] @relation("PengajarMataKuliah")
+  pendaftaran   Pendaftaran[]
 }
 
 model MataKuliah {
-  id        String   @id @default(uuid())
-  nama      String
-  kode      String   @unique
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  soal      Soal[]
-  jadwal    Jadwal[]
-  materi    Materi[]
+  id                String   @id @default(uuid())
+  nama              String
+  kode              String   @unique
+  published         Boolean  @default(false)
+  deskripsi         String?
+  kapasitas         Int?
+  kategori          String?
+  statusPendaftaran String?
+  tipeKursus        TipeKursus?
+  pengajarId        String?
+  pengajar          User?    @relation("PengajarMataKuliah", fields: [pengajarId], references: [id])
+  createdAt         DateTime @default(now())
+  soal              Soal[]
+  jadwal            Jadwal[]
+  materi            Materi[]
+  pendaftaran       Pendaftaran[]
 }
 
 model Jadwal {
@@ -91,6 +101,12 @@ enum TipeSoal {
   BENAR_SALAH
 }
 
+enum TipeKursus {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
 model SoalVector {
   id           String                      @id @default(uuid())
   soalId       String                      @unique
@@ -100,4 +116,15 @@ model SoalVector {
   embedding    Unsupported("vector(768)")
   metadata     Json?
   createdAt    DateTime                    @default(now())
+}
+
+model Pendaftaran {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  mataKuliahId String
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, mataKuliahId])
 }
