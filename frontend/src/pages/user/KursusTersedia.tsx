@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HiOutlineClock, HiOutlineBookOpen, HiOutlineUsers, HiOutlineArrowRight, HiOutlineCheckCircle } from 'react-icons/hi2';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
+import { usePendaftaranStore } from '../../store/usePendaftaranStore';
 
 interface Course {
   id: string;
@@ -21,25 +22,31 @@ interface Course {
 
 const KursusTersedia: React.FC = () => {
   const { publishedMataKuliahList, isLoading, fetchPublishedMataKuliah } = useMataKuliahStore();
+  const { pendaftaranList, fetchMyPendaftaran, enrollKursus } = usePendaftaranStore();
 
   useEffect(() => {
     fetchPublishedMataKuliah();
-  }, [fetchPublishedMataKuliah]);
+    fetchMyPendaftaran();
+  }, [fetchPublishedMataKuliah, fetchMyPendaftaran]);
 
   // Fallback data for fields not in DB
-  const getFallbackData = (mk: any) => ({
-    description: 'Pelajari materi ini untuk meningkatkan keahlian Anda secara komprehensif.',
-    tag: mk.kode.startsWith('IF') ? 'Informatika' : 'Umum',
-    level: 'Beginner',
-    date: 'Mulai Hari Ini',
-    modules: 12,
-    quota: 'Sisa: 10',
-    progress: 0,
-    instructor: 'Dosen Pengampu',
-    instructorInitial: 'DP',
-    status: 'enroll' as 'enroll' | 'registered' | 'closed',
-    gradient: 'from-emerald-900 to-slate-900',
-  });
+  const getFallbackData = (mk: any) => {
+    const isRegistered = pendaftaranList.some((p) => p.mataKuliahId === mk.id);
+    
+    return {
+      description: 'Pelajari materi ini untuk meningkatkan keahlian Anda secara komprehensif.',
+      tag: mk.kode.startsWith('IF') ? 'Informatika' : 'Umum',
+      level: 'Beginner',
+      date: 'Mulai Hari Ini',
+      modules: 12,
+      quota: 'Sisa: 10',
+      progress: 0,
+      instructor: 'Dosen Pengampu',
+      instructorInitial: 'DP',
+      status: isRegistered ? ('registered' as const) : ('enroll' as const),
+      gradient: 'from-emerald-900 to-slate-900',
+    };
+  };
 
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
@@ -51,7 +58,7 @@ const KursusTersedia: React.FC = () => {
         {publishedMataKuliahList.map((mk) => {
           const fallback = getFallbackData(mk);
           return (
-            <Link key={mk.id} to="/user/detail-kursus" className="block group">
+            <Link key={mk.id} to={`/user/detail-kursus?id=${mk.id}`} className="block group">
               <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 group-hover:shadow-2xl transition-all duration-500 h-full">
                 {/* Header / Top Part */}
                 <div className={`p-8 bg-gradient-to-br ${fallback.gradient} relative overflow-hidden h-48 flex flex-col justify-between text-white`}>
@@ -123,7 +130,13 @@ const KursusTersedia: React.FC = () => {
                 </div>
 
                 {fallback.status === 'enroll' && (
-                  <button className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all">
+                  <button 
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await enrollKursus(mk.id);
+                    }}
+                    className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all"
+                  >
                     Enroll <HiOutlineArrowRight />
                   </button>
                 )}

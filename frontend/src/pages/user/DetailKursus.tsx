@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useMateriStore } from '../../store/useMateriStore';
+import { useJadwalStore } from '../../store/useJadwalStore';
 import { 
   HiOutlineVideoCamera, 
   HiOutlinePlayCircle, 
@@ -10,31 +12,27 @@ import {
 } from 'react-icons/hi2';
 
 const DetailKursus: React.FC = () => {
-  const [expandedMateri, setExpandedMateri] = useState<number | null>(1);
+  const [searchParams] = useSearchParams();
+  const courseId = searchParams.get('id');
+  
+  const [expandedMateri, setExpandedMateri] = useState<string | null>(null);
 
-  const materials = [
-    {
-      id: 1,
-      title: 'Full-Stack Development dengan React & Node.js',
-      type: 'Zoom/Meet',
-      status: 'Selesai',
-      isCompleted: true,
-    },
-    {
-      id: 2,
-      title: 'Pengembangan Backend dan Server',
-      type: 'Micro',
-      status: 'Belum',
-      isCompleted: false,
-    },
-    {
-      id: 3,
-      title: 'Deployment dan Hosting Website',
-      type: 'General PDF',
-      status: 'Belum',
-      isCompleted: false,
-    },
-  ];
+  const { materiList, fetchMateri } = useMateriStore();
+  const { jadwalList, fetchJadwal } = useJadwalStore();
+
+  useEffect(() => {
+    if (courseId) {
+      fetchMateri(courseId);
+      fetchJadwal(courseId);
+    }
+  }, [courseId, fetchMateri, fetchJadwal]);
+
+  // Set first materi as expanded by default when list loaded
+  useEffect(() => {
+    if (materiList.length > 0 && !expandedMateri) {
+      setExpandedMateri(materiList[0].id);
+    }
+  }, [materiList, expandedMateri]);
 
   return (
     <div className="p-8 bg-slate-50 min-h-screen pb-20">
@@ -71,22 +69,22 @@ const DetailKursus: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column - Materials */}
         <div className="lg:col-span-8 space-y-4">
-          {materials.map((m) => (
+          {materiList.map((m, index) => (
             <div key={m.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
               <button 
                 onClick={() => setExpandedMateri(expandedMateri === m.id ? null : m.id)}
                 className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-6">
-                  <span className="text-lg font-extrabold text-gray-900">Materi {m.id} —</span>
-                  <span className="text-lg font-bold text-gray-700">{m.title}</span>
+                  <span className="text-lg font-extrabold text-gray-900">Materi {index + 1} —</span>
+                  <span className="text-lg font-bold text-gray-700">{m.nama}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${m.type === 'Zoom/Meet' ? 'bg-blue-100 text-blue-600' : m.type === 'Micro' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                    {m.type}
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-600">
+                    PDF
                   </span>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${m.status === 'Selesai' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
-                    {m.status} {m.status === 'Selesai' && '✓'}
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-400">
+                    Belum
                   </span>
                   {expandedMateri === m.id ? <HiOutlineChevronUp className="text-gray-400" /> : <HiOutlineChevronDown className="text-gray-400" />}
                 </div>
@@ -98,23 +96,25 @@ const DetailKursus: React.FC = () => {
                   <div>
                     <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Material</h4>
                     <div className="space-y-3">
+                      {m.fileUrl && (
+                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl group hover:border-emerald-200 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                              <HiOutlineCloudArrowUp />
+                            </div>
+                            <span className="font-bold text-gray-900 text-sm">File Materi (PDF/Docs)</span>
+                          </div>
+                          <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-600">Download</a>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl group hover:border-blue-200 transition-all">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xl">
                             <HiOutlineVideoCamera />
                           </div>
-                          <span className="font-bold text-gray-900 text-sm">Link Zoom Meeting</span>
+                          <span className="font-bold text-gray-900 text-sm">Link Zoom Meeting (Live Session)</span>
                         </div>
                         <button className="px-6 py-2 bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-100 hover:bg-blue-600">Buka</button>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl group hover:border-emerald-200 transition-all">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
-                            <HiOutlinePlayCircle />
-                          </div>
-                          <span className="font-bold text-gray-900 text-sm">Rekaman Zoom</span>
-                        </div>
-                        <button className="px-6 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-600">Tonton</button>
                       </div>
                     </div>
                   </div>
@@ -164,20 +164,25 @@ const DetailKursus: React.FC = () => {
         {/* Right Column - Stats */}
         <div className="lg:col-span-4 space-y-8">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-8">Status Kursus</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-8">Jadwal Perkuliahan</h2>
             <div className="space-y-4">
-              {[
-                { name: 'Data Science', status: 'Berlangsung', color: 'bg-blue-100 text-blue-600' },
-                { name: 'Web Development', status: 'Lulus', color: 'bg-emerald-100 text-emerald-600' },
-                { name: 'System Analyst', status: 'Mengulang', color: 'bg-orange-100 text-orange-600' },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                  <span className="text-xs font-bold text-gray-700">{item.name}</span>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${item.color}`}>
-                    {item.status}
-                  </span>
+              {jadwalList.length > 0 ? jadwalList.map((j, i) => (
+                <div key={i} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-gray-700">{j.hari.join(', ')}</span>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[9px] font-extrabold uppercase tracking-widest">
+                      Aktif
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500">
+                    {new Date(j.tglMulai).toLocaleDateString('id-ID')} s/d {new Date(j.tglSelesai).toLocaleDateString('id-ID')}
+                  </p>
                 </div>
-              ))}
+              )) : (
+                <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 text-center">
+                  <p className="text-xs font-bold text-gray-400">Belum ada jadwal yang diatur</p>
+                </div>
+              )}
             </div>
           </div>
 

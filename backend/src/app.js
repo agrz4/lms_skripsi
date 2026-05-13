@@ -10,6 +10,7 @@ const mataKuliahRoutes = require('./routes/mataKuliahRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const jadwalRoutes = require('./routes/jadwalRoutes');
 const materiRoutes = require('./routes/materiRoutes');
+const pendaftaranRoutes = require('./routes/pendaftaranRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/matakuliah', mataKuliahRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/jadwal', jadwalRoutes);
 app.use('/api/materi', materiRoutes);
+app.use('/api/pendaftaran', pendaftaranRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

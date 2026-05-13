@@ -1,8 +1,10 @@
 const prisma = require('../config/db');
 
 const getAllJadwal = async (req, res) => {
+  const { mataKuliahId } = req.query;
   try {
     const jadwal = await prisma.jadwal.findMany({
+      where: mataKuliahId ? { mataKuliahId } : {},
       include: {
         mataKuliah: true,
         dosen: { select: { id: true, nama: true } },
