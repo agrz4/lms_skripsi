@@ -3,9 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import ManajemenPengajar from './pages/admin/ManajemenPengajar';
 import ManajemenKursus from './pages/admin/ManajemenKursus';
+import ManajemenJadwal from './pages/admin/ManajemenJadwal';
+import ManajemenMateri from './pages/admin/ManajemenMateri';
+import BuatKursus from './pages/admin/BuatKursus';
 import AIKnowledge from './pages/admin/AIKnowledge';
 import AutoCorrection from './pages/admin/AutoCorrection';
 import LaporanAkhir from './pages/admin/LaporanAkhir';
+import AddMateriAdmin from './pages/admin/AddMateri';
+import CourseMap from './pages/admin/CourseMap';
 import DashboardAsisten from './pages/asisten/DashboardAsisten';
 import HalamanKoreksi from './pages/asisten/HalamanKoreksi';
 import AutoCorrectionAsisten from './pages/asisten/AutoCorrectionAsisten';
@@ -41,9 +46,14 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin/pengajar" element={<ProtectedRoute allowedRole="admin"><ManajemenPengajar /></ProtectedRoute>} />
         <Route path="/admin/kursus" element={<ProtectedRoute allowedRole="admin"><ManajemenKursus /></ProtectedRoute>} />
+        <Route path="/admin/kursus/baru" element={<ProtectedRoute allowedRole="admin"><BuatKursus /></ProtectedRoute>} />
+        <Route path="/admin/jadwal" element={<ProtectedRoute allowedRole="admin"><ManajemenJadwal /></ProtectedRoute>} />
+        <Route path="/admin/materi" element={<ProtectedRoute allowedRole="admin"><ManajemenMateri /></ProtectedRoute>} />
+        <Route path="/admin/materi/add" element={<ProtectedRoute allowedRole="admin"><AddMateriAdmin /></ProtectedRoute>} />
         <Route path="/admin/ai-knowledge" element={<ProtectedRoute allowedRole="admin"><AIKnowledge /></ProtectedRoute>} />
         <Route path="/admin/auto-correction" element={<ProtectedRoute allowedRole="admin"><AutoCorrection /></ProtectedRoute>} />
         <Route path="/admin/end-kursus" element={<ProtectedRoute allowedRole="admin"><LaporanAkhir /></ProtectedRoute>} />
+        <Route path="/admin/course-map" element={<ProtectedRoute allowedRole="admin"><CourseMap /></ProtectedRoute>} />
 
         {/* Pengajar Routes */}
         <Route path="/pengajar/dashboard" element={<ProtectedRoute allowedRole="pengajar"><DashboardAsisten /></ProtectedRoute>} />

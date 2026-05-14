@@ -24,16 +24,29 @@ import {
 const Sidebar: React.FC = () => {
   const role = localStorage.getItem('userRole') || 'admin';
 
-  const adminMenuItems = [
-    { name: 'PENGAJAR', icon: <HiOutlineUserGroup />, path: '/admin/pengajar' },
-    { name: 'Kursus', icon: <HiOutlineBookOpen />, path: '/admin/kursus' },
-    { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/admin/jadwal' },
-    { name: 'Materi', icon: <HiOutlineClipboardDocumentList />, path: '/admin/materi' },
-  ];
-
-  const adminAiItems = [
-    { name: 'AI Knowledge', icon: <HiOutlineCpuChip />, path: '/admin/ai-knowledge' },
-    { name: 'Auto Correction', icon: <HiOutlineSparkles />, path: '/admin/auto-correction' },
+  const adminSections = [
+    {
+      title: 'MENU UTAMA',
+      items: [
+        { name: 'Pengajar', icon: <HiOutlineUserGroup />, path: '/admin/pengajar' },
+        { name: 'Kursus', icon: <HiOutlineBookOpen />, path: '/admin/kursus' },
+        { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/admin/jadwal' },
+        { name: 'Materi', icon: <HiOutlineClipboardDocumentList />, path: '/admin/materi' },
+      ]
+    },
+    {
+      title: 'AI MODULE',
+      items: [
+        { name: 'AI Knowledge', icon: <HiOutlineCpuChip />, path: '/admin/ai-knowledge' },
+        { name: 'Auto Correction', icon: <HiOutlineSparkles />, path: '/admin/auto-correction' },
+      ]
+    },
+    {
+      title: 'LAPORAN',
+      items: [
+        { name: 'End Kursus', icon: <HiOutlineChartBar />, path: '/admin/end-kursus' },
+      ]
+    }
   ];
 
   const userMenuItems = [
@@ -60,12 +73,11 @@ const Sidebar: React.FC = () => {
   ];
 
   const menuItems = 
-    role === 'admin' ? adminMenuItems : 
     role === 'pengajar' ? pengajarMenuItems :
     role === 'asisten' ? asistenMenuItems : 
     userMenuItems;
 
-  const aiItems = role === 'admin' ? adminAiItems : [];
+  const aiItems = [];
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
@@ -97,74 +109,56 @@ const Sidebar: React.FC = () => {
         </div>
 
 
-        {/* Menu Utama */}
-        <div className="mb-6">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">Menu Utama</p>
-          <nav className="space-y-1">
-            {menuItems.map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                    isActive
-                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
-                      : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-600'
-                  }`
-                }
-              >
-                <span className="text-xl">{item.icon}</span>
-                {item.name}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        {/* AI Section (Only for Admin) */}
-        {aiItems.length > 0 && (
-          <div className="mb-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">AI Module</p>
-            <nav className="space-y-1">
-              {aiItems.map((item) => (
-                <NavLink
-                  key={item.name}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                      isActive
-                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-100'
-                        : 'text-gray-500 hover:bg-purple-50 hover:text-purple-600'
-                    }`
-                  }
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  {item.name}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        )}
-
-        {/* Laporan (Only for Admin) */}
-        {role === 'admin' && (
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">Laporan</p>
-            <nav className="space-y-1">
-              <NavLink
-                to="/admin/end-kursus"
-                className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                    isActive
-                      ? 'bg-red-500 text-white shadow-lg shadow-red-100'
-                      : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
-                  }`
-                }
-              >
-                <span className="text-xl"><HiOutlineArchiveBoxXMark /></span>
-                End Kursus
-              </NavLink>
-            </nav>
-          </div>
+        {/* Admin Sections */}
+        {role === 'admin' ? (
+          adminSections.map((section) => (
+            <div key={section.title} className="mb-6">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">{section.title}</p>
+              <nav className="space-y-1">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                        isActive
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
+                          : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-600'
+                      }`
+                    }
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    {item.name}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ))
+        ) : (
+          <>
+            {/* Menu Utama for Non-Admin */}
+            <div className="mb-6">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">Menu Utama</p>
+              <nav className="space-y-1">
+                {menuItems.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                        isActive
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
+                          : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-600'
+                      }`
+                    }
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    {item.name}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          </>
         )}
       </div>
 
