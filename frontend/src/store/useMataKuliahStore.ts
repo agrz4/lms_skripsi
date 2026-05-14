@@ -16,7 +16,9 @@ export interface MataKuliah {
   createdAt: string;
   _count?: {
     pendaftaran: number;
+    pertemuan: number;
   };
+  pertemuan?: any[]; // For storing detail sessions
 }
 
 interface MataKuliahState {

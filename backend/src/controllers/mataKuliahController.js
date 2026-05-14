@@ -5,7 +5,16 @@ const getAllMataKuliah = async (req, res) => {
     const mataKuliah = await prisma.mataKuliah.findMany({
       include: {
         _count: {
-          select: { pendaftaran: true }
+          select: { 
+            pendaftaran: true,
+            pertemuan: true
+          }
+        },
+        pertemuan: {
+          orderBy: { urutan: 'asc' },
+          include: {
+            materi: true
+          }
         }
       }
     });
@@ -19,6 +28,7 @@ const getAllMataKuliah = async (req, res) => {
 const createMataKuliah = async (req, res) => {
   const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId } = req.body;
   try {
+    // 1. Create Mata Kuliah
     const mataKuliah = await prisma.mataKuliah.create({
       data: { 
         nama, 
@@ -31,6 +41,18 @@ const createMataKuliah = async (req, res) => {
         pengajarId: pengajarId || undefined
       }
     });
+
+    // 2. Automatically create 14 empty sessions (Pertemuan)
+    const meetingsData = Array.from({ length: 14 }, (_, i) => ({
+      mataKuliahId: mataKuliah.id,
+      urutan: i + 1,
+      topik: `Pertemuan ${i + 1}`
+    }));
+
+    await prisma.pertemuan.createMany({
+      data: meetingsData
+    });
+
     res.status(201).json(mataKuliah);
   } catch (error) {
     console.error("Error in createMataKuliah:", error);

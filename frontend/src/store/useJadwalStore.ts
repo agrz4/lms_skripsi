@@ -1,21 +1,22 @@
 import { create } from 'zustand';
 import api from '../lib/api';
 
-export interface Jadwal {
+export interface Pertemuan {
   id: string;
   mataKuliahId: string;
-  hari: string[];
-  tglMulai: string;
-  tglSelesai: string;
-  dosenId: string;
-  asistenId: string;
+  urutan: number;
+  topik: string;
+  tgl?: string;
+  jam?: string;
+  dosenId?: string;
+  asistenId?: string;
 }
 
 interface JadwalState {
-  jadwalList: Jadwal[];
+  jadwalList: Pertemuan[];
   isLoading: boolean;
   fetchJadwal: (mataKuliahId?: string) => Promise<void>;
-  addJadwal: (jadwal: Omit<Jadwal, 'id'>) => Promise<void>;
+  updatePertemuan: (id: string, data: any) => Promise<void>;
 }
 
 export const useJadwalStore = create<JadwalState>((set) => ({
@@ -24,21 +25,24 @@ export const useJadwalStore = create<JadwalState>((set) => ({
   fetchJadwal: async (mataKuliahId) => {
     set({ isLoading: true });
     try {
-      const url = mataKuliahId ? `/jadwal?mataKuliahId=${mataKuliahId}` : '/jadwal';
+      const url = mataKuliahId ? `/pertemuan?mataKuliahId=${mataKuliahId}` : '/pertemuan';
       const response = await api.get(url);
       set({ jadwalList: response.data });
     } catch (error) {
-      console.error('Failed to fetch jadwal', error);
+      console.error('Failed to fetch pertemuan', error);
     } finally {
       set({ isLoading: false });
     }
   },
-  addJadwal: async (jadwal) => {
+  updatePertemuan: async (id, data) => {
     set({ isLoading: true });
     try {
-      await api.post('/jadwal', jadwal);
+      const response = await api.patch(`/pertemuan/${id}`, data);
+      set((state) => ({
+        jadwalList: state.jadwalList.map((p) => p.id === id ? response.data : p)
+      }));
     } catch (error) {
-      console.error('Failed to add jadwal', error);
+      console.error('Failed to update pertemuan', error);
       throw error;
     } finally {
       set({ isLoading: false });

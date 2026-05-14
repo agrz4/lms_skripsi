@@ -32,7 +32,7 @@ import {
 const ManajemenKursus: React.FC = () => {
   const navigate = useNavigate();
   const { mataKuliahList, isLoading, fetchMataKuliah, removeMataKuliah, updateMataKuliah } = useMataKuliahStore();
-  const { fetchPengajar } = usePengajarStore();
+  const { pengajarList, fetchPengajar } = usePengajarStore();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -44,12 +44,16 @@ const ManajemenKursus: React.FC = () => {
 
   const selectedCourse = mataKuliahList.find(mk => mk.id === selectedCourseId);
 
-  // Simulation of meeting counts for demo purposes (should be from API later)
+  // Calculate real progress based on backend data
   const getProgress = (mk: MataKuliah) => {
-    const jadwalCount = 14; // Dummy
-    const materiCount = 14; // Dummy
-    const isAiApproved = true; // Dummy
-    return { jadwalCount, materiCount, isAiApproved };
+    const totalSessions = 14;
+    const jadwalCount = mk._count?.pertemuan || 0;
+    
+    // Count meetings that have at least one material
+    const materiCount = mk.pertemuan?.filter(p => p.materi && p.materi.length > 0).length || 0;
+    
+    const isAiApproved = mk.published; // Placeholder for AI status
+    return { jadwalCount, materiCount, isAiApproved, totalSessions };
   };
 
   const filteredCourses = mataKuliahList.filter(mk => 
@@ -113,9 +117,19 @@ const ManajemenKursus: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCourses.map((mk) => {
+            {isLoading ? (
+               <TableRow>
+                 <TableCell colSpan={9} className="h-48 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                       <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Memuat Kursus...</p>
+                    </div>
+                 </TableCell>
+               </TableRow>
+            ) : filteredCourses.map((mk) => {
               const progress = getProgress(mk);
               const isSelected = selectedCourseId === mk.id;
+              const pengajar = pengajarList.find(p => p.id === mk.pengajarId);
               
               return (
                 <TableRow 
@@ -139,12 +153,14 @@ const ManajemenKursus: React.FC = () => {
                       {mk.kode.startsWith('IF') ? 'Beginner' : 'Intermediate'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm font-bold text-gray-600">Dr. Andi</TableCell>
-                  <TableCell className="text-sm font-bold text-gray-600">{progress.jadwalCount}/14</TableCell>
-                  <TableCell className="text-sm font-bold text-gray-600">{progress.materiCount}/14</TableCell>
-                  <TableCell className="text-sm font-bold text-gray-600">0</TableCell>
+                  <TableCell className="text-sm font-bold text-gray-600">{pengajar?.nama || '-'}</TableCell>
+                  <TableCell className="text-sm font-bold text-gray-600">{progress.jadwalCount}/{progress.totalSessions}</TableCell>
+                  <TableCell className="text-sm font-bold text-gray-600">{progress.materiCount}/{progress.totalSessions}</TableCell>
+                  <TableCell className="text-sm font-bold text-gray-600">{mk._count?.pendaftaran || 0}</TableCell>
                   <TableCell>
-                    <Badge className="bg-emerald-100 text-emerald-600 rounded-full px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest border-none">Siap</Badge>
+                    <Badge className={`${progress.materiCount >= 14 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} rounded-full px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest border-none`}>
+                      {progress.materiCount >= 14 ? 'Siap' : 'Pending'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge className={`rounded-full px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest border-none ${
@@ -156,19 +172,27 @@ const ManajemenKursus: React.FC = () => {
                   <TableCell className="pr-8">
                     <div className="flex items-center gap-2">
                       <Button 
-                        disabled={mk.published || progress.jadwalCount < 14 || progress.materiCount < 14}
+                        disabled={mk.published}
                         onClick={(e) => {
                           e.stopPropagation();
                           updateMataKuliah(mk.id, { published: true });
                         }}
                         className={`h-8 px-4 rounded-lg text-[10px] font-bold uppercase tracking-wider border-none ${
-                          mk.published ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'
+                          mk.published ? 'bg-emerald-100 text-emerald-600 cursor-default' : 'bg-indigo-600 text-white hover:bg-indigo-700'
                         }`}
                       >
-                        Publish
+                        {mk.published ? 'Published' : 'Publish'}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg">
-                        <HiOutlinePencilSquare className="text-lg" />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeMataKuliah(mk.id);
+                        }}
+                      >
+                        <HiOutlineTrash className="text-lg text-red-500" />
                       </Button>
                     </div>
                   </TableCell>

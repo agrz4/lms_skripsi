@@ -14,10 +14,13 @@ model User {
   email         String   @unique
   password      String
   role          Role     @default(MAHASISWA)
+  instansi      String?
+  pelatihan     String?
+  jadwal        String?
   createdAt     DateTime @default(now())
   soal          Soal[]
-  jadwalDosen   Jadwal[] @relation("DosenJadwal")
-  jadwalAsisten Jadwal[] @relation("AsistenJadwal")
+  jadwalDosen   Pertemuan[] @relation("DosenPertemuan")
+  jadwalAsisten Pertemuan[] @relation("AsistenPertemuan")
   mataKuliah    MataKuliah[] @relation("PengajarMataKuliah")
   pendaftaran   Pendaftaran[]
 }
@@ -36,30 +39,47 @@ model MataKuliah {
   pengajar          User?    @relation("PengajarMataKuliah", fields: [pengajarId], references: [id])
   createdAt         DateTime @default(now())
   soal              Soal[]
-  jadwal            Jadwal[]
+  pertemuan         Pertemuan[]
   materi            Materi[]
   pendaftaran       Pendaftaran[]
 }
 
-model Jadwal {
+model Pertemuan {
   id           String     @id @default(uuid())
   mataKuliahId String
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
-  hari         String[]   // e.g. ["Senin", "Rabu"]
-  tglMulai     DateTime
-  tglSelesai   DateTime
-  dosenId      String
-  dosen        User       @relation("DosenJadwal", fields: [dosenId], references: [id])
-  asistenId    String
-  asisten      User       @relation("AsistenJadwal", fields: [asistenId], references: [id])
+  urutan       Int        // 1-14
+  topik        String?
+  tgl          DateTime?
+  jam          String?
+  dosenId      String?
+  dosen        User?      @relation("DosenPertemuan", fields: [dosenId], references: [id])
+  asistenId    String?
+  asisten      User?      @relation("AsistenPertemuan", fields: [asistenId], references: [id])
+  materi       Materi[]
+  soal         Soal[]
   createdAt    DateTime   @default(now())
 }
 
 model Materi {
   id           String     @id @default(uuid())
   nama         String
+  pertemuanId  String
+  pertemuan    Pertemuan  @relation(fields: [pertemuanId], references: [id])
   mataKuliahId String
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  fileUrl      String?
+  videoUrl     String?
+  refleksi     String?
+  createdAt    DateTime   @default(now())
+}
+
+model Sertifikat {
+  id           String     @id @default(uuid())
+  userId       String
+  mataKuliahId String
+  nilai        Float
+  noSertifikat String     @unique
   fileUrl      String?
   createdAt    DateTime   @default(now())
 }
@@ -70,6 +90,8 @@ model Soal {
   tipesoal     TipeSoal
   mataKuliahId String
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  pertemuanId  String?
+  pertemuan    Pertemuan? @relation(fields: [pertemuanId], references: [id])
   dibuatOleh   String
   pembuat      User       @relation(fields: [dibuatOleh], references: [id])
   createdAt    DateTime   @default(now())

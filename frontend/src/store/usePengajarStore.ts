@@ -6,6 +6,9 @@ export interface Pengajar {
   nama: string;
   email: string;
   role: string;
+  instansi?: string;
+  pelatihan?: string;
+  jadwal?: string;
   createdAt: string;
 }
 
