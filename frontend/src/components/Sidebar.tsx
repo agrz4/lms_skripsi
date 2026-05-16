@@ -49,20 +49,44 @@ const Sidebar: React.FC = () => {
     }
   ];
 
-  const userMenuItems = [
-    { name: 'Dashboard', icon: <HiOutlineHome />, path: '/user/dashboard' },
-    { name: 'Kursus Saya', icon: <HiOutlineBookOpen />, path: '/user/kursus-saya' },
-    { name: 'Materi', icon: <HiOutlineQueueList />, path: '/user/materi' },
-    { name: 'Profile', icon: <HiOutlineUser />, path: '/user/profile' },
-    { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/user/jadwal' },
+  const userSections = [
+    {
+      title: 'MENU UTAMA',
+      items: [
+        { name: 'Kursus Tersedia', icon: <HiOutlineSquares2X2 />, path: '/user/dashboard' },
+        { name: 'My courses', icon: <HiOutlineBookOpen />, path: '/user/kursus-saya' },
+        { name: 'Assignments', icon: <HiOutlineClipboardDocumentList />, path: '/user/assignments' },
+      ]
+    },
+    {
+      title: 'AI MODULE',
+      items: [
+        { name: 'Ujian AI', icon: <HiOutlineCpuChip />, path: '/user/ujian' },
+      ]
+    },
+    {
+      title: 'LAPORAN',
+      items: [
+        { name: 'Hasil & Sertifikat', icon: <HiOutlineChartBar />, path: '/user/hasil-skor' },
+        { name: 'Profile', icon: <HiOutlineUser />, path: '/user/profile' },
+      ]
+    }
   ];
 
-
-  const asistenMenuItems = [
-    { name: 'Dashboard', icon: <HiOutlineSquares2X2 />, path: '/asisten/dashboard' },
-    { name: 'Koreksi Manual', icon: <HiOutlinePencilSquare />, path: '/asisten/koreksi' },
-    { name: 'Auto Correction AI', icon: <HiOutlineSparkles />, path: '/asisten/auto-correction' },
-    { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/asisten/jadwal' },
+  const asistenSections = [
+    {
+      title: 'MENU UTAMA',
+      items: [
+        { name: 'Koreksi Manual', icon: <HiOutlinePencilSquare />, path: '/asisten/koreksi' },
+        { name: 'Koreksi Upload', icon: <HiOutlineClipboardDocumentList />, path: '/asisten/upload' },
+      ]
+    },
+    {
+      title: 'AI MODULE',
+      items: [
+        { name: 'Auto Correction', icon: <HiOutlineSparkles />, path: '/asisten/auto-correction' },
+      ]
+    }
   ];
 
   const pengajarMenuItems = [
@@ -72,58 +96,75 @@ const Sidebar: React.FC = () => {
     { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/pengajar/jadwal' },
   ];
 
-  const menuItems = 
-    role === 'pengajar' ? pengajarMenuItems :
-    role === 'asisten' ? asistenMenuItems : 
-    userMenuItems;
-
-  const aiItems = [];
-
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     window.location.href = '/login';
   };
 
+  const isStudent = role === 'user' || role === 'mahasiswa';
+  const isAsisten = role === 'asisten';
+  const isBlueTheme = isStudent || isAsisten;
+
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
-      {/* Brand */}
-      <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-8 h-8 bg-emerald-500 rounded-md flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-100">L</div>
-        <span className="font-bold text-gray-800 tracking-tight text-lg">HYBRID LMS</span>
+    <div className={`w-80 flex flex-col h-screen sticky top-0 z-30 transition-all overflow-hidden ${
+      isBlueTheme ? 'bg-[#357ABD] text-white shadow-2xl' : 'bg-white border-r border-gray-200 text-gray-800'
+    }`}>
+      {/* Brand Section */}
+      <div className={`p-10 flex items-center gap-4 shrink-0 ${isBlueTheme ? '' : 'border-b border-gray-100'}`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black shadow-2xl shrink-0 ${
+          isBlueTheme ? 'bg-white text-[#357ABD]' : 'bg-emerald-500 text-white'
+        }`}>
+          L
+        </div>
+        <span className={`font-black tracking-tighter text-xl whitespace-nowrap ${isBlueTheme ? 'text-white' : 'text-gray-900'}`}>
+          HYBRID LMS
+        </span>
       </div>
 
-      {/* User Info */}
-      <div className="p-6 overflow-y-auto flex-1">
-        <div className="flex items-center gap-3 mb-8 bg-gray-50 p-4 rounded-xl">
-          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-xl overflow-hidden border-2 border-white shadow-sm">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${role === 'admin' ? 'Admin' : (role === 'asisten' ? 'Asisten' : 'User')}`} alt="avatar" />
+      {/* User Info Card */}
+      <div className="px-8 mb-6 shrink-0">
+        <div className={`flex items-center gap-4 p-5 rounded-[2.5rem] shadow-inner transition-all hover:scale-[1.02] ${
+          isBlueTheme ? 'bg-white/10 backdrop-blur-xl border border-white/10' : 'bg-gray-50 border border-gray-100'
+        }`}>
+          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/50 shadow-2xl shrink-0">
+            <img 
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${role === 'admin' ? 'Admin' : (isAsisten ? 'Asisten' : 'Mahasiswa')}`} 
+              alt="avatar" 
+              className="w-full h-full object-cover"
+            />
           </div>
-          <div>
-            <div className="font-bold text-gray-900 text-[10px] uppercase">
-              {role === 'admin' ? 'Admin Kursus' : (role === 'asisten' ? 'Asisten Dosen' : 'Mahasiswa')}
+          <div className="overflow-hidden">
+            <div className={`font-black text-xs truncate uppercase tracking-tight ${isBlueTheme ? 'text-white' : 'text-gray-900'}`}>
+               {role === 'pengajar' ? 'DR. Reza F' : (isAsisten ? 'Asisten 1' : (role === 'admin' ? 'Admin Kursus' : 'Budi Santoso'))}
             </div>
-            <div className="text-[10px] text-emerald-600 font-medium uppercase tracking-wider">
-              {role === 'admin' ? 'Super Admin' : (role === 'asisten' ? 'Assistant' : 'Student')}
+            <div className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isBlueTheme ? 'text-blue-100/70' : 'text-emerald-600'}`}>
+               {role === 'admin' ? 'Super Admin' : (role === 'pengajar' ? 'Assigned: P1, P2, P3' : (isAsisten ? 'Asisten Dosen' : 'Peserta'))}
             </div>
           </div>
         </div>
+      </div>
 
-
-        {/* Admin Sections */}
+      {/* Navigation Area with Custom Scrollbar */}
+      <div className="flex-1 px-4 overflow-y-auto scrollbar-hide hover:scrollbar-default transition-all pb-10">
+        <style dangerouslySetInnerHTML={{ __html: `
+          .scrollbar-hide::-webkit-scrollbar { display: none; }
+          .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        `}} />
+        
         {role === 'admin' ? (
           adminSections.map((section) => (
-            <div key={section.title} className="mb-6">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">{section.title}</p>
-              <nav className="space-y-1">
+            <div key={section.title} className="mb-10">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-6 px-6 opacity-60">{section.title}</p>
+              <nav className="space-y-2">
                 {section.items.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.path}
                     className={({ isActive }) =>
-                      `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                      `flex items-center gap-4 px-6 py-4 rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                         isActive
-                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
-                          : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-600'
+                          ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-200'
+                          : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'
                       }`
                     }
                   >
@@ -134,21 +175,20 @@ const Sidebar: React.FC = () => {
               </nav>
             </div>
           ))
-        ) : (
-          <>
-            {/* Menu Utama for Non-Admin */}
-            <div className="mb-6">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">Menu Utama</p>
-              <nav className="space-y-1">
-                {menuItems.map((item) => (
+        ) : isAsisten ? (
+          asistenSections.map((section) => (
+            <div key={section.title} className="mb-10">
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">{section.title}</p>
+              <nav className="space-y-2">
+                {section.items.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.path}
                     className={({ isActive }) =>
-                      `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                      `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                         isActive
-                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
-                          : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-600'
+                          ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
+                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
                       }`
                     }
                   >
@@ -158,22 +198,67 @@ const Sidebar: React.FC = () => {
                 ))}
               </nav>
             </div>
-          </>
-        )}
+          ))
+        ) : role === 'pengajar' ? (
+          <div className="mb-10">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-6 px-6 opacity-60">MENU UTAMA</p>
+            <nav className="space-y-2">
+              {pengajarMenuItems.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center gap-4 px-6 py-4 rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                      isActive
+                        ? 'bg-blue-500 text-white shadow-xl shadow-blue-200'
+                        : 'text-gray-400 hover:bg-blue-50 hover:text-blue-600'
+                    }`
+                  }
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  {item.name}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        ) : isStudent ? (
+          userSections.map((section) => (
+            <div key={section.title} className="mb-10">
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">{section.title}</p>
+              <nav className="space-y-2">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                        isActive
+                          ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
+                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                      }`
+                    }
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    {item.name}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ))
+        ) : null}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-100 space-y-2">
+      {/* Logout Section */}
+      <div className={`p-8 ${isBlueTheme ? 'bg-black/5' : 'border-t border-gray-50'}`}>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all"
+          className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+            isBlueTheme ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'
+          }`}
         >
-          <HiOutlineArrowLeftOnRectangle className="text-lg" />
+          <HiOutlineArrowLeftOnRectangle className="text-xl" />
           Logout
         </button>
-        <div className="text-[10px] text-gray-400 text-center">
-          &copy; 2026 LMS Hybrid Skripsi
-        </div>
       </div>
     </div>
   );

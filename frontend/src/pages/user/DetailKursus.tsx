@@ -1,212 +1,200 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { useMateriStore } from '../../store/useMateriStore';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { useJadwalStore } from '../../store/useJadwalStore';
 import { 
-  HiOutlineVideoCamera, 
-  HiOutlinePlayCircle, 
-  HiOutlineChevronDown, 
-  HiOutlineChevronUp,
-  HiOutlineCloudArrowUp,
-  HiOutlineLockClosed
+  HiOutlineCheckCircle, 
+  HiOutlineLockClosed,
+  HiOutlinePlayCircle,
+  HiOutlineInformationCircle
 } from 'react-icons/hi2';
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 
 const DetailKursus: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get('id');
   
-  const [expandedMateri, setExpandedMateri] = useState<string | null>(null);
-
-  const { materiList, fetchMateri } = useMateriStore();
+  const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
   const { jadwalList, fetchJadwal } = useJadwalStore();
 
   useEffect(() => {
+    fetchMataKuliah();
     if (courseId) {
-      fetchMateri(courseId);
       fetchJadwal(courseId);
     }
-  }, [courseId, fetchMateri, fetchJadwal]);
+  }, [courseId, fetchMataKuliah, fetchJadwal]);
 
-  // Set first materi as expanded by default when list loaded
-  useEffect(() => {
-    if (materiList.length > 0 && !expandedMateri) {
-      setExpandedMateri(materiList[0].id);
-    }
-  }, [materiList, expandedMateri]);
+  const course = mataKuliahList.find(mk => mk.id === courseId);
+  const completedSessions = jadwalList.filter(s => s.tgl && s.topik).length;
+  const progressPercent = Math.round((completedSessions / 14) * 100);
 
   return (
-    <div className="p-8 bg-slate-50 min-h-screen pb-20">
-      {/* Header Banner */}
-      <div className="bg-slate-800 rounded-3xl p-8 mb-8 text-white relative overflow-hidden shadow-2xl">
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-extrabold mb-3">Web Development</h1>
-            <div className="flex items-center gap-4">
-              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-500/30">
-                Berlangsung
-              </span>
-              <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">
-                5 Mar 2026
-              </span>
-            </div>
+    <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
+      {/* Header Progress Section */}
+      <div className="bg-[#2D3748] rounded-[2rem] p-10 mb-10 text-white shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
+          <div className="flex items-center gap-6">
+             <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl">
+                🚀
+             </div>
+             <div>
+                <h1 className="text-3xl font-black">{course?.nama || 'Web Development'}</h1>
+                <p className="text-indigo-200 font-bold uppercase tracking-widest text-[10px] mt-1">Status: Sedang Berjalan</p>
+             </div>
           </div>
-          
-          <div className="w-full md:w-96">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Progress Kursus</span>
-              <span className="text-[10px] font-bold">60%</span>
-            </div>
-            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-[60%] shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
-            </div>
+          <div className="w-full md:w-[350px]">
+             <div className="flex justify-between items-end mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Progress Belajar</span>
+                <span className="text-xs font-black">{completedSessions}/14 Sesi</span>
+             </div>
+             <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 transition-all duration-1000 shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+                  style={{ width: `${progressPercent}%` }}
+                ></div>
+             </div>
           </div>
         </div>
-        
-        {/* Decorative circle */}
-        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column - Materials */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Left Column: 14 Meetings */}
         <div className="lg:col-span-8 space-y-4">
-          {materiList.map((m, index) => (
-            <div key={m.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-              <button 
-                onClick={() => setExpandedMateri(expandedMateri === m.id ? null : m.id)}
-                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          {jadwalList.map((s, index) => {
+            const isCompleted = index < completedSessions;
+            const isActive = index === completedSessions;
+            const isLocked = index > completedSessions;
+
+            return (
+              <div 
+                key={s.id} 
+                className={`group rounded-[1.8rem] p-6 transition-all duration-300 border-2 ${
+                  isActive ? 'bg-[#E0E7FF] border-[#C7D2FE] shadow-xl shadow-indigo-100 scale-[1.02]' : 
+                  isCompleted ? 'bg-white border-emerald-100 hover:border-emerald-200' : 
+                  'bg-white border-transparent shadow-sm grayscale opacity-70'
+                }`}
               >
-                <div className="flex items-center gap-6">
-                  <span className="text-lg font-extrabold text-gray-900">Materi {index + 1} —</span>
-                  <span className="text-lg font-bold text-gray-700">{m.nama}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-600">
-                    PDF
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-400">
-                    Belum
-                  </span>
-                  {expandedMateri === m.id ? <HiOutlineChevronUp className="text-gray-400" /> : <HiOutlineChevronDown className="text-gray-400" />}
-                </div>
-              </button>
-
-              {expandedMateri === m.id && (
-                <div className="p-8 border-t border-gray-50 space-y-8 animate-in fade-in slide-in-from-top-2 duration-300">
-                  {/* Material Links */}
-                  <div>
-                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Material</h4>
-                    <div className="space-y-3">
-                      {m.fileUrl && (
-                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl group hover:border-emerald-200 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
-                              <HiOutlineCloudArrowUp />
-                            </div>
-                            <span className="font-bold text-gray-900 text-sm">File Materi (PDF/Docs)</span>
-                          </div>
-                          <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-600">Download</a>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl group hover:border-blue-200 transition-all">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xl">
-                            <HiOutlineVideoCamera />
-                          </div>
-                          <span className="font-bold text-gray-900 text-sm">Link Zoom Meeting (Live Session)</span>
-                        </div>
-                        <button className="px-6 py-2 bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-100 hover:bg-blue-600">Buka</button>
-                      </div>
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex items-center gap-6">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black ${
+                      isActive ? 'bg-indigo-500 text-white' : 
+                      isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'
+                    }`}>
+                      {s.urutan}
+                    </div>
+                    <div>
+                      <h3 className={`text-lg font-black ${isActive ? 'text-indigo-900' : isCompleted ? 'text-gray-800' : 'text-gray-400'}`}>
+                        Pertemuan {s.urutan} — {s.topik || 'Belum Ada Topik'}
+                        {isActive && <span className="ml-2 text-indigo-500">← Aktif</span>}
+                        {isLocked && <HiOutlineLockClosed className="inline ml-2 text-sm" />}
+                      </h3>
+                      <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isActive ? 'text-indigo-500' : isCompleted ? 'text-emerald-600/60' : 'text-gray-400'}`}>
+                        {isCompleted ? 'Review Materi · Video · PDF · Refleksi' : 
+                         isActive ? 'Micro · 2 Video TikTok · Ada Refleksi' : 'Belum Terbuka'}
+                      </p>
                     </div>
                   </div>
-
-                  {/* Refleksi */}
-                  <div>
-                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Refleksi Materi</h4>
-                    <textarea 
-                      className="w-full p-6 bg-gray-50 border border-gray-200 rounded-[2rem] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
-                      placeholder="Tuliskan refleksi Anda mengenai materi ini..."
-                    ></textarea>
-                  </div>
-
-                  {/* Tugas */}
-                  <div>
-                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Tugas</h4>
-                    <div className="w-full p-10 border-2 border-dashed border-gray-200 rounded-[2rem] bg-gray-50/50 flex flex-col items-center justify-center gap-3 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer">
-                      <HiOutlineCloudArrowUp className="text-4xl text-gray-300" />
-                      <span className="text-xs text-gray-400 font-bold">Upload file jawaban</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-center pt-4">
-                    <button className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">
-                      Kumpulkan
-                    </button>
+                  
+                  <div className="flex items-center gap-4">
+                     {(isCompleted || isActive) && (
+                       <Button 
+                         onClick={() => navigate(`/user/materi-sesi?pertemuanId=${s.id}`)}
+                         size="sm" 
+                         className={`${
+                           isActive ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                         } text-white font-black rounded-xl text-[10px] px-6 transition-all`}
+                       >
+                         {isActive ? 'MASUK KELAS' : 'REVIEW MATERI'}
+                       </Button>
+                     )}
+                     {isLocked && (
+                       <Badge className="bg-gray-100 text-gray-400 rounded-lg px-4 py-1 text-[10px] font-black border-none uppercase">
+                         Terkunci
+                       </Badge>
+                     )}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-
-          {/* Locked Section */}
-          <div className="bg-blue-900/10 border-2 border-dashed border-blue-200 rounded-3xl p-10 text-center">
-             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6">
-                <HiOutlineLockClosed />
-             </div>
-             <h3 className="text-xl font-extrabold text-blue-900 mb-2">Ujian Akhir — 30 Soal PG (AI Generate)</h3>
-             <p className="text-sm text-blue-700/60 mb-8 font-medium">Tersedia setelah semua materi selesai</p>
-             <Link to="/user/ujian" className="inline-block px-10 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
-                Buka Ujian (Simulasi)
-             </Link>
-          </div>
-
+              </div>
+            );
+          })}
         </div>
 
-        {/* Right Column - Stats */}
+        {/* Right Column: Widgets */}
         <div className="lg:col-span-4 space-y-8">
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-8">Jadwal Perkuliahan</h2>
-            <div className="space-y-4">
-              {jadwalList.length > 0 ? jadwalList.map((j, i) => (
-                <div key={i} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold text-gray-700">{j.hari.join(', ')}</span>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[9px] font-extrabold uppercase tracking-widest">
-                      Aktif
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-500">
-                    {new Date(j.tglMulai).toLocaleDateString('id-ID')} s/d {new Date(j.tglSelesai).toLocaleDateString('id-ID')}
-                  </p>
-                </div>
-              )) : (
-                <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 text-center">
-                  <p className="text-xs font-bold text-gray-400">Belum ada jadwal yang diatur</p>
-                </div>
-              )}
+          {/* Progress Card */}
+          <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-8">
+            <h2 className="text-xl font-black text-gray-900 mb-8">Progress Kursus</h2>
+            <div className="space-y-6">
+               <div className="space-y-2">
+                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <span>Pertemuan Selesai</span>
+                    <span className="text-indigo-600">{completedSessions}/14</span>
+                 </div>
+                 <Progress value={progressPercent} className="h-2 bg-gray-100" />
+               </div>
+               <div className="space-y-2">
+                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <span>Refleksi Submit</span>
+                    <span className="text-emerald-600">{completedSessions}/14</span>
+                 </div>
+                 <Progress value={progressPercent} className="h-2 bg-gray-100" />
+               </div>
+               <div className="space-y-2">
+                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <span>Latihan Selesai</span>
+                    <span className="text-amber-600">{completedSessions}/14</span>
+                 </div>
+                 <Progress value={progressPercent} className="h-2 bg-gray-100" />
+               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-8">Nilai Saya</h2>
-            <div className="space-y-4">
-               <div className="flex justify-between items-center py-3 border-b border-gray-50">
-                  <span className="text-sm font-bold text-gray-500">Refleksi M1</span>
-                  <span className="text-lg font-extrabold text-gray-900">85</span>
+          {/* Nilai Card */}
+          <Card className="rounded-[2.5rem] border-none shadow-sm bg-white overflow-hidden">
+            <div className="p-8 pb-4">
+               <h2 className="text-xl font-black text-gray-900 mb-6">Status Nilai</h2>
+            </div>
+            <div className="divide-y divide-gray-50">
+               <div className="p-6 flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500">Rata Latihan PG</span>
+                  <span className="text-lg font-black text-gray-900">88.5</span>
                </div>
-               <div className="flex justify-between items-center py-3 border-b border-gray-50">
-                  <span className="text-sm font-bold text-gray-500">Tugas M1</span>
-                  <span className="text-lg font-extrabold text-gray-900">80</span>
+               <div className="p-6 flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500">Rata Refleksi</span>
+                  <span className="text-lg font-black text-gray-900">90.2</span>
                </div>
-               <div className="flex justify-between items-center py-3">
-                  <span className="text-sm font-bold text-gray-500">Ujian Akhir</span>
-                  <span className="text-lg font-extrabold text-gray-300">—</span>
+               <div className="p-6 flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500">Ujian AI</span>
+                  <span className="text-lg font-black text-gray-300">—</span>
                </div>
             </div>
+          </Card>
+
+          {/* AI Exam Card */}
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-8 rounded-[2.5rem] border-2 border-indigo-100 shadow-xl shadow-indigo-100/50">
+             <h3 className="text-lg font-black text-indigo-900 mb-2">Ujian AI</h3>
+             <p className="text-xs text-indigo-700/60 font-bold mb-8">Tersedia setelah semua 14 pertemuan selesai</p>
+             
+             <Button disabled className="w-full bg-gray-400 text-white font-black py-8 rounded-2xl flex flex-col gap-1 grayscale opacity-50 cursor-not-allowed">
+                <div className="flex items-center gap-2">
+                   <HiOutlineLockClosed /> <span>Selesaikan semua pertemuan dulu</span>
+                </div>
+             </Button>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+// Simple internal Card component for clean design
+const Card = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  <div className={`bg-white rounded-[2rem] border border-gray-100 shadow-sm ${className}`}>
+    {children}
+  </div>
+);
 
 export default DetailKursus;

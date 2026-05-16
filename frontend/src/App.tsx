@@ -14,13 +14,17 @@ import CourseMap from './pages/admin/CourseMap';
 import DashboardAsisten from './pages/asisten/DashboardAsisten';
 import HalamanKoreksi from './pages/asisten/HalamanKoreksi';
 import AutoCorrectionAsisten from './pages/asisten/AutoCorrectionAsisten';
-import MonitoringMahasiswa from './pages/asisten/MonitoringMahasiswa';
-import AddMateri from './pages/asisten/AddMateri';
+import MonitoringMahasiswa from './pages/pengajar/MonitoringMahasiswa';
+import AddMateri from './pages/pengajar/AddMateri';
+import KoreksiUploadDetail from './pages/asisten/KoreksiUploadDetail';
 import KursusTersedia from './pages/user/KursusTersedia';
 import DetailKursus from './pages/user/DetailKursus';
 import UjianPage from './pages/user/UjianPage';
 import HasilSkorAI from './pages/user/HasilSkorAI';
 import UserProfile from './pages/user/UserProfile';
+import MateriSesi from './pages/user/MateriSesi';
+import ViewPDF from './pages/user/ViewPDF';
+import KelasOnline from './pages/user/KelasOnline';
 import AdminLayout from './layouts/AdminLayout';
 
 
@@ -64,6 +68,7 @@ function App() {
         {/* Asisten Routes */}
         <Route path="/asisten/dashboard" element={<ProtectedRoute allowedRole="asisten"><DashboardAsisten /></ProtectedRoute>} />
         <Route path="/asisten/koreksi" element={<ProtectedRoute allowedRole="asisten"><HalamanKoreksi /></ProtectedRoute>} />
+        <Route path="/asisten/upload" element={<ProtectedRoute allowedRole="asisten"><KoreksiUploadDetail /></ProtectedRoute>} />
         <Route path="/asisten/auto-correction" element={<ProtectedRoute allowedRole="asisten"><AutoCorrectionAsisten /></ProtectedRoute>} />
         <Route path="/asisten/jadwal" element={<ProtectedRoute allowedRole="asisten"><div className="p-8"><h1 className="text-2xl font-bold">Jadwal Asisten</h1><p className="text-gray-500">Halaman jadwal asisten sedang dalam pengembangan.</p></div></ProtectedRoute>} />
 
@@ -72,6 +77,9 @@ function App() {
         <Route path="/user/dashboard" element={<ProtectedRoute allowedRole="user"><KursusTersedia /></ProtectedRoute>} />
         <Route path="/user/kursus-saya" element={<ProtectedRoute allowedRole="user"><div className="p-8"><h1 className="text-2xl font-bold">Kursus Saya</h1><p className="text-gray-500">Halaman kursus yang telah Anda ambil.</p></div></ProtectedRoute>} />
         <Route path="/user/detail-kursus" element={<ProtectedRoute allowedRole="user"><DetailKursus /></ProtectedRoute>} />
+        <Route path="/user/materi-sesi" element={<ProtectedRoute allowedRole="user"><MateriSesi /></ProtectedRoute>} />
+        <Route path="/user/view-pdf" element={<ProtectedRoute allowedRole="user"><ViewPDF /></ProtectedRoute>} />
+        <Route path="/user/kelas-online" element={<ProtectedRoute allowedRole="user"><KelasOnline /></ProtectedRoute>} />
         <Route path="/user/ujian" element={<ProtectedRoute allowedRole="user"><UjianPage /></ProtectedRoute>} />
         <Route path="/user/hasil-skor" element={<ProtectedRoute allowedRole="user"><HasilSkorAI /></ProtectedRoute>} />
         <Route path="/user/profile" element={<ProtectedRoute allowedRole="user"><UserProfile /></ProtectedRoute>} />
