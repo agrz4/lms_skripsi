@@ -1,12 +1,17 @@
 const prisma = require('../config/db');
 
 const getAllMateri = async (req, res) => {
-  const { mataKuliahId } = req.query;
+  const { mataKuliahId, pertemuanId } = req.query;
   try {
+    const where = {};
+    if (mataKuliahId) where.mataKuliahId = mataKuliahId;
+    if (pertemuanId) where.pertemuanId = pertemuanId;
+
     const materi = await prisma.materi.findMany({
-      where: mataKuliahId ? { mataKuliahId } : {},
+      where,
       include: {
-        mataKuliah: true
+        mataKuliah: true,
+        pertemuan: true
       }
     });
     res.json(materi);
@@ -16,13 +21,16 @@ const getAllMateri = async (req, res) => {
 };
 
 const createMateri = async (req, res) => {
-  const { nama, mataKuliahId, fileUrl } = req.body;
+  const { nama, mataKuliahId, pertemuanId, fileUrl, videoUrl, refleksi } = req.body;
   try {
     const materi = await prisma.materi.create({
       data: {
         nama,
         mataKuliahId,
-        fileUrl
+        pertemuanId,
+        fileUrl,
+        videoUrl,
+        refleksi
       }
     });
     res.status(201).json(materi);
@@ -33,14 +41,15 @@ const createMateri = async (req, res) => {
 
 const updateMateri = async (req, res) => {
   const { id } = req.params;
-  const { nama, mataKuliahId, fileUrl } = req.body;
+  const { nama, fileUrl, videoUrl, refleksi } = req.body;
   try {
     const materi = await prisma.materi.update({
       where: { id },
       data: {
         nama,
-        mataKuliahId,
-        fileUrl
+        fileUrl,
+        videoUrl,
+        refleksi
       }
     });
     res.json(materi);

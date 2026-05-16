@@ -4,25 +4,30 @@ import api from '../lib/api';
 export interface Materi {
   id: string;
   nama: string;
+  pertemuanId: string;
   mataKuliahId: string;
   fileUrl?: string;
+  videoUrl?: string;
+  refleksi?: string;
+  tipe?: 'VIDEO' | 'PDF' | 'LINK';
 }
 
 interface MateriState {
   materiList: Materi[];
   isLoading: boolean;
-  fetchMateri: (mataKuliahId?: string) => Promise<void>;
+  fetchMateriByPertemuan: (pertemuanId: string) => Promise<void>;
   addMateri: (materi: Omit<Materi, 'id'>) => Promise<void>;
+  updateMateri: (id: string, materi: Partial<Materi>) => Promise<void>;
+  deleteMateri: (id: string) => Promise<void>;
 }
 
 export const useMateriStore = create<MateriState>((set) => ({
   materiList: [],
   isLoading: false,
-  fetchMateri: async (mataKuliahId) => {
+  fetchMateriByPertemuan: async (pertemuanId) => {
     set({ isLoading: true });
     try {
-      const url = mataKuliahId ? `/materi?mataKuliahId=${mataKuliahId}` : '/materi';
-      const response = await api.get(url);
+      const response = await api.get(`/materi?pertemuanId=${pertemuanId}`);
       set({ materiList: response.data });
     } catch (error) {
       console.error('Failed to fetch materi', error);
@@ -31,14 +36,31 @@ export const useMateriStore = create<MateriState>((set) => ({
     }
   },
   addMateri: async (materi) => {
-    set({ isLoading: true });
     try {
-      await api.post('/materi', materi);
+      const response = await api.post('/materi', materi);
+      set((state) => ({ materiList: [...state.materiList, response.data] }));
     } catch (error) {
       console.error('Failed to add materi', error);
-      throw error;
-    } finally {
-      set({ isLoading: false });
+    }
+  },
+  updateMateri: async (id, materi) => {
+    try {
+      const response = await api.put(`/materi/${id}`, materi);
+      set((state) => ({
+        materiList: state.materiList.map((m) => (m.id === id ? response.data : m)),
+      }));
+    } catch (error) {
+      console.error('Failed to update materi', error);
+    }
+  },
+  deleteMateri: async (id) => {
+    try {
+      await api.delete(`/materi/${id}`);
+      set((state) => ({
+        materiList: state.materiList.filter((m) => m.id !== id),
+      }));
+    } catch (error) {
+      console.error('Failed to delete materi', error);
     }
   },
 }));
