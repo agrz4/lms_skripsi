@@ -88,7 +88,7 @@ const BuatKursus: React.FC = () => {
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kategori</label>
-                <Select onValueChange={(val) => setFormData(prev => ({ ...prev, kategori: val }))}>
+                <Select onValueChange={(val: string) => setFormData(prev => ({ ...prev, kategori: val }))}>
                   <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
                     <SelectValue placeholder="Pilih Kategori" />
                   </SelectTrigger>

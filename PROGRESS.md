@@ -40,6 +40,13 @@ Dokumen ini dibuat untuk menyimpan konteks pengerjaan proyek agar asisten AI dap
     *   **Step 3 (Materi)**: Input nama materi dan relasi ke kursus.
     *   **Step 4 (Publish)**: Mengubah status `published` menjadi `true`.
 
+### 3. Modul & Dashboard Mahasiswa
+*   **Detail Kursus Premium**: Visualisasi grid 14 sesi pertemuan yang responsif berdasarkan status kelulusan nyata.
+*   **Materi Sesi Interaktif**: Integrasi pemutar video, download PDF, dan sidebar status checklist dinamis.
+*   **Latihan Praktik (Real Upload)**: Fitur unggah screenshot & ZIP project yang dilengkapi dengan **Animated Progress Loader (0-100%)** dan persistensi langsung ke database PostgreSQL.
+*   **Auto-Correction Gemini AI**: Engine evaluasi jawaban esai refleksi otomatis menggunakan **Google Gemini Flash API** yang langsung menghitung skor referensi (0-100) dan memberikan feedback instan.
+*   **Auto-Restore & Cache**: Mengembalikan data teks esai, file tugas, dan nilai AI secara otomatis ketika halaman di-refresh.
+
 ---
 
 ## 📝 Data Dummy / Akun Tes
@@ -53,12 +60,12 @@ Dokumen ini dibuat untuk menyimpan konteks pengerjaan proyek agar asisten AI dap
 ## ⏳ Pekerjaan Rumah (To-Do List)
 
 ### Prioritas Tinggi
-1.  **AI Knowledge (`AIKnowledge.tsx`)**: Saat ini masih menggunakan data bohongan (mock). Perlu diintegrasikan dengan fitur RAG / Vector DB yang ada di backend.
-2.  **Auto Correction (`AutoCorrection.tsx`)**: Masih menggunakan data mock. Perlu dihubungkan dengan endpoint penilaian otomatis.
+1.  **Portal Koreksi Asisten (Role Asisten)**: Hubungkan portal koreksi manual (`HalamanKoreksi`, `KoreksiUploadDetail`) ke database agar asisten bisa melihat daftar screenshot & file ZIP mahasiswa serta meng-input nilai akhir manual.
+2.  **Dashboard Monitoring Dosen (Role Pengajar)**: Hubungkan monitoring mahasiswa dosen agar membaca data nilai dan status penyelesaian tugas real-time mahasiswa dari database.
 
 ### Skala Menengah/Panjang
-3.  **Dashboard Dosen & Asisten**: Memastikan mereka bisa melihat jadwal dan materi yang di-assign oleh Admin.
-4.  **Fitur Pendaftaran (Enrollment)**: Menghubungkan Mahasiswa ke Kursus yang sudah di-publish agar mereka bisa melihat jadwalnya.
+3.  **Sistem Ujian AI**: Pemicu ujian akhir otomatis setelah semua pertemuan P1-P14 diselesaikan oleh mahasiswa.
+4.  **Fitur Pendaftaran (Enrollment)**: Manajemen pendaftaran mahasiswa ke kelas/kursus tertentu oleh Admin.
 
 ---
 

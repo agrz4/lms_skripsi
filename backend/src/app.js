@@ -11,6 +11,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const pertemuanRoutes = require('./routes/pertemuanRoutes');
 const materiRoutes = require('./routes/materiRoutes');
 const pendaftaranRoutes = require('./routes/pendaftaranRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const studentRoutes = require('./routes/studentRoutes');
 
 const app = express();
 
@@ -26,6 +28,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pertemuan', pertemuanRoutes);
 app.use('/api/materi', materiRoutes);
 app.use('/api/pendaftaran', pendaftaranRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/student', studentRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

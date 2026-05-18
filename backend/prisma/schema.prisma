@@ -23,6 +23,8 @@ model User {
   jadwalAsisten Pertemuan[] @relation("AsistenPertemuan")
   mataKuliah    MataKuliah[] @relation("PengajarMataKuliah")
   pendaftaran   Pendaftaran[]
+  submissions   Submission[]
+  progress      StudentProgress[]
 }
 
 model MataKuliah {
@@ -58,6 +60,8 @@ model Pertemuan {
   asisten      User?      @relation("AsistenPertemuan", fields: [asistenId], references: [id])
   materi       Materi[]
   soal         Soal[]
+  submissions  Submission[]
+  progress     StudentProgress[]
   createdAt    DateTime   @default(now())
 }
 
@@ -149,4 +153,35 @@ model Pendaftaran {
   createdAt    DateTime   @default(now())
 
   @@unique([userId, mataKuliahId])
+}
+
+model Submission {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  pertemuanId  String
+  pertemuan    Pertemuan  @relation(fields: [pertemuanId], references: [id])
+  type         String     // "REFLEKSI", "FILE_UPLOAD", "SCREENSHOT"
+  content      String?    // Teks jawaban refleksi
+  fileUrl      String?    // URL file yang diupload (ZIP/Screenshot)
+  score        Float?     // Nilai final dari asisten/pengajar (0-100)
+  aiScore      Float?     // Skor referensi otomatis dari AI (0-100)
+  feedback     String?    // Catatan koreksi dari asisten/pengajar
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, pertemuanId, type])
+}
+
+model StudentProgress {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  pertemuanId  String
+  pertemuan    Pertemuan  @relation(fields: [pertemuanId], references: [id])
+  watchedTime  Int        @default(0)     // Persentase video ditonton (0-100)
+  isCompleted  Boolean    @default(false) // Status "Selesai" pada pertemuan
+  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, pertemuanId])
 }

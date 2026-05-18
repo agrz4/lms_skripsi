@@ -31,6 +31,15 @@ Sistem telah memiliki 4 role utama dengan alur kerja yang sudah disinkronkan ses
 - **Materi Sesi**: Halaman belajar lengkap dengan video player, download PDF, form refleksi, dan area upload tugas.
 - **Review Mode**: Mahasiswa bisa masuk kembali ke materi yang sudah selesai untuk belajar ulang.
 
+### 4. Role Admin (Backend) [NEW]
+- **Assignment Logic (`POST /api/admin/assign-pengajar`)**: API untuk mengaitkan Dosen atau Asisten ke Mata Kuliah secara global, atau ke Pertemuan (sesi 1-14) secara spesifik.
+- **AI Knowledge Sync (`POST /api/admin/ai-sync`)**: API untuk menyelaraskan modul materi pembelajaran dengan Vector Database menggunakan Google Gemini embedding model (768 dimensi) secara real-time.
+
+### 5. Role Student (Backend) [NEW]
+- **Gemini AI Auto-Grader (`POST /api/student/refleksi/submit`)**: Integrasi engine LLM Google Gemini Flash untuk secara otomatis mengoreksi esai refleksi mahasiswa secara semantik dan memberikan skor referensi (0-100) beserta feedback tertulis secara langsung.
+- **Practice Upload (`POST /api/student/upload/tugas`)**: API untuk pengiriman screenshot hasil program atau file program ZIP ke database.
+- **Session Progress (`POST /api/student/status/progres` & `GET /api/student/status/progres`)**: Manajemen dan sinkronisasi checkpoint progres belajar (tonton video, pengerjaan tugas, selesai) per pertemuan (P1-P14).
+
 ---
 
 ## 🛠️ Struktur File Baru (Frontend)
@@ -63,4 +72,4 @@ Sistem telah memiliki 4 role utama dengan alur kerja yang sudah disinkronkan ses
 3. **Real-time Notification**: Notifikasi untuk asisten saat ada tugas baru yang masuk untuk dikoreksi.
 
 ---
-*Terakhir diupdate: 16 Mei 2026 oleh Antigravity*
+*Terakhir diupdate: 18 Mei 2026 oleh Antigravity*

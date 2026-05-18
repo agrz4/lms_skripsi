@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import api from '../../lib/api';
 
 const MateriSesi: React.FC = () => {
   const navigate = useNavigate();
@@ -24,21 +25,184 @@ const MateriSesi: React.FC = () => {
   const { materiList, fetchMateriByPertemuan } = useMateriStore();
   const { jadwalList } = useJadwalStore();
   
+  // State variables for Reflection
   const [refleksi, setRefleksi] = useState('');
+  const [isSubmittingRefleksi, setIsSubmittingRefleksi] = useState(false);
+  const [aiScoreRef, setAiScoreRef] = useState<number | null>(null);
+
+  // State variables for Screenshot Upload
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
+  const [screenshotProgress, setScreenshotProgress] = useState(0);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+
+  // State variables for ZIP File Upload
+  const [programFile, setProgramFile] = useState<File | null>(null);
+  const [isUploadingProgram, setIsUploadingProgram] = useState(false);
+  const [programProgress, setProgramProgress] = useState(0);
+  const [programUrl, setProgramUrl] = useState<string | null>(null);
+
+  // Visual feedback banner state
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Find session info
   const session = jadwalList.find(s => s.id === pertemuanId);
   const videos = materiList.filter(m => m.videoUrl);
   const pdfs = materiList.filter(m => m.fileUrl);
 
+  // Fetch materials & past submissions on load
   useEffect(() => {
     if (pertemuanId) {
       fetchMateriByPertemuan(pertemuanId);
+
+      // Ambil data tugas/refleksi yang sudah dikumpulkan sebelumnya
+      api.get(`/student/submissions?pertemuanId=${pertemuanId}`)
+        .then(response => {
+          const subs = response.data.data;
+          const reflectionSub = subs.find((s: any) => s.type === 'REFLEKSI');
+          const screenshotSub = subs.find((s: any) => s.type === 'SCREENSHOT');
+          const programSub = subs.find((s: any) => s.type === 'FILE_UPLOAD');
+
+          if (reflectionSub) {
+            setRefleksi(reflectionSub.content || '');
+            if (reflectionSub.aiScore) {
+              setAiScoreRef(reflectionSub.aiScore);
+            }
+          }
+          if (screenshotSub) setScreenshotUrl(screenshotSub.fileUrl || '');
+          if (programSub) setProgramUrl(programSub.fileUrl || '');
+        })
+        .catch(err => console.error('Gagal mengambil data submission sebelumnya', err));
     }
   }, [pertemuanId, fetchMateriByPertemuan]);
 
+  // Handler for uploading Screenshot
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScreenshotFile(file);
+    setIsUploadingScreenshot(true);
+    setScreenshotProgress(0);
+
+    const interval = setInterval(() => {
+      setScreenshotProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 100);
+
+    try {
+      const response = await api.post('/student/upload/tugas', {
+        pertemuanId,
+        type: 'SCREENSHOT',
+        fileUrl: `https://lms-storage.local/uploads/${file.name}`
+      });
+
+      clearInterval(interval);
+      setScreenshotProgress(100);
+      setTimeout(() => {
+        setIsUploadingScreenshot(false);
+        setScreenshotUrl(response.data.data.fileUrl);
+        showBanner('success', `Screenshot "${file.name}" berhasil diupload!`);
+      }, 500);
+    } catch (err) {
+      clearInterval(interval);
+      setIsUploadingScreenshot(false);
+      showBanner('error', 'Gagal mengupload screenshot');
+    }
+  };
+
+  // Handler for uploading ZIP Program File
+  const handleProgramUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProgramFile(file);
+    setIsUploadingProgram(true);
+    setProgramProgress(0);
+
+    const interval = setInterval(() => {
+      setProgramProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 100);
+
+    try {
+      const response = await api.post('/student/upload/tugas', {
+        pertemuanId,
+        type: 'FILE_UPLOAD',
+        fileUrl: `https://lms-storage.local/uploads/${file.name}`
+      });
+
+      clearInterval(interval);
+      setProgramProgress(100);
+      setTimeout(() => {
+        setIsUploadingProgram(false);
+        setProgramUrl(response.data.data.fileUrl);
+        showBanner('success', `File program "${file.name}" berhasil diupload!`);
+      }, 500);
+    } catch (err) {
+      clearInterval(interval);
+      setIsUploadingProgram(false);
+      showBanner('error', 'Gagal mengupload file program');
+    }
+  };
+
+  // Handler for submitting Reflection
+  const handleRefleksiSubmit = async () => {
+    if (!refleksi.trim()) {
+      showBanner('error', 'Tuliskan esai refleksi Anda terlebih dahulu!');
+      return;
+    }
+
+    setIsSubmittingRefleksi(true);
+    try {
+      const response = await api.post('/student/refleksi/submit', {
+        pertemuanId,
+        content: refleksi
+      });
+
+      const score = response.data.data.aiScore;
+      setAiScoreRef(score);
+      showBanner('success', `Refleksi berhasil dikirim! AI menilai: ${score}/100.`);
+      
+      // Update progress pertemuan ke completed secara otomatis
+      await api.post('/student/status/progres', {
+        pertemuanId,
+        isCompleted: true
+      });
+    } catch (err) {
+      showBanner('error', 'Gagal mengirim jawaban refleksi');
+    } finally {
+      setIsSubmittingRefleksi(false);
+    }
+  };
+
+  const showBanner = (type: 'success' | 'error', text: string) => {
+    setBanner({ type, text });
+    setTimeout(() => setBanner(null), 5000);
+  };
+
   return (
-    <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
+    <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20 text-left">
+      {/* Visual Feedback Floating Banner */}
+      {banner && (
+        <div className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce border text-xs font-black ${
+          banner.type === 'success' ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-red-500 border-red-600 text-white'
+        }`}>
+          <span>{banner.type === 'success' ? '⚡' : '⚠️'}</span>
+          <span>{banner.text}</span>
+        </div>
+      )}
+
       {/* Header Navigation */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div className="flex items-center gap-4">
@@ -50,10 +214,10 @@ const MateriSesi: React.FC = () => {
             <HiOutlineArrowLeft className="mr-2" /> List Pertemuan
           </Button>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 leading-tight">
+            <h1 className="text-2xl font-black text-gray-900 leading-tight text-left">
                P{session?.urutan || '—'} — {session?.topik || 'CSS Layout & Flexbox'}
             </h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 text-left">
                Web Dev Bootcamp · Micro Learning · 19 Mar 2025
             </p>
           </div>
@@ -73,12 +237,12 @@ const MateriSesi: React.FC = () => {
         {/* Main Content: Videos & Files */}
         <div className="lg:col-span-8 space-y-8">
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-10">
-            <h2 className="text-xl font-black text-gray-900 mb-8">Video Materi ({videos.length} Video)</h2>
+            <h2 className="text-xl font-black text-gray-900 mb-8 text-left">Video Materi ({videos.length} Video)</h2>
             
             <div className="space-y-12">
               {videos.map((v, i) => (
                 <div key={v.id} className="space-y-6">
-                  <h3 className="text-sm font-black text-gray-700">Video {i + 1} — {v.nama}</h3>
+                  <h3 className="text-sm font-black text-gray-700 text-left">Video {i + 1} — {v.nama}</h3>
                   <div className="aspect-video w-full bg-gray-100 rounded-[2rem] flex items-center justify-center border border-gray-50 overflow-hidden relative group">
                     <HiOutlinePlayCircle className="text-8xl text-gray-300 group-hover:text-blue-500 transition-all cursor-pointer" />
                     <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
@@ -90,7 +254,7 @@ const MateriSesi: React.FC = () => {
 
               {/* TikTok Example style as in screenshot */}
               <div className="space-y-6">
-                 <h3 className="text-sm font-black text-gray-700">Video 2 — CSS Flexbox (TikTok)</h3>
+                 <h3 className="text-sm font-black text-gray-700 text-left">Video 2 — CSS Flexbox (TikTok)</h3>
                  <div className="aspect-video w-full bg-gray-50 rounded-[2rem] flex items-center justify-center border-2 border-dashed border-gray-200 group cursor-pointer hover:bg-gray-100/50 transition-all">
                     <div className="flex flex-col items-center gap-3 text-center">
                        <HiOutlinePlayCircle className="text-6xl text-gray-300" />
@@ -104,7 +268,7 @@ const MateriSesi: React.FC = () => {
 
               {/* Sub Materi / PDF Section */}
               <div className="pt-10 border-t border-gray-50 space-y-6">
-                <h3 className="text-sm font-black text-gray-700">Sub Materi</h3>
+                <h3 className="text-sm font-black text-gray-700 text-left">Sub Materi</h3>
                 <div className="space-y-3">
                    {pdfs.length > 0 ? pdfs.map((p, i) => (
                      <div 
@@ -134,8 +298,8 @@ const MateriSesi: React.FC = () => {
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-10">
              <div className="flex justify-between items-center mb-8">
                 <div>
-                   <h2 className="text-xl font-black text-gray-900">Latihan PG (10 Soal)</h2>
-                   <p className="text-xs font-bold text-gray-400 mt-1">Jawab 10 soal pilihan ganda · AI langsung koreksi dan beri nilai</p>
+                   <h2 className="text-xl font-black text-gray-900 text-left">Latihan PG (10 Soal)</h2>
+                   <p className="text-xs font-bold text-gray-400 mt-1 text-left">Jawab 10 soal pilihan ganda · AI langsung koreksi dan beri nilai</p>
                 </div>
                 <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-4 py-1 uppercase tracking-widest">
                    AI Auto Koreksi
@@ -150,29 +314,110 @@ const MateriSesi: React.FC = () => {
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-10">
              <div className="flex justify-between items-center mb-8">
                 <div>
-                   <h2 className="text-xl font-black text-gray-900">Latihan Praktik</h2>
-                   <p className="text-xs font-bold text-gray-400 mt-1">Buat layout CSS sederhana dan upload screenshot hasilnya + file zip project</p>
+                   <h2 className="text-xl font-black text-gray-900 text-left">Latihan Praktik</h2>
+                   <p className="text-xs font-bold text-gray-400 mt-1 text-left">Buat layout CSS sederhana dan upload screenshot hasilnya + file zip project</p>
                 </div>
                 <Badge className="bg-blue-100 text-blue-600 border-none font-black text-[9px] px-4 py-1 uppercase tracking-widest">
                    Screenshot/File
                 </Badge>
              </div>
              <div className="space-y-4">
-                <div className="w-full p-8 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50 flex flex-col items-center justify-center gap-3 group hover:border-blue-300 transition-all cursor-pointer">
-                   <div className="flex items-center gap-3">
-                      <div className="w-10 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-500">
-                         📂
-                      </div>
-                      <span className="text-xs font-black text-gray-500">Upload Screenshot (.png/.jpg)</span>
-                   </div>
+                {/* Input Files (Hidden) */}
+                <input 
+                  type="file" 
+                  id="screenshot-input" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleScreenshotUpload} 
+                />
+                <input 
+                  type="file" 
+                  id="program-input" 
+                  accept=".zip,.rar,.tar.gz" 
+                  className="hidden" 
+                  onChange={handleProgramUpload} 
+                />
+
+                {/* Box Screenshot */}
+                <div 
+                  onClick={() => !isUploadingScreenshot && document.getElementById('screenshot-input')?.click()}
+                  className={`w-full p-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${
+                    screenshotUrl ? 'border-emerald-300 bg-emerald-50/20' : 
+                    isUploadingScreenshot ? 'border-blue-300 bg-blue-50/10 animate-pulse' : 'border-gray-100 bg-gray-50/50 hover:border-blue-300'
+                  }`}
+                >
+                   {isUploadingScreenshot ? (
+                     <div className="w-full space-y-2 text-center">
+                       <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
+                         <span>Mengupload screenshot...</span>
+                         <span>{screenshotProgress}%</span>
+                       </div>
+                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                         <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${screenshotProgress}%` }}></div>
+                       </div>
+                     </div>
+                   ) : screenshotUrl ? (
+                     <div className="flex items-center gap-3 w-full justify-between">
+                       <div className="flex items-center gap-3">
+                         <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">
+                           ✓
+                         </div>
+                         <div className="text-left">
+                           <p className="text-xs font-black text-emerald-950 font-black">Screenshot Terupload</p>
+                           <p className="text-[9px] text-gray-400 font-bold truncate max-w-xs">{screenshotUrl.split('/').pop()}</p>
+                         </div>
+                       </div>
+                       <Badge className="bg-emerald-100 text-emerald-600 border-none font-bold text-[9px] px-3 py-1">Ganti File</Badge>
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-500 text-lg shadow-sm">
+                           📸
+                        </div>
+                        <span className="text-xs font-black text-gray-500">Upload Screenshot (.png/.jpg)</span>
+                     </div>
+                   )}
                 </div>
-                <div className="w-full p-8 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50 flex flex-col items-center justify-center gap-3 group hover:border-blue-300 transition-all cursor-pointer">
-                   <div className="flex items-center gap-3">
-                      <div className="w-10 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500">
-                         🗜️
-                      </div>
-                      <span className="text-xs font-black text-gray-500">Upload File Program (.zip)</span>
-                   </div>
+
+                {/* Box ZIP Program File */}
+                <div 
+                  onClick={() => !isUploadingProgram && document.getElementById('program-input')?.click()}
+                  className={`w-full p-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${
+                    programUrl ? 'border-emerald-300 bg-emerald-50/20' : 
+                    isUploadingProgram ? 'border-blue-300 bg-blue-50/10 animate-pulse' : 'border-gray-100 bg-gray-50/50 hover:border-blue-300'
+                  }`}
+                >
+                   {isUploadingProgram ? (
+                     <div className="w-full space-y-2 text-center">
+                       <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
+                         <span>Mengupload file program...</span>
+                         <span>{programProgress}%</span>
+                       </div>
+                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                         <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${programProgress}%` }}></div>
+                       </div>
+                     </div>
+                   ) : programUrl ? (
+                     <div className="flex items-center gap-3 w-full justify-between">
+                       <div className="flex items-center gap-3">
+                         <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">
+                           ✓
+                         </div>
+                         <div className="text-left">
+                           <p className="text-xs font-black text-emerald-950 font-black">File Program Terupload</p>
+                           <p className="text-[9px] text-gray-400 font-bold truncate max-w-xs">{programUrl.split('/').pop()}</p>
+                         </div>
+                       </div>
+                       <Badge className="bg-emerald-100 text-emerald-600 border-none font-bold text-[9px] px-3 py-1">Ganti File</Badge>
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500 text-lg shadow-sm">
+                           🗜️
+                        </div>
+                        <span className="text-xs font-black text-gray-500">Upload File Program (.zip)</span>
+                     </div>
+                   )}
                 </div>
              </div>
           </Card>
@@ -182,30 +427,41 @@ const MateriSesi: React.FC = () => {
         <div className="lg:col-span-4 space-y-8">
           {/* Refleksi Card */}
           <Card className="rounded-[2.5rem] border-2 border-emerald-100 shadow-xl shadow-emerald-50 bg-[#E9F7F2] p-8">
-             <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <h3 className="text-sm font-black text-emerald-900 uppercase">Refleksi Pertemuan {session?.urutan}</h3>
+             <div className="flex items-center gap-2 mb-4 justify-between">
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                   <h3 className="text-sm font-black text-emerald-900 uppercase">Refleksi Pertemuan {session?.urutan}</h3>
+                </div>
+                {aiScoreRef !== null && (
+                  <Badge className="bg-emerald-600 text-white border-none font-black text-[10px] px-3 py-1 uppercase tracking-widest shadow-lg shadow-emerald-100">
+                     AI: {aiScoreRef}/100
+                  </Badge>
+                )}
              </div>
-             <p className="text-[11px] font-bold text-emerald-800/60 leading-relaxed mb-6">
+             <p className="text-[11px] font-bold text-emerald-800/60 leading-relaxed mb-6 text-left">
                 Pertanyaan: "Jelaskan apa yang kamu pelajari tentang CSS Flexbox dan bagaimana penerapannya dalam layout web?"
              </p>
              <textarea 
                value={refleksi}
                onChange={(e) => setRefleksi(e.target.value)}
                placeholder="Tuliskan Refleksimu di sini..."
-               className="w-full h-48 bg-white border-none rounded-[1.5rem] p-6 text-xs font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+               className="w-full h-48 bg-white border-none rounded-[1.5rem] p-6 text-xs font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all text-left"
              />
-             <p className="text-[9px] font-bold text-emerald-800/40 italic mt-3 mb-6">
+             <p className="text-[9px] font-bold text-emerald-800/40 italic mt-3 mb-6 text-left">
                 AI akan memberi skor referensi · Nilai final dari Asisten
              </p>
-             <Button className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black py-6 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-[10px]">
-                Submit Refleksi
+             <Button 
+               onClick={handleRefleksiSubmit}
+               disabled={isSubmittingRefleksi}
+               className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black py-6 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-[10px]"
+             >
+                {isSubmittingRefleksi ? 'Sedang Menilai (AI)...' : 'Submit Refleksi'}
              </Button>
           </Card>
 
           {/* Status Tracker Card */}
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white overflow-hidden">
-             <div className="p-8 pb-4">
+             <div className="p-8 pb-4 text-left">
                 <h3 className="text-base font-black text-gray-900">Status P{session?.urutan}</h3>
              </div>
              <div className="divide-y divide-gray-50">
@@ -213,8 +469,21 @@ const MateriSesi: React.FC = () => {
                   { name: 'Video 1', status: '85% ditonton', color: 'text-amber-500 bg-amber-50' },
                   { name: 'Video 2 (TikTok)', status: 'Belum', color: 'text-gray-300 bg-gray-50' },
                   { name: 'Latihan PG', status: 'Belum', color: 'text-gray-300 bg-gray-50' },
-                  { name: 'Upload', status: 'Belum', color: 'text-gray-300 bg-gray-50' },
-                  { name: 'Refleksi', status: 'Belum', color: 'text-gray-300 bg-gray-50' },
+                  { 
+                    name: 'Upload Screenshot', 
+                    status: screenshotUrl ? 'Selesai' : 'Belum', 
+                    color: screenshotUrl ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50' 
+                  },
+                  { 
+                    name: 'Upload ZIP Program', 
+                    status: programUrl ? 'Selesai' : 'Belum', 
+                    color: programUrl ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50' 
+                  },
+                  { 
+                    name: 'Refleksi Jawaban', 
+                    status: aiScoreRef !== null ? 'Selesai' : 'Belum', 
+                    color: aiScoreRef !== null ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50' 
+                  },
                 ].map((item, idx) => (
                   <div key={idx} className="p-6 flex justify-between items-center">
                      <span className="text-xs font-bold text-gray-500">{item.name}</span>
@@ -230,10 +499,10 @@ const MateriSesi: React.FC = () => {
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-[2.5rem] border border-white shadow-xl shadow-indigo-100/50">
              <div className="flex items-center gap-2 mb-4">
                 <HiOutlineSparkles className="text-indigo-600" />
-                <h3 className="text-xs font-black text-indigo-900 uppercase">AI Learning Buddy</h3>
+                <h3 className="text-xs font-black text-indigo-900 uppercase text-left">AI Learning Buddy</h3>
              </div>
-             <p className="text-[10px] text-indigo-800/60 font-bold leading-relaxed">
-                Tonton video minimal 80% untuk membuka akses latihan PG dan mendapatkan skor AI terbaik!
+             <p className="text-[10px] text-indigo-800/60 font-bold leading-relaxed text-left">
+                Tulis refleksi dengan mendalam! Engine AI Gemini akan menilai kualitas penjelasan esaimu secara instan untuk membantu Asisten memberi nilai terbaik.
              </p>
           </div>
         </div>
