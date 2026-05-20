@@ -3,6 +3,7 @@ dotenv.config();
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const aiRoutes = require('./routes/aiRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -13,11 +14,16 @@ const materiRoutes = require('./routes/materiRoutes');
 const pendaftaranRoutes = require('./routes/pendaftaranRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const monitoringRoutes = require('./routes/monitoringRoutes');
+const koreksiRoutes = require('./routes/koreksiRoutes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Static folder for uploaded files
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // API Routes
 app.use('/api/ai', aiRoutes);
@@ -30,6 +36,8 @@ app.use('/api/materi', materiRoutes);
 app.use('/api/pendaftaran', pendaftaranRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/koreksi', koreksiRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

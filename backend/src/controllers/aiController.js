@@ -76,4 +76,98 @@ const indexSoalHandler = async (req, res) => {
   }
 };
 
-module.exports = { evaluasiSoalHandler, indexSoalHandler };
+const getStatsPGHandler = async (req, res) => {
+  try {
+    const submissions = await prisma.submission.findMany({
+      where: { type: 'PILIHAN_GANDA' },
+      include: {
+        user: { select: { id: true, nama: true, email: true } },
+        pertemuan: { include: { mataKuliah: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const totalSubmissions = submissions.length;
+    const scores = submissions.map(s => s.score || s.aiScore || 0);
+    const avgScore = totalSubmissions > 0 
+      ? (scores.reduce((sum, val) => sum + val, 0) / totalSubmissions) 
+      : 0;
+
+    let distribution = {
+      perfect: 0,
+      excellent: 0,
+      good: 0,
+      poor: 0
+    };
+
+    scores.forEach(score => {
+      if (score === 100) distribution.perfect++;
+      else if (score >= 80) distribution.excellent++;
+      else if (score >= 60) distribution.good++;
+      else distribution.poor++;
+    });
+
+    if (totalSubmissions === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Belum ada data pengerjaan riil. Menampilkan simulasi statistik AI.',
+        isSimulated: true,
+        data: {
+          totalSubmissions: 28,
+          averageScore: 84.5,
+          distribution: {
+            perfect: 5,
+            excellent: 15,
+            good: 6,
+            poor: 2
+          },
+          submissions: [
+            {
+              id: 'sim-1',
+              user: { nama: 'Budi Santoso', email: 'budi@lms.com' },
+              pertemuan: { urutan: 3, mataKuliah: { nama: 'Dasar Pemrograman Web' } },
+              score: 90,
+              aiScore: 90,
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sim-2',
+              user: { nama: 'Ani Setyawati', email: 'ani@lms.com' },
+              pertemuan: { urutan: 3, mataKuliah: { nama: 'Dasar Pemrograman Web' } },
+              score: 100,
+              aiScore: 100,
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sim-3',
+              user: { nama: 'Candra Wijaya', email: 'candra@lms.com' },
+              pertemuan: { urutan: 2, mataKuliah: { nama: 'Dasar Pemrograman Web' } },
+              score: 80,
+              aiScore: 80,
+              createdAt: new Date().toISOString()
+            }
+          ]
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      isSimulated: false,
+      data: {
+        totalSubmissions,
+        averageScore: parseFloat(avgScore.toFixed(1)),
+        distribution,
+        submissions
+      }
+    });
+  } catch (error) {
+    console.error('Error in getStatsPGHandler:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Terjadi kesalahan pada server',
+    });
+  }
+};
+
+module.exports = { evaluasiSoalHandler, indexSoalHandler, getStatsPGHandler };

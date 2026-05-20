@@ -15,27 +15,27 @@ Daftar tugas integrasi API untuk menghubungkan Frontend UI dengan Backend sistem
 
 ---
 
-## 🧑‍🏫 Role: Pengajar (Teacher/Dosen)
-- [ ] **Add/Edit Materi (`/pengajar/add-materi`)**:
+## 🧑‍🏫 Role: Pengajar (Teacher/Dosen) [COMPLETED]
+- [x] **Add/Edit Materi (`/pengajar/add-materi`)**:
     - `POST /materi/create`: Menyimpan data pertemuan (Judul, Deskripsi, Link TikTok/Zoom).
-    - `POST /materi/upload-video`: Endpoint untuk upload video lokal ke server.
-    - `POST /materi/upload-submateri`: Endpoint untuk upload file PDF/Modul.
-    - `POST /materi/latihan-pg`: Simpan soal pilihan ganda ke database.
-- [ ] **Monitoring Mahasiswa (`/pengajar/monitoring`)**:
-    - `GET /monitoring/materi-assigned`: Mengambil hanya materi yang di-assign ke dosen tersebut.
-    - `GET /monitoring/stats`: Agregasi nilai rata-rata kelas, total mhs, dan keaktifan.
-    - `GET /monitoring/detail-mhs?pertemuanId={id}`: Mengambil list mhs dan status tugas mereka per sesi.
+    - `POST /materi/upload-video`: Endpoint untuk upload video lokal ke server (Tersedia di `/api/materi/upload-video`).
+    - `POST /materi/upload-submateri`: Endpoint untuk upload file PDF/Modul (Tersedia di `/api/materi/upload-submateri`).
+    - `POST /materi/latihan-pg`: Simpan soal pilihan ganda ke database (Tersedia di `/api/materi/latihan-pg`).
+- [x] **Monitoring Mahasiswa (`/pengajar/monitoring`)**:
+    - `GET /monitoring/materi-assigned`: Mengambil hanya materi yang di-assign ke dosen tersebut (Tersedia di `/api/monitoring/materi-assigned`).
+    - `GET /monitoring/stats`: Agregasi nilai rata-rata kelas, total mhs, dan keaktifan (Tersedia di `/api/monitoring/stats`).
+    - `GET /monitoring/detail-mhs?pertemuanId={id}`: Mengambil list mhs dan status tugas mereka per sesi (Tersedia di `/api/monitoring/detail-mhs`).
 
 ---
 
-## 🧑‍💻 Role: Asisten (Assistant)
-- [ ] **Koreksi Manual (`/asisten/koreksi`)**:
-    - `GET /koreksi/list`: Mengambil daftar tugas (Refleksi/Upload) yang masuk dari mahasiswa.
-    - `POST /koreksi/submit-nilai`: Mengirim nilai akhir (0-100) dan catatan feedback dari asisten.
-- [ ] **Koreksi Upload Detail (`/asisten/upload`)**:
-    - `GET /koreksi/file-detail/{id}`: Mengambil link file/screenshot yang di-upload mhs untuk di-preview.
-- [ ] **Auto Correction (`/asisten/auto-correction`)**:
-    - `GET /ai/stats-pg`: Mengambil data statistik pengerjaan PG yang dikoreksi otomatis oleh AI.
+## 🧑‍💻 Role: Asisten (Assistant) [COMPLETED]
+- [x] **Koreksi Manual (`/asisten/koreksi`)**:
+    - `GET /koreksi/list`: Mengambil daftar tugas (Refleksi/Upload) yang masuk dari mahasiswa (Tersedia di `/api/koreksi/list`).
+    - `POST /koreksi/submit-nilai`: Mengirim nilai akhir (0-100) dan catatan feedback dari asisten (Tersedia di `/api/koreksi/submit-nilai`).
+- [x] **Koreksi Upload Detail (`/asisten/upload`)**:
+    - `GET /koreksi/file-detail/{id}`: Mengambil link file/screenshot yang di-upload mhs untuk di-preview (Tersedia di `/api/koreksi/file-detail/:id`).
+- [x] **Auto Correction (`/asisten/auto-correction`)**:
+    - `GET /ai/stats-pg`: Mengambil data statistik pengerjaan PG yang dikoreksi otomatis oleh AI (Tersedia di `/api/ai/stats-pg`).
 
 ---
 
@@ -47,11 +47,11 @@ Daftar tugas integrasi API untuk menghubungkan Frontend UI dengan Backend sistem
 
 ---
 
-## 📦 Global System Tasks
-- [ ] **Authentication Extension**:
-    - Update `GET /users/me` untuk mengembalikan data profil lengkap sesuai role (Avatar, Nama Gelar, List Materi Assigned).
-- [ ] **File Storage**:
-    - Implementasi penyimpanan file (Multer/S3/Cloudinary) untuk menangani upload video dan dokumen besar dari Pengajar & Mahasiswa.
+## 📦 Global System Tasks [COMPLETED]
+- [x] **Authentication Extension**:
+    - Update `GET /users/me` untuk mengembalikan data profil lengkap sesuai role (Avatar, Nama Gelar, List Materi Assigned) (Implementasi di `authController.js`).
+- [x] **File Storage**:
+    - Implementasi penyimpanan file (Multer/S3/Cloudinary) untuk menangani upload video dan dokumen besar dari Pengajar & Mahasiswa (Tersedia di `uploadMiddleware.js`).
 
 ---
 *Dokumen ini adalah panduan teknis untuk developer backend.*
