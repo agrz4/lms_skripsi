@@ -438,9 +438,22 @@ const MateriSesi: React.FC = () => {
                   </Badge>
                 )}
              </div>
-             <p className="text-[11px] font-bold text-emerald-800/60 leading-relaxed mb-6 text-left">
-                Pertanyaan: "Jelaskan apa yang kamu pelajari tentang CSS Flexbox dan bagaimana penerapannya dalam layout web?"
-             </p>
+             <div className="text-[11px] font-bold text-emerald-800/70 leading-relaxed mb-6 text-left space-y-2">
+                <span className="text-emerald-900 block font-black mb-1">Pertanyaan Refleksi:</span>
+                {materiList.filter(m => m.refleksi && m.refleksi.trim()).length > 0 ? (
+                   materiList
+                      .filter(m => m.refleksi && m.refleksi.trim())
+                      .map((m, idx, arr) => (
+                         <p key={m.id || idx} className="bg-white/40 p-2.5 rounded-xl border border-emerald-100/50">
+                            {arr.length > 1 ? `${idx + 1}. ` : ''}{m.refleksi}
+                         </p>
+                      ))
+                ) : (
+                   <p className="bg-white/40 p-2.5 rounded-xl border border-emerald-100/50">
+                      Jelaskan apa yang kamu pelajari pada pertemuan ini dan bagaimana penerapannya dalam layout web?
+                   </p>
+                )}
+             </div>
              <textarea 
                value={refleksi}
                onChange={(e) => setRefleksi(e.target.value)}

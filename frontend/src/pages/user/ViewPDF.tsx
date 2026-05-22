@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useJadwalStore } from '../../store/useJadwalStore';
+import { useMateriStore } from '../../store/useMateriStore';
 import { 
   HiOutlineArrowLeft, 
   HiOutlineMagnifyingGlassMinus, 
@@ -12,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import api from '../../lib/api';
 
 const ViewPDF: React.FC = () => {
   const navigate = useNavigate();
@@ -22,13 +24,89 @@ const ViewPDF: React.FC = () => {
 
   const { jadwalList } = useJadwalStore();
   const session = jadwalList.find(s => s.id === pertemuanId);
+  const { materiList, fetchMateriByPertemuan } = useMateriStore();
 
   const [zoom, setZoom] = useState(100);
   const [currentPage, setCurrentPage] = useState(2);
   const totalPages = 18;
 
+  // State variables for Reflection
+  const [refleksi, setRefleksi] = useState('');
+  const [isSubmittingRefleksi, setIsSubmittingRefleksi] = useState(false);
+  const [aiScoreRef, setAiScoreRef] = useState<number | null>(null);
+  
+  // Floating banner feedback state
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Fetch materials & past submissions on load
+  useEffect(() => {
+    if (pertemuanId) {
+      fetchMateriByPertemuan(pertemuanId);
+
+      // Ambil data tugas/refleksi yang sudah dikumpulkan sebelumnya
+      api.get(`/student/submissions?pertemuanId=${pertemuanId}`)
+        .then(response => {
+          const subs = response.data.data;
+          const reflectionSub = subs.find((s: any) => s.type === 'REFLEKSI');
+
+          if (reflectionSub) {
+            setRefleksi(reflectionSub.content || '');
+            if (reflectionSub.aiScore) {
+              setAiScoreRef(reflectionSub.aiScore);
+            }
+          }
+        })
+        .catch(err => console.error('Gagal mengambil data submission sebelumnya', err));
+    }
+  }, [pertemuanId, fetchMateriByPertemuan]);
+
+  // Handler for submitting Reflection
+  const handleRefleksiSubmit = async () => {
+    if (!refleksi.trim()) {
+      showBanner('error', 'Tuliskan esai refleksi Anda terlebih dahulu!');
+      return;
+    }
+
+    setIsSubmittingRefleksi(true);
+    try {
+      const response = await api.post('/student/refleksi/submit', {
+        pertemuanId,
+        content: refleksi
+      });
+
+      const score = response.data.data.aiScore;
+      setAiScoreRef(score);
+      showBanner('success', `Refleksi berhasil dikirim! AI menilai: ${score}/100.`);
+      
+      // Update progress pertemuan ke completed secara otomatis
+      await api.post('/student/status/progres', {
+        pertemuanId,
+        isCompleted: true
+      });
+    } catch (err) {
+      showBanner('error', 'Gagal mengirim jawaban refleksi');
+    } finally {
+      setIsSubmittingRefleksi(false);
+    }
+  };
+
+  const showBanner = (type: 'success' | 'error', text: string) => {
+    setBanner({ type, text });
+    setTimeout(() => setBanner(null), 5000);
+  };
+
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
+      {/* Visual Feedback Floating Banner */}
+      {banner && (
+        <div className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce border text-xs font-black ${
+          banner.type === 'success' ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-red-500 border-red-600 text-white'
+        }`}>
+          <span>{banner.type === 'success' ? '⚡' : '⚠️'}</span>
+          <span>{banner.text}</span>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div className="flex items-center gap-6">
@@ -145,22 +223,48 @@ const ViewPDF: React.FC = () => {
         {/* Sidebar Sections */}
         <div className="lg:col-span-4 space-y-8">
           <Card className="rounded-[2.5rem] border-2 border-emerald-100 shadow-xl shadow-emerald-50 bg-[#E9F7F2] p-8">
-             <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <h3 className="text-sm font-black text-emerald-900 uppercase">Refleksi P{session?.urutan || '4'}</h3>
+             <div className="flex items-center gap-2 mb-4 justify-between">
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                   <h3 className="text-sm font-black text-emerald-900 uppercase">Refleksi P{session?.urutan || '4'}</h3>
+                </div>
+                {aiScoreRef !== null && (
+                   <Badge className="bg-emerald-600 text-white border-none font-black text-[10px] px-3 py-1 uppercase tracking-widest shadow-lg shadow-emerald-100">
+                      AI: {aiScoreRef}/100
+                   </Badge>
+                )}
              </div>
-             <p className="text-[11px] font-bold text-emerald-800/60 leading-relaxed mb-6 italic">
-                "Apa perbedaan flex-direction row dan column dan kapan menggunakannya?"
-             </p>
+             <div className="text-[11px] font-bold text-emerald-800/70 leading-relaxed mb-6 text-left space-y-2">
+                <span className="text-emerald-900 block font-black mb-1">Pertanyaan Refleksi:</span>
+                {materiList.filter(m => m.refleksi && m.refleksi.trim()).length > 0 ? (
+                   materiList
+                      .filter(m => m.refleksi && m.refleksi.trim())
+                      .map((m, idx, arr) => (
+                         <p key={m.id || idx} className="bg-white/40 p-2.5 rounded-xl border border-emerald-100/50 font-sans normal-case">
+                            {arr.length > 1 ? `${idx + 1}. ` : ''}{m.refleksi}
+                         </p>
+                      ))
+                ) : (
+                   <p className="bg-white/40 p-2.5 rounded-xl border border-emerald-100/50 font-sans normal-case">
+                      Jelaskan apa yang kamu pelajari pada pertemuan ini dan bagaimana penerapannya dalam layout web?
+                   </p>
+                )}
+             </div>
              <textarea 
+               value={refleksi}
+               onChange={(e) => setRefleksi(e.target.value)}
                placeholder="Tuliskan Refleksimu di sini..."
-               className="w-full h-48 bg-white border-none rounded-[1.5rem] p-6 text-xs font-medium focus:outline-none transition-all"
+               className="w-full h-48 bg-white border-none rounded-[1.5rem] p-6 text-xs font-medium focus:outline-none"
              />
              <p className="text-[9px] font-bold text-emerald-800/40 italic mt-3 mb-6">
-                AI akan sebagai referensi Asisten
+                AI akan memberi skor referensi · Nilai final dari Asisten
              </p>
-             <Button className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black py-6 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-[10px]">
-                Submit Refleksi
+             <Button 
+               onClick={handleRefleksiSubmit}
+               disabled={isSubmittingRefleksi}
+               className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black py-6 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-[10px]"
+             >
+                {isSubmittingRefleksi ? 'Sedang Menilai (AI)...' : 'Submit Refleksi'}
              </Button>
           </Card>
 
@@ -183,8 +287,10 @@ const ViewPDF: React.FC = () => {
                 </div>
                 <div className="p-6 flex justify-between items-center">
                    <span className="text-xs font-bold text-gray-500">Refleksi</span>
-                   <Badge className="text-gray-300 bg-gray-50 border-none font-black text-[8px] px-3 py-0.5 rounded-full uppercase">
-                      Belum
+                   <Badge className={`${
+                      aiScoreRef !== null ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50'
+                    } border-none font-black text-[8px] px-3 py-0.5 rounded-full uppercase`}>
+                      {aiScoreRef !== null ? 'Selesai' : 'Belum'}
                    </Badge>
                 </div>
              </div>

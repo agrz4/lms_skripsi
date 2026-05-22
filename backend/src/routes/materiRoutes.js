@@ -7,12 +7,14 @@ const {
   deleteMateri, 
   uploadVideo, 
   uploadSubmateri, 
-  createLatihanPG 
+  createLatihanPG,
+  getLatihanPG
 } = require('../controllers/materiController');
 const { authMiddleware, dosenOnly } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
 router.get('/', authMiddleware, getAllMateri);
+router.get('/latihan-pg', authMiddleware, getLatihanPG);
 router.post('/', authMiddleware, dosenOnly, createMateri);
 router.post('/create', authMiddleware, dosenOnly, createMateri);
 router.post('/upload-video', authMiddleware, dosenOnly, upload.single('video'), uploadVideo);

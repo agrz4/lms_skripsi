@@ -114,6 +114,25 @@ const createLatihanPG = async (req, res) => {
   }
   
   try {
+    // Clear old choice questions for this session to prevent duplicates
+    if (pertemuanId) {
+      const existingSoal = await prisma.soal.findMany({
+        where: { pertemuanId, tipesoal: 'PILIHAN_GANDA' }
+      });
+      const existingSoalIds = existingSoal.map(s => s.id);
+      if (existingSoalIds.length > 0) {
+        await prisma.soalVector.deleteMany({
+          where: { soalId: { in: existingSoalIds } }
+        });
+        await prisma.evaluasi.deleteMany({
+          where: { soalId: { in: existingSoalIds } }
+        });
+        await prisma.soal.deleteMany({
+          where: { id: { in: existingSoalIds } }
+        });
+      }
+    }
+
     const { indexSoal } = require('../services/ragService');
     const createdSoalList = [];
     
@@ -171,6 +190,24 @@ const createLatihanPG = async (req, res) => {
   }
 };
 
+const getLatihanPG = async (req, res) => {
+  const { pertemuanId } = req.query;
+  if (!pertemuanId) {
+    return res.status(400).json({ message: 'pertemuanId wajib diisi' });
+  }
+  try {
+    const soal = await prisma.soal.findMany({
+      where: {
+        pertemuanId,
+        tipesoal: 'PILIHAN_GANDA'
+      }
+    });
+    res.json(soal);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getAllMateri, 
   createMateri, 
@@ -178,5 +215,6 @@ module.exports = {
   deleteMateri,
   uploadVideo,
   uploadSubmateri,
-  createLatihanPG
+  createLatihanPG,
+  getLatihanPG
 };
