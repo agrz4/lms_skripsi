@@ -16,6 +16,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
 const koreksiRoutes = require('./routes/koreksiRoutes');
+const ujianRoutes = require('./routes/ujianRoutes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/koreksi', koreksiRoutes);
+app.use('/api/ujian', ujianRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

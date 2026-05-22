@@ -18,6 +18,7 @@ import MonitoringMahasiswa from './pages/pengajar/MonitoringMahasiswa';
 import AddMateri from './pages/pengajar/AddMateri';
 import KoreksiUploadDetail from './pages/asisten/KoreksiUploadDetail';
 import KursusTersedia from './pages/user/KursusTersedia';
+import KursusSaya from './pages/user/KursusSaya';
 import DetailKursus from './pages/user/DetailKursus';
 import UjianPage from './pages/user/UjianPage';
 import HasilSkorAI from './pages/user/HasilSkorAI';
@@ -75,7 +76,7 @@ function App() {
 
         {/* User (Mahasiswa) Routes */}
         <Route path="/user/dashboard" element={<ProtectedRoute allowedRole="user"><KursusTersedia /></ProtectedRoute>} />
-        <Route path="/user/kursus-saya" element={<ProtectedRoute allowedRole="user"><div className="p-8"><h1 className="text-2xl font-bold">Kursus Saya</h1><p className="text-gray-500">Halaman kursus yang telah Anda ambil.</p></div></ProtectedRoute>} />
+        <Route path="/user/kursus-saya" element={<ProtectedRoute allowedRole="user"><KursusSaya /></ProtectedRoute>} />
         <Route path="/user/detail-kursus" element={<ProtectedRoute allowedRole="user"><DetailKursus /></ProtectedRoute>} />
         <Route path="/user/materi-sesi" element={<ProtectedRoute allowedRole="user"><MateriSesi /></ProtectedRoute>} />
         <Route path="/user/view-pdf" element={<ProtectedRoute allowedRole="user"><ViewPDF /></ProtectedRoute>} />

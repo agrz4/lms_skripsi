@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React, { useState, useEffect } from 'react';
 import { 
   HiOutlineCheckCircle, 
   HiOutlineClock, 
@@ -21,15 +20,75 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import api from '../../lib/api';
+
+const fallbackMockData = [
+  { id: '1', materi: 'Introduction to Figma', kursus: 'UI/UX Design', type: 'Video', transcript: 'done', rag: 'done', soal: 10, status: 'Synced' },
+  { id: '2', materi: 'React Hooks Deep Dive', kursus: 'Web Dev', type: 'PDF', transcript: 'done', rag: 'done', soal: 15, status: 'Synced' },
+  { id: '3', materi: 'Advanced Typography', kursus: 'UI/UX Design', type: 'Video', transcript: 'processing', rag: 'waiting', soal: 0, status: 'Processing' },
+  { id: '4', materi: 'Database Normalization', kursus: 'Backend Mastery', type: 'Video', transcript: 'error', rag: 'failed', soal: 0, status: 'Error' },
+  { id: '5', materi: 'User Research Methods', kursus: 'UI/UX Design', type: 'PDF', transcript: 'done', rag: 'done', soal: 12, status: 'Synced' },
+];
 
 const AIKnowledge: React.FC = () => {
-  const knowledgeData = [
-    { id: 1, materi: 'Introduction to Figma', kursus: 'UI/UX Design', type: 'Video', transcript: 'done', rag: 'done', soal: 10, status: 'Synced' },
-    { id: 2, materi: 'React Hooks Deep Dive', kursus: 'Web Dev', type: 'PDF', transcript: 'done', rag: 'done', soal: 15, status: 'Synced' },
-    { id: 3, materi: 'Advanced Typography', kursus: 'UI/UX Design', type: 'Video', transcript: 'processing', rag: 'waiting', soal: 0, status: 'Processing' },
-    { id: 4, materi: 'Database Normalization', kursus: 'Backend Mastery', type: 'Video', transcript: 'error', rag: 'failed', soal: 0, status: 'Error' },
-    { id: 5, materi: 'User Research Methods', kursus: 'UI/UX Design', type: 'PDF', transcript: 'done', rag: 'done', soal: 12, status: 'Synced' },
-  ];
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [syncing, setSyncing] = useState<boolean>(false);
+  const [syncLogs, setSyncLogs] = useState<any | null>(null);
+  const [showLogsModal, setShowLogsModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/materi');
+      if (res.data && res.data.length > 0) {
+        const mapped = res.data.map((m: any) => ({
+          id: m.id,
+          materi: m.nama,
+          kursus: m.mataKuliah?.nama || 'General',
+          type: m.videoUrl ? 'Video' : 'PDF',
+          transcript: 'done',
+          rag: 'done',
+          soal: m.refleksi ? 1 : 0,
+          status: 'Synced'
+        }));
+        setMaterials(mapped);
+      } else {
+        setMaterials(fallbackMockData);
+      }
+    } catch (err) {
+      console.error("Gagal mengambil data materi:", err);
+      setMaterials(fallbackMockData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await api.post('/admin/ai-sync');
+      if (res.data && res.data.success) {
+        setSyncLogs(res.data);
+        setShowLogsModal(true);
+        fetchMaterials();
+      }
+    } catch (err: any) {
+      console.error("Gagal sinkronisasi RAG:", err);
+      alert("Gagal melakukan sinkronisasi AI: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Count statuses
+  const syncedCount = materials.filter(m => m.status === 'Synced').length;
+  const processingCount = materials.filter(m => m.status === 'Processing').length;
+  const errorCount = materials.filter(m => m.status === 'Error').length;
 
   return (
     <>
@@ -44,8 +103,14 @@ const AIKnowledge: React.FC = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">Monitoring sistem retrieval augmented generation untuk materi kursus.</p>
           </div>
-          <Button variant="outline" size="icon" className="rounded-full h-12 w-12 text-purple-600 border-purple-100 bg-purple-50 hover:bg-purple-100 transition-all">
-            <HiOutlineArrowPath className="text-2xl animate-spin-slow" />
+          <Button 
+            onClick={handleSync}
+            disabled={syncing}
+            variant="outline" 
+            size="icon" 
+            className="rounded-full h-12 w-12 text-purple-600 border-purple-100 bg-purple-50 hover:bg-purple-100 transition-all disabled:opacity-50"
+          >
+            <HiOutlineArrowPath className={`text-2xl ${syncing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
@@ -84,45 +149,51 @@ const AIKnowledge: React.FC = () => {
           {/* Main Table */}
           <div className="col-span-9">
             <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-              <Table>
-                <TableHeader className="bg-gray-50/50">
-                  <TableRow>
-                    <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest">Nama Materi</TableHead>
-                    <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">Jenis</TableHead>
-                    <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">Transcript</TableHead>
-                    <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">RAG Index</TableHead>
-                    <TableHead className="px-6 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Soal</TableHead>
-                    <TableHead className="px-8 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Status AI</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {knowledgeData.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-gray-50/30 transition-colors">
-                      <TableCell className="px-8 py-6">
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">{item.materi}</div>
-                          <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">{item.kursus}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <Badge variant="outline" className={`font-bold text-[9px] px-2 py-0 ${item.type === 'PDF' ? 'border-red-200 text-red-600 bg-red-50' : 'border-blue-200 text-blue-600 bg-blue-50'}`}>
-                          {item.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">{getStatusIcon(item.transcript)}</TableCell>
-                      <TableCell className="px-6 py-6">{getStatusIcon(item.rag)}</TableCell>
-                      <TableCell className="px-6 py-6 text-center">
-                        <span className="text-sm font-black text-gray-900">{item.soal > 0 ? item.soal : '—'}</span>
-                      </TableCell>
-                      <TableCell className="px-8 py-6 text-center">
-                        <Badge variant={item.status === 'Synced' ? 'default' : item.status === 'Processing' ? 'secondary' : 'destructive'} className="rounded-full px-3 py-0.5 text-[9px] font-black uppercase">
-                          {item.status}
-                        </Badge>
-                      </TableCell>
+              {loading ? (
+                <div className="p-12 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Memuat data AI Knowledge Base...
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-gray-50/50">
+                    <TableRow>
+                      <TableHead className="px-8 py-5 font-bold uppercase text-[10px] tracking-widest">Nama Materi</TableHead>
+                      <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">Jenis</TableHead>
+                      <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">Transcript</TableHead>
+                      <TableHead className="px-6 py-5 font-bold uppercase text-[10px] tracking-widest">RAG Index</TableHead>
+                      <TableHead className="px-6 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Soal</TableHead>
+                      <TableHead className="px-8 py-5 text-center font-bold uppercase text-[10px] tracking-widest">Status AI</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {materials.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-gray-50/30 transition-colors">
+                        <TableCell className="px-8 py-6">
+                          <div>
+                            <div className="text-sm font-bold text-gray-900">{item.materi}</div>
+                            <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">{item.kursus}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-6">
+                          <Badge variant="outline" className={`font-bold text-[9px] px-2 py-0 ${item.type === 'PDF' ? 'border-red-200 text-red-600 bg-red-50' : 'border-blue-200 text-blue-600 bg-blue-50'}`}>
+                            {item.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-6 py-6">{getStatusIcon(item.transcript)}</TableCell>
+                        <TableCell className="px-6 py-6">{getStatusIcon(item.rag)}</TableCell>
+                        <TableCell className="px-6 py-6 text-center">
+                          <span className="text-sm font-black text-gray-900">{item.soal > 0 ? item.soal : '—'}</span>
+                        </TableCell>
+                        <TableCell className="px-8 py-6 text-center">
+                          <Badge variant={item.status === 'Synced' ? 'default' : item.status === 'Processing' ? 'secondary' : 'destructive'} className="rounded-full px-3 py-0.5 text-[9px] font-black uppercase">
+                            {item.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </Card>
           </div>
 
@@ -136,9 +207,9 @@ const AIKnowledge: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <StatRow label="TerIndex" value="9" color="text-emerald-500" />
-                <StatRow label="Proses" value="2" color="text-blue-500" />
-                <StatRow label="Error" value="1" color="text-red-500" />
+                <StatRow label="TerIndex" value={String(syncedCount)} color="text-emerald-500" />
+                <StatRow label="Proses" value={String(processingCount)} color="text-blue-500" />
+                <StatRow label="Error" value={String(errorCount)} color="text-red-500" />
               </CardContent>
             </Card>
 
@@ -150,8 +221,12 @@ const AIKnowledge: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full rounded-2xl py-6 font-bold text-xs uppercase tracking-widest shadow-xl shadow-gray-200 transition-all hover:scale-[1.02] active:scale-95">
-                  Reindex Semua
+                <Button 
+                  onClick={handleSync}
+                  disabled={syncing}
+                  className="w-full rounded-2xl py-6 font-bold text-xs uppercase tracking-widest shadow-xl shadow-gray-200 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                >
+                  {syncing ? 'Memproses Sync...' : 'Reindex Semua'}
                 </Button>
                 <Button variant="outline" className="w-full rounded-2xl py-6 font-bold text-xs uppercase tracking-widest border-gray-100 hover:bg-gray-50">
                   Retry Error
@@ -164,6 +239,65 @@ const AIKnowledge: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Sync Results Modal */}
+      {showLogsModal && syncLogs && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl rounded-[2.5rem] border-none shadow-2xl bg-white overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white">
+              <h3 className="text-2xl font-black">Laporan Sinkronisasi RAG AI</h3>
+              <p className="text-xs font-bold opacity-80 mt-1 uppercase tracking-wider">
+                {syncLogs.message || 'Sinkronisasi Selesai'}
+              </p>
+            </div>
+            <CardContent className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl text-center">
+                  <span className="text-3xl font-black text-emerald-600">{syncLogs.syncedCount}</span>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Berhasil Disinkronkan</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl text-center">
+                  <span className="text-3xl font-black text-gray-900">{syncLogs.totalCount}</span>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total Materi</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Detail Logs Per Materi</h4>
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-2 divide-y divide-gray-50">
+                  {(syncLogs.logs || []).map((log: any, index: number) => (
+                    <div key={index} className="pt-3 flex justify-between items-start gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">{log.nama}</p>
+                        <p className="text-[9px] font-mono text-gray-400 mt-0.5">{log.snippet}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <Badge className={`border-none font-black text-[8px] px-2 py-0.5 rounded-full uppercase ${
+                          log.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                        }`}>
+                          {log.status}
+                        </Badge>
+                        {log.vectorDimension && (
+                          <span className="text-[8px] font-mono text-gray-400">Dim: {log.vectorDimension}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex justify-end">
+                <Button 
+                  onClick={() => setShowLogsModal(false)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-6"
+                >
+                  Tutup Laporan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </>
   );
 };
@@ -214,3 +348,4 @@ const HiOutlineCpuChip: React.FC<any> = (props) => (
 );
 
 export default AIKnowledge;
+

@@ -25,6 +25,7 @@ model User {
   pendaftaran   Pendaftaran[]
   submissions   Submission[]
   progress      StudentProgress[]
+  ujianSubmissions UjianSubmission[]
 }
 
 model MataKuliah {
@@ -44,6 +45,7 @@ model MataKuliah {
   pertemuan         Pertemuan[]
   materi            Materi[]
   pendaftaran       Pendaftaran[]
+  ujian             Ujian?
 }
 
 model Pertemuan {
@@ -184,4 +186,27 @@ model StudentProgress {
   createdAt    DateTime   @default(now())
 
   @@unique([userId, pertemuanId])
+}
+
+model Ujian {
+  id           String            @id @default(uuid())
+  mataKuliahId String            @unique
+  mataKuliah   MataKuliah        @relation(fields: [mataKuliahId], references: [id])
+  durasi       Int               @default(90)
+  submissions  UjianSubmission[]
+  createdAt    DateTime          @default(now())
+}
+
+model UjianSubmission {
+  id        String   @id @default(uuid())
+  ujianId   String
+  ujian     Ujian    @relation(fields: [ujianId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  score     Float
+  answers   Json
+  feedback  String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, ujianId])
 }
