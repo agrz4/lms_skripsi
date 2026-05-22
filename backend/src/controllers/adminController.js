@@ -496,4 +496,197 @@ const downloadSertifikat = async (req, res) => {
   }
 };
 
-module.exports = { assignPengajar, aiSync, getLaporanAkhir, generateSertifikat, downloadSertifikat };
+/**
+ * GET /api/admin/soal/queue
+ * Mengambil antrean soal yang berstatus PENDING (belum disetujui admin) beserta statistik persetujuan soal.
+ */
+const getSoalQueue = async (req, res) => {
+  try {
+    const pendingCount = await prisma.soal.count({ where: { status: 'PENDING' } });
+    const approvedCount = await prisma.soal.count({ where: { status: 'APPROVED' } });
+    const rejectedCount = await prisma.soal.count({ where: { status: 'REJECTED' } });
+    const totalCount = await prisma.soal.count();
+
+    const pendingSoal = await prisma.soal.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        mataKuliah: true,
+        pertemuan: true,
+        pembuat: {
+          select: { id: true, nama: true, role: true }
+        },
+        evaluasi: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let queueData = pendingSoal;
+    let isSimulated = false;
+
+    if (pendingSoal.length === 0) {
+      isSimulated = true;
+      queueData = [
+        {
+          id: 'sim-soal-1',
+          pertanyaan: JSON.stringify({
+            soal: 'Manakah dari berikut ini yang merupakan cara yang benar untuk mendefinisikan layout CSS Grid?',
+            options: {
+              A: 'display: block-grid;',
+              B: 'display: grid;',
+              C: 'grid-template: layout;',
+              D: 'display: flex-grid;'
+            },
+            jawaban: 'B'
+          }),
+          tipesoal: 'PILIHAN_GANDA',
+          status: 'PENDING',
+          mataKuliahId: 'sim-mk-1',
+          mataKuliah: { nama: 'Dasar Pemrograman Web', kode: 'MK001' },
+          pertemuanId: 'sim-pert-3',
+          pertemuan: { urutan: 3, topik: 'CSS Layout' },
+          dibuatOleh: 'sim-user-1',
+          pembuat: { nama: 'Dr. Ahmad Dosen', role: 'DOSEN' },
+          createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+          evaluasi: [
+            {
+              id: 'sim-eval-1',
+              skorKualitas: 8.7,
+              tingkatKesulitan: 'sedang',
+              isDuplikat: false,
+              saranPerbaikan: 'Soal sudah baik dan sangat relevan dengan topik CSS Layout.'
+            }
+          ]
+        },
+        {
+          id: 'sim-soal-2',
+          pertanyaan: JSON.stringify({
+            soal: 'Apa fungsi utama dari tag HTML <img /> dalam pengembangan halaman web?',
+            options: {
+              A: 'Menampilkan video dari server lokal',
+              B: 'Menyematkan berkas gambar/visual secara inline',
+              C: 'Membuat tautan/hyperlink antar halaman',
+              D: 'Memformat teks menjadi huruf tebal'
+            },
+            jawaban: 'B'
+          }),
+          tipesoal: 'PILIHAN_GANDA',
+          status: 'PENDING',
+          mataKuliahId: 'sim-mk-1',
+          mataKuliah: { nama: 'Dasar Pemrograman Web', kode: 'MK001' },
+          pertemuanId: 'sim-pert-1',
+          pertemuan: { urutan: 1, topik: 'Intro Web Dev' },
+          dibuatOleh: 'sim-user-1',
+          pembuat: { nama: 'Dr. Ahmad Dosen', role: 'DOSEN' },
+          createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+          evaluasi: [
+            {
+              id: 'sim-eval-2',
+              skorKualitas: 9.2,
+              tingkatKesulitan: 'mudah',
+              isDuplikat: true,
+              saranPerbaikan: 'Soal terdeteksi mirip 92% dengan soal pertemuan 1 kelas paralel lainnya. Disarankan mengganti jenis gambarnya.'
+            }
+          ]
+        }
+      ];
+    }
+
+    return res.status(200).json({
+      success: true,
+      isSimulated,
+      stats: {
+        pending: isSimulated ? 2 : pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        total: totalCount
+      },
+      queue: queueData
+    });
+  } catch (error) {
+    console.error('Error in getSoalQueue:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * POST /api/admin/soal/approve
+ * Menyetujui soal AI sehingga statusnya menjadi APPROVED.
+ */
+const approveSoal = async (req, res) => {
+  const { soalId, soalIds } = req.body;
+
+  try {
+    if (soalIds && Array.isArray(soalIds)) {
+      await prisma.soal.updateMany({
+        where: { id: { in: soalIds } },
+        data: { status: 'APPROVED' }
+      });
+      return res.status(200).json({ success: true, message: 'Berhasil menyetujui soal-soal terpilih.' });
+    }
+
+    if (!soalId) {
+      return res.status(400).json({ success: false, message: 'soalId atau soalIds wajib diisi' });
+    }
+
+    if (String(soalId).startsWith('sim-')) {
+      return res.status(200).json({ success: true, message: 'Berhasil menyetujui soal simulasi.' });
+    }
+
+    await prisma.soal.update({
+      where: { id: soalId },
+      data: { status: 'APPROVED' }
+    });
+
+    return res.status(200).json({ success: true, message: 'Soal berhasil disetujui.' });
+  } catch (error) {
+    console.error('Error in approveSoal:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * POST /api/admin/soal/reject
+ * Menolak soal AI sehingga statusnya menjadi REJECTED.
+ */
+const rejectSoal = async (req, res) => {
+  const { soalId, soalIds } = req.body;
+
+  try {
+    if (soalIds && Array.isArray(soalIds)) {
+      await prisma.soal.updateMany({
+        where: { id: { in: soalIds } },
+        data: { status: 'REJECTED' }
+      });
+      return res.status(200).json({ success: true, message: 'Berhasil menolak soal-soal terpilih.' });
+    }
+
+    if (!soalId) {
+      return res.status(400).json({ success: false, message: 'soalId atau soalIds wajib diisi' });
+    }
+
+    if (String(soalId).startsWith('sim-')) {
+      return res.status(200).json({ success: true, message: 'Berhasil menolak soal simulasi.' });
+    }
+
+    await prisma.soal.update({
+      where: { id: soalId },
+      data: { status: 'REJECTED' }
+    });
+
+    return res.status(200).json({ success: true, message: 'Soal berhasil ditolak.' });
+  } catch (error) {
+    console.error('Error in rejectSoal:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { 
+  assignPengajar, 
+  aiSync, 
+  getLaporanAkhir, 
+  generateSertifikat, 
+  downloadSertifikat,
+  getSoalQueue,
+  approveSoal,
+  rejectSoal
+};

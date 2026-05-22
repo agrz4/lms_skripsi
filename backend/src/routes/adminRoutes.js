@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { assignPengajar, aiSync, getLaporanAkhir, generateSertifikat, downloadSertifikat } = require('../controllers/adminController');
+const { 
+  assignPengajar, 
+  aiSync, 
+  getLaporanAkhir, 
+  generateSertifikat, 
+  downloadSertifikat,
+  getSoalQueue,
+  approveSoal,
+  rejectSoal
+} = require('../controllers/adminController');
 const { authMiddleware, adminOnly } = require('../middlewares/authMiddleware');
 
 // Proteksi seluruh route admin agar membutuhkan login
@@ -21,5 +30,10 @@ router.post('/ai-sync', aiSync);
 // Route Rekap Laporan & Sertifikat Admin
 router.get('/laporan-akhir', getLaporanAkhir);
 router.post('/sertifikat/generate', generateSertifikat);
+
+// Route AI Review Queue
+router.get('/soal/queue', getSoalQueue);
+router.post('/soal/approve', approveSoal);
+router.post('/soal/reject', rejectSoal);
 
 module.exports = router;

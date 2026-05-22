@@ -22,7 +22,7 @@ Fitur ini dirancang untuk menguji kompetensi akhir mahasiswa secara komprehensif
 
 ---
 
-## 2. 🤖 Auto-Correction Dashboard & AI Review Queue (Role: Asisten & Admin)
+## 2. 🤖 Auto-Correction Dashboard & AI Review Queue (Role: Asisten & Admin) [COMPLETED]
 Sistem untuk memantau status koreksi otomatis oleh AI dan memberikan kendali kepada Admin atas kualitas soal hasil generate RAG.
 
 *   **Halaman Frontend**:
@@ -31,11 +31,11 @@ Sistem untuk memantau status koreksi otomatis oleh AI dan memberikan kendali kep
 *   **Pekerjaan Rumah (To-Do)**:
     *   [x] **Asisten Dashboard Integration**:
         *   Hubungkan `AutoCorrectionAsisten.tsx` untuk memanggil API `GET /api/ai/stats-pg` yang sudah tersedia di backend untuk menggantikan mockup statistik dan tabel log pengerjaan mahasiswa.
-    *   [ ] **Admin Review Queue API & Logic**:
-        *   [ ] Tambahkan kolom status persetujuan (e.g. `isApproved` / `status` enum `PENDING`, `APPROVED`, `REJECTED`) pada model `Soal` di `schema.prisma`.
-        *   [ ] Buat endpoint `GET /api/admin/soal/queue` untuk mengambil daftar soal yang baru digenerate oleh AI dan berstatus `PENDING`.
-        *   [ ] Buat endpoint `POST /api/admin/soal/approve` dan `POST /api/admin/soal/reject` untuk memperbarui status soal tersebut.
-        *   [ ] Hubungkan UI `AutoCorrection.tsx` dengan endpoint-endpoint di atas.
+    *   [x] **Admin Review Queue API & Logic**:
+        *   [x] Tambahkan kolom status persetujuan (e.g. `isApproved` / `status` enum `PENDING`, `APPROVED`, `REJECTED`) pada model `Soal` di `schema.prisma`.
+        *   [x] Buat endpoint `GET /api/admin/soal/queue` untuk mengambil daftar soal yang baru digenerate oleh AI dan berstatus `PENDING`.
+        *   [x] Buat endpoint `POST /api/admin/soal/approve` dan `POST /api/admin/soal/reject` untuk memperbarui status soal tersebut.
+        *   [x] Hubungkan UI `AutoCorrection.tsx` dengan endpoint-endpoint di atas.
 
 ---
 

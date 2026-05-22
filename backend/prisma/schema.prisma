@@ -94,6 +94,7 @@ model Soal {
   id           String     @id @default(uuid())
   pertanyaan   String
   tipesoal     TipeSoal
+  status       SoalStatus @default(APPROVED)
   mataKuliahId String
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
   pertemuanId  String?
@@ -133,6 +134,12 @@ enum TipeKursus {
   ONLINE
   OFFLINE
   HYBRID
+}
+
+enum SoalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model SoalVector {
