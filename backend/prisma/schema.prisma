@@ -68,16 +68,17 @@ model Pertemuan {
 }
 
 model Materi {
-  id           String     @id @default(uuid())
-  nama         String
-  pertemuanId  String
-  pertemuan    Pertemuan  @relation(fields: [pertemuanId], references: [id])
-  mataKuliahId String
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
-  fileUrl      String?
-  videoUrl     String?
-  refleksi     String?
-  createdAt    DateTime   @default(now())
+  id              String          @id @default(uuid())
+  nama            String
+  pertemuanId     String
+  pertemuan       Pertemuan       @relation(fields: [pertemuanId], references: [id])
+  mataKuliahId    String
+  mataKuliah      MataKuliah      @relation(fields: [mataKuliahId], references: [id])
+  fileUrl         String?
+  videoUrl        String?
+  refleksi        String?
+  embeddingStatus EmbeddingStatus @default(WAITING)
+  createdAt       DateTime        @default(now())
 }
 
 model Sertifikat {
@@ -140,6 +141,13 @@ enum SoalStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum EmbeddingStatus {
+  WAITING
+  PROCESSING
+  SUCCESS
+  FAILED
 }
 
 model SoalVector {

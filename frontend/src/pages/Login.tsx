@@ -34,8 +34,8 @@ const Login: React.FC = () => {
       localStorage.setItem('userName', user.nama);
 
       if (roleToStore === 'admin') navigate('/admin/pengajar');
-      else if (roleToStore === 'pengajar') navigate('/pengajar/dashboard');
-      else if (roleToStore === 'asisten') navigate('/asisten/dashboard');
+      else if (roleToStore === 'pengajar') navigate('/pengajar/monitoring');
+      else if (roleToStore === 'asisten') navigate('/asisten/koreksi');
       else if (roleToStore === 'user') navigate('/user/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');

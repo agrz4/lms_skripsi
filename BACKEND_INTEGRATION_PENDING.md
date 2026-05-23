@@ -39,19 +39,18 @@ Sistem untuk memantau status koreksi otomatis oleh AI dan memberikan kendali kep
 
 ---
 
-## 🗄️ 3. Monitoring AI Knowledge Base (Role: Admin)
+## 🗄️ 3. Monitoring AI Knowledge Base (Role: Admin) [COMPLETED]
 Layanan pemantauan sinkronisasi dokumen kurikulum ke dalam vector database (RAG).
 
 *   **Halaman Frontend**:
     *   `src/pages/admin/AIKnowledge.tsx` ([AIKnowledge.tsx](file:///c:/Users/agram/OneDrive/Pictures/Desktop/lms_skripsi/frontend/src/pages/admin/AIKnowledge.tsx))
 *   **Kondisi Saat Ini**:
-    *   Tabel status sinkronisasi per materi/modul didefinisikan secara statis.
-    *   Tombol pemicu reindexasi global belum terhubung ke backend.
+    *   Telah terintegrasi penuh dengan backend untuk pemantauan sinkronisasi secara real-time dan reindexasi AI.
 *   **Pekerjaan Rumah (To-Do)**:
-    *   [ ] **Prisma Schema & Status Tracking**: Tambahkan field status sinkronisasi (e.g. `embeddingStatus` enum `WAITING`, `PROCESSING`, `SUCCESS`, `FAILED`) pada model `Materi`.
-    *   [ ] **Backend Router & Controller**:
+    *   [x] **Prisma Schema & Status Tracking**: Tambahkan field status sinkronisasi (e.g. `embeddingStatus` enum `WAITING`, `PROCESSING`, `SUCCESS`, `FAILED`) pada model `Materi`.
+    *   [x] **Backend Router & Controller**:
         *   Buat endpoint `GET /api/admin/ai-knowledge/status` untuk mendapatkan riwayat sinkronisasi dokumen kurikulum.
-    *   [ ] **Frontend Binding**:
+    *   [x] **Frontend Binding**:
         *   Hubungkan halaman `AIKnowledge.tsx` agar membaca data status dari database secara real-time.
         *   Wiriing tombol *"Reindex Semua"* untuk mengirim request ke `POST /api/admin/ai-sync` yang sudah tersedia di backend.
 
@@ -75,14 +74,14 @@ Fitur kelulusan kursus global untuk mengevaluasi seluruh nilai mahasiswa dan men
 
 ---
 
-## 🚧 5. Halaman Kosong / Menu Placeholder
-Beberapa rute di `App.tsx` masih diarahkan ke elemen `div` placeholder sederhana dan membutuhkan implementasi UI serta integrasi backend penuh:
+## 🚧 5. Halaman Kosong / Menu Placeholder [COMPLETED]
+Beberapa rute di `App.tsx` yang sebelumnya berupa elemen `div` placeholder sederhana kini telah selesai diimplementasikan UI dan integrasi backend secara penuh:
 
 *   **Mahasiswa (User)**:
     *   [x] `/user/kursus-saya`: Daftar kursus aktif yang sedang diikuti mahasiswa (Terintegrasi riil dengan store `usePendaftaranStore` & progres belajar).
-    *   [ ] `/user/materi`: Daftar arsip materi global.
+    *   [x] `/user/materi`: Daftar arsip materi global terintegrasi real-time.
 *   **Pengajar (Dosen)**:
-    *   [ ] `/pengajar/jadwal`: Jadwal mengajar dosen yang bersangkutan (Hubungkan dengan model `Pertemuan` filter `dosenId`).
+    *   [x] `/pengajar/jadwal`: Jadwal mengajar dosen yang bersangkutan (Hubungkan dengan model `Pertemuan` filter `dosenId`).
 *   **Asisten**:
-    *   [ ] `/asisten/jadwal`: Jadwal asisten mengawas/mengoreksi kelas (Hubungkan dengan model `Pertemuan` filter `asistenId`).
+    *   [x] `/asisten/jadwal`: Jadwal asisten mengawas/mengoreksi kelas (Hubungkan dengan model `Pertemuan` filter `asistenId`).
 

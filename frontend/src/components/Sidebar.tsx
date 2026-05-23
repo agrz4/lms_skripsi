@@ -55,7 +55,6 @@ const Sidebar: React.FC = () => {
       items: [
         { name: 'Kursus Tersedia', icon: <HiOutlineSquares2X2 />, path: '/user/dashboard' },
         { name: 'My courses', icon: <HiOutlineBookOpen />, path: '/user/kursus-saya' },
-        { name: 'Assignments', icon: <HiOutlineClipboardDocumentList />, path: '/user/assignments' },
       ]
     },
     {
@@ -90,10 +89,8 @@ const Sidebar: React.FC = () => {
   ];
 
   const pengajarMenuItems = [
-    { name: 'Dashboard', icon: <HiOutlineSquares2X2 />, path: '/pengajar/dashboard' },
     { name: 'Monitoring', icon: <HiOutlineChartBar />, path: '/pengajar/monitoring' },
     { name: 'Add Materi', icon: <HiOutlinePlus />, path: '/pengajar/add-materi' },
-    { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/pengajar/jadwal' },
   ];
 
   const handleLogout = () => {

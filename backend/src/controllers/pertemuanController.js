@@ -1,10 +1,15 @@
 const prisma = require('../config/db');
 
 const getAllPertemuan = async (req, res) => {
-  const { mataKuliahId } = req.query;
+  const { mataKuliahId, dosenId, asistenId } = req.query;
   try {
+    const where = {};
+    if (mataKuliahId) where.mataKuliahId = mataKuliahId;
+    if (dosenId) where.dosenId = dosenId;
+    if (asistenId) where.asistenId = asistenId;
+
     const pertemuan = await prisma.pertemuan.findMany({
-      where: mataKuliahId ? { mataKuliahId } : {},
+      where,
       orderBy: { urutan: 'asc' },
       include: {
         mataKuliah: true,

@@ -36,6 +36,7 @@ const AIKnowledge: React.FC = () => {
   const [syncing, setSyncing] = useState<boolean>(false);
   const [syncLogs, setSyncLogs] = useState<any | null>(null);
   const [showLogsModal, setShowLogsModal] = useState<boolean>(false);
+  const [isSimulated, setIsSimulated] = useState<boolean>(false);
 
   useEffect(() => {
     fetchMaterials();
@@ -44,25 +45,18 @@ const AIKnowledge: React.FC = () => {
   const fetchMaterials = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/materi');
-      if (res.data && res.data.length > 0) {
-        const mapped = res.data.map((m: any) => ({
-          id: m.id,
-          materi: m.nama,
-          kursus: m.mataKuliah?.nama || 'General',
-          type: m.videoUrl ? 'Video' : 'PDF',
-          transcript: 'done',
-          rag: 'done',
-          soal: m.refleksi ? 1 : 0,
-          status: 'Synced'
-        }));
-        setMaterials(mapped);
+      const res = await api.get('/admin/ai-knowledge/status');
+      if (res.data && res.data.success) {
+        setMaterials(res.data.data || []);
+        setIsSimulated(!!res.data.isSimulated);
       } else {
         setMaterials(fallbackMockData);
+        setIsSimulated(true);
       }
     } catch (err) {
-      console.error("Gagal mengambil data materi:", err);
+      console.error("Gagal mengambil data status RAG:", err);
       setMaterials(fallbackMockData);
+      setIsSimulated(true);
     } finally {
       setLoading(false);
     }
@@ -86,12 +80,19 @@ const AIKnowledge: React.FC = () => {
   };
 
   // Count statuses
-  const syncedCount = materials.filter(m => m.status === 'Synced').length;
-  const processingCount = materials.filter(m => m.status === 'Processing').length;
-  const errorCount = materials.filter(m => m.status === 'Error').length;
+  const syncedCount = materials.filter(m => m.status === 'Synced' || m.status === 'SUCCESS').length;
+  const processingCount = materials.filter(m => m.status === 'Processing' || m.status === 'PROCESSING').length;
+  const errorCount = materials.filter(m => m.status === 'Error' || m.status === 'FAILED').length;
 
   return (
     <>
+      {isSimulated && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-black uppercase rounded-2xl tracking-wider flex items-center justify-between shadow-sm">
+          <span>⚠️ Belum ada sinkronisasi RAG riil atau kolom database belum di-push. Menampilkan data simulasi RAG. Silakan jalankan <code>npx prisma db push</code> di terminal WSL Anda untuk mengaktifkan database.</span>
+          <button onClick={() => setIsSimulated(false)} className="underline hover:text-amber-950 font-black ml-4">TUTUP</button>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Title Section */}

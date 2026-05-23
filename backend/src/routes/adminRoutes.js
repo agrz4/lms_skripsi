@@ -8,7 +8,8 @@ const {
   downloadSertifikat,
   getSoalQueue,
   approveSoal,
-  rejectSoal
+  rejectSoal,
+  getAIKnowledgeStatus
 } = require('../controllers/adminController');
 const { authMiddleware, adminOnly } = require('../middlewares/authMiddleware');
 
@@ -35,5 +36,8 @@ router.post('/sertifikat/generate', generateSertifikat);
 router.get('/soal/queue', getSoalQueue);
 router.post('/soal/approve', approveSoal);
 router.post('/soal/reject', rejectSoal);
+
+// Route AI Knowledge Status
+router.get('/ai-knowledge/status', getAIKnowledgeStatus);
 
 module.exports = router;
