@@ -1,9 +1,14 @@
 import React from 'react';
 import { HiOutlineMagnifyingGlass, HiOutlineBell, HiOutlineBars3BottomLeft } from 'react-icons/hi2';
+import { useAuthStore } from '../store/useAuthStore';
 
 const Navbar: React.FC = () => {
+  const { user } = useAuthStore();
   const role = localStorage.getItem('userRole') || 'admin';
   const isStudent = role === 'user' || role === 'mahasiswa';
+
+  const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.nama || 'Mahasiswa')}`;
+  const avatarUrl = user?.avatar || defaultAvatar;
 
   return (
     <div className={`h-20 flex items-center justify-between px-10 sticky top-0 z-20 transition-all ${
@@ -47,17 +52,17 @@ const Navbar: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
             <div className={`text-xs font-black uppercase tracking-tight ${isStudent ? 'text-white' : 'text-gray-900'}`}>
-               {role === 'admin' ? 'Admin' : 'Budi Santoso'}
+               {user?.nama || localStorage.getItem('userName') || 'User'}
             </div>
             <div className={`text-[9px] font-bold uppercase tracking-widest ${isStudent ? 'text-blue-100' : 'text-gray-400'}`}>
-               {role === 'admin' ? 'Super Admin' : 'Mahasiswa'}
+               {user?.gelar || (role === 'admin' ? 'Super Admin' : 'Mahasiswa')}
             </div>
           </div>
           <div className={`w-12 h-12 border-2 rounded-2xl overflow-hidden shadow-lg ${
             isStudent ? 'border-white/50 bg-white/10' : 'border-gray-100 bg-gray-50'
           }`}>
             <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${role === 'admin' ? 'Admin' : 'Mahasiswa'}`} 
+              src={avatarUrl} 
               alt="avatar" 
               className="w-full h-full object-cover"
             />

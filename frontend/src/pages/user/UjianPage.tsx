@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import api from '../../lib/api';
+import { usePendaftaranStore } from '../../store/usePendaftaranStore';
 
 interface SoalItem {
   id: string;
@@ -30,6 +31,9 @@ const UjianPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get('courseId') || '';
 
+  const { pendaftaranList, fetchMyPendaftaran } = usePendaftaranStore();
+  const [hasCheckedEnrollments, setHasCheckedEnrollments] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState('');
@@ -45,13 +49,27 @@ const UjianPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!courseId) {
-      alert('Mata Kuliah ID tidak ditemukan!');
-      navigate('/user/kursus-saya');
-      return;
+    if (courseId) {
+      fetchUjianData();
+    } else {
+      const checkEnrollments = async () => {
+        setLoading(true);
+        await fetchMyPendaftaran();
+        setHasCheckedEnrollments(true);
+        setLoading(false);
+      };
+      checkEnrollments();
     }
-    fetchUjianData();
   }, [courseId]);
+
+  // Redirect if exactly one enrollment is found
+  useEffect(() => {
+    if (!courseId && hasCheckedEnrollments && !loading) {
+      if (pendaftaranList.length === 1) {
+        navigate(`/user/ujian?courseId=${pendaftaranList[0].mataKuliahId}`, { replace: true });
+      }
+    }
+  }, [courseId, hasCheckedEnrollments, pendaftaranList, loading, navigate]);
 
   // Timer Countdown Effect
   useEffect(() => {
@@ -149,6 +167,90 @@ const UjianPage: React.FC = () => {
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Menyiapkan Lembar Soal Ujian...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle missing courseId
+  if (!courseId) {
+    if (pendaftaranList.length === 0) {
+      return (
+        <div className="p-10 bg-slate-50 min-h-screen flex items-center justify-center">
+          <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-12 text-center max-w-lg space-y-6">
+            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500">
+              <HiOutlineInformationCircle className="text-4xl" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-gray-900">Belum Mengikuti Kursus</h3>
+              <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                Anda belum terdaftar di kelas/mata kuliah manapun. Silakan daftar kelas terlebih dahulu untuk dapat mengakses ujian AI.
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate('/user/dashboard')}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs px-8 py-5 uppercase tracking-wider shadow-lg"
+            >
+              Cari Kursus
+            </Button>
+          </Card>
+        </div>
+      );
+    }
+
+    if (pendaftaranList.length === 1) {
+      // Return a temporary loader while the redirect takes effect
+      return (
+        <div className="p-10 bg-slate-50 min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Mengalihkan ke halaman ujian...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-8 bg-slate-50 min-h-screen pb-20">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900">Ujian AI - Pilih Kelas</h1>
+            <p className="text-xs text-gray-400 font-bold uppercase mt-1 tracking-wider">Silakan pilih kelas yang ingin Anda ikuti ujian akhirnya</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {pendaftaranList.map((p) => {
+              const mk = p.mataKuliah;
+              if (!mk) return null;
+              return (
+                <Card 
+                  key={p.id}
+                  className="rounded-[2rem] border-none shadow-sm bg-white p-8 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+                  onClick={() => navigate(`/user/ujian?courseId=${p.mataKuliahId}`)}
+                >
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Badge className="bg-indigo-55 text-indigo-600 border-none font-bold text-[9px] px-3 py-1 uppercase tracking-widest">
+                        {mk.kode}
+                      </Badge>
+                      <HiOutlineSparkles className="text-indigo-400 text-xl opacity-60 group-hover:scale-110 transition-all" />
+                    </div>
+                    <h3 className="text-xl font-black text-gray-900 group-hover:text-indigo-600 transition-all">
+                      {mk.nama}
+                    </h3>
+                    <p className="text-xs text-gray-400 line-clamp-2">
+                      {mk.deskripsi || 'Mata kuliah pembelajaran sistem LMS Hybrid.'}
+                    </p>
+                  </div>
+                  <div className="pt-6 mt-6 border-t border-gray-50 flex justify-end">
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-[10px] px-6 py-4 uppercase tracking-widest shadow-md">
+                      Ambil Ujian
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     );

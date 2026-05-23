@@ -38,7 +38,7 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-  const { nama, email, password, role } = req.body;
+  const { nama, email, password, role, instansi } = req.body;
 
   try {
     let user = await prisma.user.findUnique({ where: { email } });
@@ -53,7 +53,8 @@ const register = async (req, res) => {
         nama,
         email,
         password: hashedPassword,
-        role: role || 'MAHASISWA'
+        role: role || 'MAHASISWA',
+        instansi
       }
     });
 
@@ -166,4 +167,81 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { login, register, getMe };
+const updateProfile = async (req, res) => {
+  const { nama, email, instansi, passwordLama, passwordBaru } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if email is already taken by another user
+    if (email && email !== user.email) {
+      const emailExists = await prisma.user.findUnique({ where: { email } });
+      if (emailExists) {
+        return res.status(400).json({ message: 'Email sudah digunakan oleh pengguna lain' });
+      }
+    }
+
+    const updateData = {};
+    if (nama) updateData.nama = nama;
+    if (email) updateData.email = email;
+    if (instansi !== undefined) updateData.instansi = instansi;
+
+    if (passwordBaru) {
+      if (!passwordLama) {
+        return res.status(400).json({ message: 'Password lama harus diisi untuk mengubah password' });
+      }
+
+      const isMatch = await bcrypt.compare(passwordLama, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Password lama salah' });
+      }
+
+      updateData.password = await bcrypt.hash(passwordBaru, 10);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData
+    });
+
+    res.json({
+      message: 'Profile berhasil diperbarui',
+      user: {
+        id: updatedUser.id,
+        nama: updatedUser.nama,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        instansi: updatedUser.instansi
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getDemoUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        nama: true,
+        email: true,
+        role: true
+      },
+      orderBy: {
+        nama: 'asc'
+      }
+    });
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { login, register, getMe, updateProfile, getDemoUsers };

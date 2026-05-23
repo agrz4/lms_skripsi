@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import ManajemenPengajar from './pages/admin/ManajemenPengajar';
 import ManajemenKursus from './pages/admin/ManajemenKursus';
 import ManajemenJadwal from './pages/admin/ManajemenJadwal';
@@ -48,6 +49,7 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         {/* Admin Routes */}
         <Route path="/admin/pengajar" element={<ProtectedRoute allowedRole="admin"><ManajemenPengajar /></ProtectedRoute>} />
         <Route path="/admin/kursus" element={<ProtectedRoute allowedRole="admin"><ManajemenKursus /></ProtectedRoute>} />

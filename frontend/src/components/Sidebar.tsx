@@ -17,11 +17,13 @@ import {
   HiOutlineQueueList,
   HiOutlineUser
 } from 'react-icons/hi2';
+import { useAuthStore } from '../store/useAuthStore';
 
 
 
 
 const Sidebar: React.FC = () => {
+  const { user } = useAuthStore();
   const role = localStorage.getItem('userRole') || 'admin';
 
   const adminSections = [
@@ -125,17 +127,17 @@ const Sidebar: React.FC = () => {
         }`}>
           <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/50 shadow-2xl shrink-0">
             <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${role === 'admin' ? 'Admin' : (isAsisten ? 'Asisten' : 'Mahasiswa')}`} 
+              src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.nama || 'Mahasiswa')}`} 
               alt="avatar" 
               className="w-full h-full object-cover"
             />
           </div>
           <div className="overflow-hidden">
             <div className={`font-black text-xs truncate uppercase tracking-tight ${isBlueTheme ? 'text-white' : 'text-gray-900'}`}>
-               {role === 'pengajar' ? 'DR. Reza F' : (isAsisten ? 'Asisten 1' : (role === 'admin' ? 'Admin Kursus' : 'Budi Santoso'))}
+               {user?.nama || localStorage.getItem('userName') || 'User'}
             </div>
             <div className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isBlueTheme ? 'text-blue-100/70' : 'text-emerald-600'}`}>
-               {role === 'admin' ? 'Super Admin' : (role === 'pengajar' ? 'Assigned: P1, P2, P3' : (isAsisten ? 'Asisten Dosen' : 'Peserta'))}
+               {user?.gelar || (role === 'admin' ? 'Super Admin' : (role === 'pengajar' ? 'Dosen' : (isAsisten ? 'Asisten Dosen' : 'Peserta')))}
             </div>
           </div>
         </div>

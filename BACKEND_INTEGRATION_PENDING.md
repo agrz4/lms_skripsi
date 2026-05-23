@@ -19,6 +19,7 @@ Fitur ini dirancang untuk menguji kompetensi akhir mahasiswa secara komprehensif
         *   `POST /api/ujian/submit`: Menerima jawaban mahasiswa, melakukan scoring otomatis, dan menyimpan skor final ke database.
     *   [x] **Frontend Binding**: Hubungkan `UjianPage.tsx` agar mengambil soal riil dari API dan mengirimkan lembar jawaban saat submit.
     *   [x] **Unlock Logic**: Tambahkan validasi pada backend/frontend agar tombol ujian hanya aktif jika status `StudentProgress` untuk ke-14 sesi pertemuan telah bernilai `isCompleted: true`.
+    *   [x] **Deteksi Kelas Ujian**: Menambahkan pendeteksian otomatis kelas pada `UjianPage.tsx`. Jika diakses tanpa parameter `courseId` (misal dari sidebar), sistem otomatis mengarahkan ke ujian (jika hanya 1 kelas) atau menyajikan daftar kartu kelas pemilih (jika > 1 kelas).
 
 ---
 
@@ -75,13 +76,17 @@ Fitur kelulusan kursus global untuk mengevaluasi seluruh nilai mahasiswa dan men
 ---
 
 ## 🚧 5. Halaman Kosong / Menu Placeholder [COMPLETED]
-Beberapa rute di `App.tsx` yang sebelumnya berupa elemen `div` placeholder sederhana kini telah selesai diimplementasikan UI dan integrasi backend secara penuh:
+Seluruh rute menu placeholder di `App.tsx` telah diselesaikan dengan integrasi riil atau dibersihkan (dihapus) sesuai batasan menu per-role:
 
 *   **Mahasiswa (User)**:
-    *   [x] `/user/kursus-saya`: Daftar kursus aktif yang sedang diikuti mahasiswa (Terintegrasi riil dengan store `usePendaftaranStore` & progres belajar).
-    *   [x] `/user/materi`: Daftar arsip materi global terintegrasi real-time.
+    *   [x] `/register`: Pendaftaran peserta/mahasiswa baru (Selesai terintegrasi backend, menyimpan field `nama`, `email`, `instansi`, dan `password`).
+    *   [x] `/user/profile`: Pengaturan profil mahasiswa (Selesai terintegrasi backend, mendukung pembaruan nama, email, instansi, dan ganti password).
+    *   [x] Profil & Login Dinamis (Selesai menghubungkan `Sidebar` dan `Navbar` dengan store `useAuthStore` untuk menampilkan nama, gelar, dan avatar riil. Menambahkan daftar akun demo dinamis dari database pada halaman Login).
+    *   [x] `/user/kursus-saya`: Daftar kursus aktif mahasiswa (Selesai terintegrasi store `usePendaftaranStore` & progres belajar).
+    *   [x] `/user/materi`: Daftar arsip materi global (Dihapus dari menu/rute - Obsolete).
+    *   [x] `/user/assignments`: Daftar penugasan (Dihapus dari menu/rute - Obsolete).
 *   **Pengajar (Dosen)**:
-    *   [x] `/pengajar/jadwal`: Jadwal mengajar dosen yang bersangkutan (Hubungkan dengan model `Pertemuan` filter `dosenId`).
+    *   [x] `/pengajar/jadwal`: Jadwal mengajar dosen (Dihapus dari menu/rute - Obsolete).
 *   **Asisten**:
-    *   [x] `/asisten/jadwal`: Jadwal asisten mengawas/mengoreksi kelas (Hubungkan dengan model `Pertemuan` filter `asistenId`).
+    *   [x] `/asisten/jadwal`: Jadwal asisten (Dihapus dari menu/rute - Obsolete).
 

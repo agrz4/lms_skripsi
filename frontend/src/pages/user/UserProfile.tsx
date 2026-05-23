@@ -7,12 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const UserProfile: React.FC = () => {
-    const { user, fetchMe, loading } = useAuthStore();
+    const { user, fetchMe, updateProfile, loading } = useAuthStore();
     const [formData, setFormData] = React.useState({
         nama: '',
         email: '',
         instansi: ''
     });
+    const [passwordLama, setPasswordLama] = React.useState('');
+    const [passwordBaru, setPasswordBaru] = React.useState('');
+    const [konfirmasiPassword, setKonfirmasiPassword] = React.useState('');
+    const [statusMessage, setStatusMessage] = React.useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isSaving, setIsSaving] = React.useState(false);
 
     useEffect(() => {
         fetchMe();
@@ -32,7 +37,46 @@ const UserProfile: React.FC = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    if (loading) {
+    const handleSave = async () => {
+        setStatusMessage(null);
+        
+        if (!formData.nama || !formData.email) {
+            setStatusMessage({ type: 'error', text: 'Nama dan Email harus diisi.' });
+            return;
+        }
+
+        if (passwordBaru) {
+            if (!passwordLama) {
+                setStatusMessage({ type: 'error', text: 'Password lama harus diisi untuk mengubah password.' });
+                return;
+            }
+            if (passwordBaru !== konfirmasiPassword) {
+                setStatusMessage({ type: 'error', text: 'Password baru dan konfirmasi tidak cocok.' });
+                return;
+            }
+        }
+
+        setIsSaving(true);
+        const result = await updateProfile({
+            nama: formData.nama,
+            email: formData.email,
+            instansi: formData.instansi,
+            passwordLama: passwordBaru ? passwordLama : undefined,
+            passwordBaru: passwordBaru ? passwordBaru : undefined,
+        });
+
+        setIsSaving(false);
+        if (result.success) {
+            setStatusMessage({ type: 'success', text: result.message });
+            setPasswordLama('');
+            setPasswordBaru('');
+            setKonfirmasiPassword('');
+        } else {
+            setStatusMessage({ type: 'error', text: result.message });
+        }
+    };
+
+    if (loading && !formData.nama) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -61,10 +105,25 @@ const UserProfile: React.FC = () => {
                         </div>
 
                         <div className="flex-1 w-full">
-                            <div className="bg-[#7198A8]/20 border border-[#7198A8]/10 p-4 rounded-xl flex items-center gap-4 mb-8">
-                                <div className="w-6 h-6 bg-[#7198A8] rounded-full flex items-center justify-center text-white text-[10px]">✓</div>
-                                <span className="text-xs font-black text-[#51717e] uppercase tracking-widest">Data Profile: Nama · Email · Instansi</span>
-                            </div>
+                            {statusMessage ? (
+                                <div className={`p-4 rounded-xl border font-bold text-xs uppercase tracking-wider flex items-center gap-3 mb-8 ${
+                                    statusMessage.type === 'success' 
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                                        : 'bg-red-50 border-red-200 text-red-700'
+                                }`}>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] ${
+                                        statusMessage.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
+                                    }`}>
+                                        {statusMessage.type === 'success' ? '✓' : '✗'}
+                                    </div>
+                                    <span>{statusMessage.text}</span>
+                                </div>
+                            ) : (
+                                <div className="bg-[#7198A8]/20 border border-[#7198A8]/10 p-4 rounded-xl flex items-center gap-4 mb-8">
+                                    <div className="w-6 h-6 bg-[#7198A8] rounded-full flex items-center justify-center text-white text-[10px]">✓</div>
+                                    <span className="text-xs font-black text-[#51717e] uppercase tracking-widest">Data Profile: Nama · Email · Instansi</span>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
@@ -121,6 +180,8 @@ const UserProfile: React.FC = () => {
                                 <Label className="text-xs font-black text-gray-500 uppercase tracking-widest">Password Lama</Label>
                                 <Input
                                     type="password"
+                                    value={passwordLama}
+                                    onChange={(e) => setPasswordLama(e.target.value)}
                                     placeholder="********"
                                     className="bg-white border-gray-200 rounded-xl py-6 font-medium"
                                 />
@@ -129,6 +190,8 @@ const UserProfile: React.FC = () => {
                                 <Label className="text-xs font-black text-gray-500 uppercase tracking-widest">Password Baru</Label>
                                 <Input
                                     type="password"
+                                    value={passwordBaru}
+                                    onChange={(e) => setPasswordBaru(e.target.value)}
                                     placeholder="********"
                                     className="bg-white border-gray-200 rounded-xl py-6 font-medium"
                                 />
@@ -137,6 +200,8 @@ const UserProfile: React.FC = () => {
                                 <Label className="text-xs font-black text-gray-500 uppercase tracking-widest">Konfirmasi</Label>
                                 <Input
                                     type="password"
+                                    value={konfirmasiPassword}
+                                    onChange={(e) => setKonfirmasiPassword(e.target.value)}
                                     placeholder="********"
                                     className="bg-white border-gray-200 rounded-xl py-6 font-medium"
                                 />
@@ -144,8 +209,12 @@ const UserProfile: React.FC = () => {
                         </div>
 
                         <div className="flex justify-end pt-4">
-                            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-black py-7 px-12 rounded-xl shadow-xl shadow-blue-100 uppercase tracking-widest text-xs">
-                                Simpan Perubahan
+                            <Button 
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-black py-7 px-12 rounded-xl shadow-xl shadow-blue-100 uppercase tracking-widest text-xs disabled:opacity-50"
+                            >
+                                {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </Button>
                         </div>
                     </div>
