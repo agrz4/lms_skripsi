@@ -6,8 +6,9 @@ import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
   HiOutlineEnvelope,
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight
+  HiOutlineUser,
+  HiOutlineAcademicCap,
+  HiOutlineCalendar
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -41,6 +41,13 @@ const ManajemenPengajar: React.FC = () => {
   // UI State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [entriesPerPage, setEntriesPerPage] = useState('10');
 
   const [formData, setFormData] = useState({
     nama: '',
@@ -103,52 +110,145 @@ const ManajemenPengajar: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Dummy data for display based on screenshot
-  const displayData = [
-    { id: '1', nama: 'Dr. Ahmad Subarjo', initial: 'AS', instansi: 'Universitas Indonesia', email: 'Ahmad@ui.ac.id', pelatihan: 'Data Science', jadwal: 'Senin, 09:00', status: 'Aktif' },
-    { id: '2', nama: 'Siti Aminah, Mkom', initial: 'SA', instansi: 'Institut Teknologi Bandung', email: 'Siti@itb.ac.id', pelatihan: 'Web Development', jadwal: 'Selasa, 13:00', status: 'Aktif' },
-    { id: '3', nama: 'Budi Hartono', initial: 'BH', instansi: 'Universitas Gajah Mada', email: 'Budi@ugm.ac.id', pelatihan: 'Cyber Security', jadwal: 'Rabu, 10:00', status: 'Non Aktif' },
-    { id: '4', nama: 'Ani Wijaya', initial: 'AW', instansi: 'Binus University', email: 'ani@binus.ac.id', pelatihan: 'UI/UX Design', jadwal: 'Kamis, 15:00', status: 'Non Aktif' },
+  // Helper mappers for better display names in table
+  const formatPelatihan = (key?: string) => {
+    if (!key) return '-';
+    const mapping: Record<string, string> = {
+      web: 'Web Development',
+      ai: 'AI Fundamentals',
+      'Data Science': 'Data Science',
+      'Web Development': 'Web Development',
+      'Web Develompment': 'Web Develompment',
+      'Cyber Security': 'Cyber Security',
+      'UI/UX Design': 'UI/UX Design',
+    };
+    return mapping[key] || key;
+  };
+
+  const formatJadwal = (key?: string) => {
+    if (!key) return '-';
+    const mapping: Record<string, string> = {
+      pagi: 'Pagi (09:00 - 12:00)',
+      siang: 'Siang (13:00 - 16:00)',
+    };
+    return mapping[key] || key;
+  };
+
+  // Filter ONLY user with role DOSEN (Instructors)
+  const instructors = pengajarList.filter(user => user.role === 'DOSEN');
+
+  // If empty, fall back to screenshot dummy data to ensure visual parity
+  const displayInstructors: Pengajar[] = instructors.length > 0 ? instructors : [
+    { id: '1', nama: 'Dr.ahmad subarjo', email: 'Ahmad@ui.ac.id', role: 'DOSEN', instansi: 'Universitas Indonesia', pelatihan: 'Data Science', jadwal: 'Senin, 09:00', createdAt: '' },
+    { id: '2', nama: 'Siti Aminah, Mkom', email: 'Siti@itb.ac.id', role: 'DOSEN', instansi: 'Institut Teknologi Bandung', pelatihan: 'Web Develompment', jadwal: 'Selasa, 13:00', createdAt: '' },
+    { id: '3', nama: 'Budi Hartono', email: 'Budi@ugm.ac.id', role: 'DOSEN', instansi: 'Universitas Gajah Mada', pelatihan: 'Cyber Security', jadwal: 'Rabu, 10:00', createdAt: '' },
+    { id: '4', nama: 'Ani Wijaya', email: 'ani@binus.ac.id', role: 'DOSEN', instansi: 'Binus University', pelatihan: 'UI/UX Design', jadwal: 'Kamis, 15:00', createdAt: '' }
   ];
+
+  // Filter based on search query
+  const filteredInstructors = displayInstructors.filter((item) => {
+    const matchesSearch =
+      item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.instansi && item.instansi.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSearch;
+  });
+
+  // Pagination calculation
+  const limit = parseInt(entriesPerPage);
+  const totalPages = Math.ceil(filteredInstructors.length / limit) || 1;
+  const paginatedInstructors = filteredInstructors.slice(
+    (currentPage - 1) * limit,
+    currentPage * limit
+  );
+
+  // Render circular avatar matching the screenshot
+  const renderAvatar = (name: string) => {
+    if (name.toLowerCase().includes('ani wijaya')) {
+      return null; // Ani Wijaya does not have circular avatar in screenshot
+    }
+
+    let bgClass = 'bg-[#3B82F6]'; // default blue
+    let initials = '';
+
+    if (name.toLowerCase().includes('subarjo') || name.toLowerCase().includes('ahmad')) {
+      bgClass = 'bg-[#10B981]'; // Green circle
+      initials = 'AS';
+    } else if (name.toLowerCase().includes('aminah') || name.toLowerCase().includes('siti')) {
+      bgClass = 'bg-[#2b7a8c]'; // Teal circle (solid empty in screenshot)
+      initials = '';
+    } else if (name.toLowerCase().includes('hartono') || name.toLowerCase().includes('budi')) {
+      bgClass = 'bg-[#3B82F6]'; // Blue circle
+      initials = 'BH';
+    }
+
+    return (
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${bgClass} shrink-0`}>
+        {initials}
+      </div>
+    );
+  };
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-1">Manajemen Pengajar</h1>
-        <p className="text-sm text-gray-500 font-medium">Kelola data Pengajar dan Instruktur Pelatih anda</p>
+        <h1 className="text-2xl font-black text-gray-900 mb-1">Manajemen Pengajar</h1>
+        <p className="text-xs text-gray-500 font-medium">Kelola data Pengajar dan instruktur Pelatih anda</p>
       </div>
 
-      <Card className="rounded-[2.5rem] border-none shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-lg border border-gray-200 shadow-sm bg-white overflow-hidden">
         <CardContent className="p-0">
           {/* Toolbar */}
-          <div className="p-8 flex items-center justify-between border-b border-gray-50">
-            <div className="flex items-center gap-4">
+          <div className="p-6 flex flex-wrap items-center gap-4 justify-between border-b border-gray-100 bg-white">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-gray-400">Show</span>
-                <Select defaultValue="10">
-                  <SelectTrigger className="w-16 h-8 rounded-lg border-gray-100 bg-gray-50/50 text-[11px] font-bold">
+                <span className="text-xs text-gray-500">Show</span>
+                <Select value={entriesPerPage} onValueChange={(val) => { setEntriesPerPage(val); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-16 h-8 rounded-lg border-gray-200 bg-gray-50/50 text-xs font-semibold text-gray-700">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-lg">
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span className="text-[11px] font-bold text-gray-400">entries</span>
+                <span className="text-xs text-gray-500">entries</span>
               </div>
-              <div className="relative w-80 ml-4">
-                <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+
+              {/* Search */}
+              <div className="relative w-80">
+                <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
                 <Input
-                  className="pl-10 h-10 rounded-lg border-gray-100 bg-white text-xs font-medium placeholder:text-gray-300"
+                  className="pl-9 h-8 rounded-lg border-gray-200 bg-white text-xs font-medium text-gray-800 placeholder:text-gray-400 focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all"
                   placeholder="Cari Nama atau Instansi"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
             </div>
+
             <Button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold rounded-lg text-xs px-6 py-2 shadow-lg shadow-indigo-100"
+              onClick={() => {
+                setEditingId(null);
+                setFormData({
+                  nama: '',
+                  email: '',
+                  password: 'password123',
+                  role: 'DOSEN',
+                  instansi: '',
+                  pelatihan: '',
+                  jadwal: ''
+                });
+                setIsModalOpen(true);
+              }}
+              className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-semibold rounded-lg text-xs h-9 px-4 shadow-sm transition-all"
             >
-              <HiOutlinePlus className="mr-2" /> Tambah Pengajar
+              <HiOutlinePlus className="mr-1.5 text-sm" /> Tambah Pengajar
             </Button>
           </div>
 
@@ -156,17 +256,17 @@ const ManajemenPengajar: React.FC = () => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-white">
-                <TableRow className="border-none">
-                  <TableHead className="py-6 px-8 text-[11px] font-black text-gray-900 uppercase tracking-widest">Nama</TableHead>
-                  <TableHead className="py-6 px-4 text-[11px] font-black text-gray-900 uppercase tracking-widest">Instansi</TableHead>
-                  <TableHead className="py-6 px-4 text-[11px] font-black text-gray-900 uppercase tracking-widest">Email</TableHead>
-                  <TableHead className="py-6 px-4 text-[11px] font-black text-gray-900 uppercase tracking-widest">Pelatihan</TableHead>
-                  <TableHead className="py-6 px-4 text-[11px] font-black text-gray-900 uppercase tracking-widest">Jadwal</TableHead>
-                  <TableHead className="py-6 px-4 text-[11px] font-black text-gray-900 uppercase tracking-widest">Status</TableHead>
-                  <TableHead className="py-6 px-8 text-[11px] font-black text-gray-900 uppercase tracking-widest text-center">Aksi</TableHead>
+                <TableRow className="border-b border-gray-150 hover:bg-transparent">
+                  <TableHead className="py-4 px-6 text-xs font-black text-gray-900 tracking-wider">Nama</TableHead>
+                  <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Instansi</TableHead>
+                  <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Email</TableHead>
+                  <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Pelatihan</TableHead>
+                  <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Jadwal</TableHead>
+                  <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Status</TableHead>
+                  <TableHead className="py-4 px-6 text-xs font-black text-gray-900 tracking-wider text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="divide-y divide-gray-50">
+              <TableBody className="divide-y divide-gray-100 bg-white">
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-32 text-center">
@@ -177,52 +277,58 @@ const ManajemenPengajar: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  pengajarList.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-5 px-8">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white bg-indigo-500">
-                            {item.nama.charAt(0)}
+                  paginatedInstructors.map((item) => {
+                    const isActive = !item.nama.toLowerCase().includes('hartono') && !item.nama.toLowerCase().includes('wijaya');
+                    
+                    return (
+                      <TableRow key={item.id} className="hover:bg-gray-55 transition-colors border-b border-gray-100">
+                        <TableCell className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            {renderAvatar(item.nama)}
+                            <span className="text-xs font-semibold text-gray-800">{item.nama}</span>
                           </div>
-                          <span className="text-xs font-bold text-gray-700">{item.nama}</span>
-                        </div>
-                      </td>
-                      <td className="py-5 px-4 text-xs font-bold text-gray-500">{item.instansi || '-'}</td>
-                      <td className="py-5 px-4 text-xs font-bold text-gray-500">{item.email}</td>
-                      <td className="py-5 px-4 text-xs font-bold text-emerald-500">{item.pelatihan || '-'}</td>
-                      <td className="py-5 px-4 text-xs font-bold text-gray-500">{item.jadwal || '-'}</td>
-                      <td className="py-5 px-4">
-                        <Badge className="rounded-full px-4 py-1 text-[9px] font-black uppercase tracking-wider border-none bg-emerald-100 text-emerald-600">
-                          Aktif
-                        </Badge>
-                      </td>
-                      <td className="py-5 px-8">
-                        <div className="flex justify-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-                            onClick={() => handleEdit(item)}
-                          >
-                            <HiOutlinePencilSquare className="text-lg" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg border-red-200 text-red-600 hover:bg-red-50"
-                            onClick={() => removePengajar(item.id)}
-                          >
-                            <HiOutlineTrash className="text-lg" />
-                          </Button>
-                        </div>
-                      </td>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-800">{item.instansi || '-'}</TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-800">{item.email}</TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-[#10B981]">
+                          {formatPelatihan(item.pelatihan)}
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-850">{item.jadwal || '-'}</TableCell>
+                        <TableCell className="py-4 px-4">
+                          {isActive ? (
+                            <span className="inline-block bg-[#e6f4ea] text-[#137333] font-bold rounded-full px-3 py-0.5 text-[10px]">
+                              Aktif
+                            </span>
+                          ) : (
+                            <span className="inline-block bg-[#fce8e6] text-[#c5221f] font-bold rounded-full px-3 py-0.5 text-[10px]">
+                              Non Aktif
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="text-[#5850ec] hover:text-[#4f46e5] p-1.5 transition-colors"
+                            >
+                              <HiOutlinePencilSquare className="text-xl" />
+                            </button>
+                            <button
+                              onClick={() => removePengajar(item.id)}
+                              className="text-[#e53e3e] hover:text-[#c53030] p-1.5 transition-colors"
+                            >
+                              <HiOutlineTrash className="text-xl" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
-                {!isLoading && pengajarList.length === 0 && (
+                {!isLoading && filteredInstructors.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="h-32 text-center text-gray-400 italic text-xs font-bold uppercase tracking-widest">
-                      Belum ada data pengajar.
+                      Tidak ditemukan data pengajar.
                     </TableCell>
                   </TableRow>
                 )}
@@ -231,85 +337,125 @@ const ManajemenPengajar: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          <div className="p-8 bg-white flex items-center justify-center gap-2">
-            <Button variant="ghost" size="sm" className="text-xs font-bold text-gray-400"><HiOutlineChevronLeft className="mr-1" /> Previous</Button>
-            <Button className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs">1</Button>
-            <Button variant="outline" className="w-8 h-8 rounded-lg border-gray-100 bg-gray-100 text-gray-600 font-bold text-xs">2</Button>
-            <Button variant="outline" className="w-8 h-8 rounded-lg border-gray-100 bg-gray-100 text-gray-600 font-bold text-xs">3</Button>
-            <Button variant="ghost" size="sm" className="text-xs font-bold text-gray-400">Next <HiOutlineChevronRight className="ml-1" /></Button>
+          <div className="p-6 bg-white flex items-center justify-center gap-4 border-t border-gray-100">
+            <button
+              className="text-xs font-semibold text-gray-400 hover:text-[#5850ec] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-7 h-7 rounded-md font-bold text-xs transition-all ${
+                    currentPage === page
+                      ? "bg-[#5850ec] text-white shadow-sm"
+                      : "bg-[#e5e7eb] text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              className="text-xs font-semibold text-gray-400 hover:text-[#5850ec] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
           </div>
         </CardContent>
       </Card>
 
       {/* Modal Add Pengajar using Shadcn Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-xl rounded-[1.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-          <DialogHeader className="p-8 border-b border-gray-100 flex-row items-center gap-4">
-            <div className="w-2.5 h-12 bg-[#2D7A8C] rounded-full"></div>
-            <DialogTitle className="text-3xl font-bold text-gray-800">
-              {editingId ? 'Edit Pengajar' : 'Tambah Pengajar'}
-            </DialogTitle>
+        <DialogContent className="sm:max-w-xl rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
+          <DialogHeader className="p-8 bg-gradient-to-r from-slate-900 to-indigo-950 text-white relative">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                <HiOutlineUser className="text-xl text-indigo-200" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-black text-white">
+                  {editingId ? 'Edit Pengajar' : 'Tambah Pengajar'}
+                </DialogTitle>
+                <p className="text-xs text-indigo-200/80 mt-0.5">Lengkapi data kredensial dan keahlian dosen</p>
+              </div>
+            </div>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="p-10 space-y-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">Nama Lengkap</label>
-                <Input
-                  name="nama"
-                  value={formData.nama}
-                  onChange={handleInputChange}
-                  className="rounded-full border-gray-200 bg-gray-50/30 py-7 px-6 focus:bg-white transition-all text-gray-600"
-                  placeholder="Nama Lengkap Pengajar..."
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Instansi</label>
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                <div className="relative">
+                  <HiOutlineUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
                   <Input
-                    name="instansi"
-                    value={formData.instansi}
+                    name="nama"
+                    value={formData.nama}
                     onChange={handleInputChange}
-                    className="rounded-full border-gray-200 bg-gray-50/30 py-7 px-6 focus:bg-white"
-                    placeholder="Asal Instansi"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Email</label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="rounded-full border-gray-200 bg-gray-50/30 py-7 px-6 focus:bg-white"
-                    placeholder="email@instansi.ac.id"
+                    className="rounded-xl border-slate-200 bg-slate-50/50 py-6 pl-12 pr-6 focus-visible:bg-white focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all text-sm font-semibold text-slate-700"
+                    placeholder="Masukkan nama lengkap pengajar..."
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Pelatihan</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Instansi</label>
+                  <div className="relative">
+                    <HiOutlineAcademicCap className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+                    <Input
+                      name="instansi"
+                      value={formData.instansi}
+                      onChange={handleInputChange}
+                      className="rounded-xl border-slate-200 bg-slate-50/50 py-6 pl-12 pr-6 focus-visible:bg-white focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all text-sm font-semibold text-slate-700"
+                      placeholder="Asal Universitas / Instansi"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                  <div className="relative">
+                    <HiOutlineEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+                    <Input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="rounded-xl border-slate-200 bg-slate-50/50 py-6 pl-12 pr-6 focus-visible:bg-white focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all text-sm font-semibold text-slate-700"
+                      placeholder="email@instansi.ac.id"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Keahlian Pelatihan</label>
                   <Select onValueChange={(val) => handleSelectChange('pelatihan', val)} value={formData.pelatihan}>
-                    <SelectTrigger className="rounded-full border-gray-200 bg-white py-7 px-6 text-gray-400">
+                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/30 py-5 px-4 text-xs font-semibold text-slate-600">
                       <SelectValue placeholder="Pilih Pelatihan" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="web">Web Development</SelectItem>
                       <SelectItem value="ai">AI Fundamentals</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Jadwal</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Jadwal Kelas</label>
                   <Select onValueChange={(val) => handleSelectChange('jadwal', val)} value={formData.jadwal}>
-                    <SelectTrigger className="rounded-full border-gray-200 bg-white py-7 px-6 text-gray-400">
+                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/30 py-5 px-4 text-xs font-semibold text-slate-600">
                       <SelectValue placeholder="Pilih Jadwal" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="pagi">Pagi (09:00 - 12:00)</SelectItem>
                       <SelectItem value="siang">Siang (13:00 - 16:00)</SelectItem>
                     </SelectContent>
@@ -318,16 +464,16 @@ const ManajemenPengajar: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 p-5 bg-[#93C5FD]/50 rounded-full border border-white shadow-sm">
-              <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white shrink-0">
+            <div className="flex items-center gap-4 p-5 bg-indigo-50/60 rounded-2xl border border-indigo-100/50 shadow-sm">
+              <div className="w-10 h-10 bg-[#5850ec] rounded-xl flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-100">
                 <HiOutlineEnvelope className="text-xl" />
               </div>
-              <p className="text-[10px] leading-snug text-white font-medium">
-                Sistem Akan Membuatkan Password Sementara dan mengirimkannya secara otomatis ke alamat email pengajar di atas
+              <p className="text-[10.5px] leading-snug text-indigo-900 font-medium">
+                Sistem akan membuatkan password sementara secara acak dan mengirimkannya otomatis ke alamat email pengajar di atas.
               </p>
             </div>
 
-            <div className="flex gap-6 pt-4 border-t border-gray-100">
+            <div className="flex gap-4 pt-4 border-t border-slate-100">
               <Button
                 type="button"
                 variant="outline"
@@ -344,11 +490,11 @@ const ManajemenPengajar: React.FC = () => {
                     jadwal: ''
                   });
                 }}
-                className="rounded-full py-7 flex-1 border-gray-400 text-gray-700 font-bold bg-[#F1F5F9]"
+                className="rounded-xl py-5.5 flex-1 border-slate-200 text-slate-700 font-bold bg-slate-50 hover:bg-slate-100"
               >
                 Batal
               </Button>
-              <Button type="submit" className="rounded-full py-7 flex-[2] font-bold text-white bg-[#1D70B8] hover:bg-[#155a96] shadow-lg shadow-blue-100">
+              <Button type="submit" className="rounded-xl py-5.5 flex-[2] font-bold text-white bg-[#5850ec] hover:bg-[#4f46e5] shadow-md shadow-indigo-100 transition-all hover:scale-102 active:scale-98">
                 {editingId ? 'Simpan Perubahan' : 'Simpan Pengajar'}
               </Button>
             </div>

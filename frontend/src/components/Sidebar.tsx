@@ -32,6 +32,7 @@ const Sidebar: React.FC = () => {
       items: [
         { name: 'Pengajar', icon: <HiOutlineUserGroup />, path: '/admin/pengajar' },
         { name: 'Kursus', icon: <HiOutlineBookOpen />, path: '/admin/kursus' },
+        { name: 'Course Map', icon: <HiOutlineQueueList />, path: '/admin/course-map' },
         { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/admin/jadwal' },
         { name: 'Materi', icon: <HiOutlineClipboardDocumentList />, path: '/admin/materi' },
       ]
@@ -39,7 +40,7 @@ const Sidebar: React.FC = () => {
     {
       title: 'AI MODULE',
       items: [
-        { name: 'AI Knowledge', icon: <HiOutlineCpuChip />, path: '/admin/ai-knowledge' },
+        { name: 'AI Review Queue', icon: <HiOutlineCpuChip />, path: '/admin/ai-knowledge' },
         { name: 'Auto Correction', icon: <HiOutlineSparkles />, path: '/admin/auto-correction' },
       ]
     },
@@ -102,7 +103,7 @@ const Sidebar: React.FC = () => {
 
   const isStudent = role === 'user' || role === 'mahasiswa';
   const isAsisten = role === 'asisten';
-  const isBlueTheme = isStudent || isAsisten;
+  const isBlueTheme = true; // Always blue theme to match other roles and the image design
 
   return (
     <div className={`w-80 flex flex-col h-screen sticky top-0 z-30 transition-all overflow-hidden ${
@@ -153,17 +154,17 @@ const Sidebar: React.FC = () => {
         {role === 'admin' ? (
           adminSections.map((section) => (
             <div key={section.title} className="mb-10">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-6 px-6 opacity-60">{section.title}</p>
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">{section.title}</p>
               <nav className="space-y-2">
                 {section.items.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-4 px-6 py-4 rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                      `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                         isActive
-                          ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-200'
-                          : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'
+                          ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
+                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
                       }`
                     }
                   >
@@ -200,17 +201,17 @@ const Sidebar: React.FC = () => {
           ))
         ) : role === 'pengajar' ? (
           <div className="mb-10">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-6 px-6 opacity-60">MENU UTAMA</p>
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">MENU UTAMA</p>
             <nav className="space-y-2">
               {pengajarMenuItems.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-4 px-6 py-4 rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                       isActive
-                        ? 'bg-blue-500 text-white shadow-xl shadow-blue-200'
-                        : 'text-gray-400 hover:bg-blue-50 hover:text-blue-600'
+                        ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
+                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
                     }`
                   }
                 >

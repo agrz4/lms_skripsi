@@ -66,7 +66,7 @@ const ManajemenKursus: React.FC = () => {
       {/* Top Actions */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
         <Button 
-          onClick={() => navigate('/admin/kursus/baru')}
+          onClick={() => navigate('/admin/buat-kursus')}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-6 py-6"
         >
           <HiOutlinePlus className="mr-2" /> Buat Kursus Baru
