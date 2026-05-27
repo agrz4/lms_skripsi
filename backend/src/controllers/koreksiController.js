@@ -11,10 +11,15 @@ const getKoreksiList = async (req, res) => {
     const userId = req.user.id;
     let whereClause = {};
 
-    // Filter berdasarkan role
+    // Filter berdasarkan role: Jika asisten, ambil yang di-assign ke dirinya ATAU yang belum di-assign (null) agar tidak kosong saat simulasi/demo
     if (userRole === 'ASISTEN') {
       whereClause = {
-        pertemuan: { asistenId: userId }
+        pertemuan: {
+          OR: [
+            { asistenId: userId },
+            { asistenId: null }
+          ]
+        }
       };
     } else if (userRole === 'DOSEN') {
       whereClause = {
@@ -78,12 +83,33 @@ const submitNilai = async (req, res) => {
   }
 
   try {
-    const submission = await prisma.submission.update({
-      where: { id: submissionId },
+    // Cari submission target untuk mendapatkan userId dan pertemuanId
+    const targetSub = await prisma.submission.findUnique({
+      where: { id: submissionId }
+    });
+
+    if (!targetSub) {
+      return res.status(404).json({
+        success: false,
+        message: 'Submission tidak ditemukan'
+      });
+    }
+
+    // Update semua submission untuk user & pertemuan yang sama
+    await prisma.submission.updateMany({
+      where: {
+        userId: targetSub.userId,
+        pertemuanId: targetSub.pertemuanId
+      },
       data: {
         score: numericScore,
         feedback: feedback || null
-      },
+      }
+    });
+
+    // Ambil ulang data submission target untuk respon yang kaya detail
+    const submission = await prisma.submission.findUnique({
+      where: { id: submissionId },
       include: {
         user: {
           select: { nama: true }
@@ -137,9 +163,20 @@ const getFileDetail = async (req, res) => {
       });
     }
 
+    // Ambil semua submission lain dari user yang sama untuk pertemuan yang sama
+    const allSubmissions = await prisma.submission.findMany({
+      where: {
+        userId: submission.userId,
+        pertemuanId: submission.pertemuanId
+      }
+    });
+
     res.json({
       success: true,
-      data: submission
+      data: {
+        ...submission,
+        allSubmissions
+      }
     });
   } catch (error) {
     console.error('Error in getFileDetail:', error);

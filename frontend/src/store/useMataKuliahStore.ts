@@ -10,6 +10,8 @@ export interface MataKuliah {
   deskripsi?: string;
   kapasitas?: number;
   kategori?: string;
+  level?: string;
+  warna?: string;
   statusPendaftaran?: string;
   tipeKursus?: string;
   pengajarId?: string;
@@ -19,6 +21,8 @@ export interface MataKuliah {
     pertemuan: number;
   };
   pertemuan?: any[]; // For storing detail sessions
+  prerequisites?: any[];
+  prerequisiteFor?: any[];
 }
 
 interface MataKuliahState {
@@ -27,7 +31,7 @@ interface MataKuliahState {
   isLoading: boolean;
   fetchMataKuliah: () => Promise<void>;
   fetchPublishedMataKuliah: () => Promise<void>;
-  addMataKuliah: (mk: Omit<MataKuliah, 'id' | 'createdAt'>) => Promise<void>;
+  addMataKuliah: (mk: Omit<MataKuliah, 'id' | 'createdAt' | 'prerequisites' | 'prerequisiteFor'>) => Promise<void>;
   removeMataKuliah: (id: string) => Promise<void>;
   updateMataKuliah: (id: string, updatedData: Partial<MataKuliah>) => Promise<void>;
 }

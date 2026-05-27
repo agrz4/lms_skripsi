@@ -81,7 +81,6 @@ const MateriSesi: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setScreenshotFile(file);
     setIsUploadingScreenshot(true);
     setScreenshotProgress(0);
 
@@ -96,10 +95,15 @@ const MateriSesi: React.FC = () => {
     }, 100);
 
     try {
-      const response = await api.post('/student/upload/tugas', {
-        pertemuanId,
-        type: 'SCREENSHOT',
-        fileUrl: `https://lms-storage.local/uploads/${file.name}`
+      const formData = new FormData();
+      formData.append('pertemuanId', pertemuanId || '');
+      formData.append('type', 'SCREENSHOT');
+      formData.append('file', file);
+
+      const response = await api.post('/student/upload/tugas', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       clearInterval(interval);
@@ -136,10 +140,15 @@ const MateriSesi: React.FC = () => {
     }, 100);
 
     try {
-      const response = await api.post('/student/upload/tugas', {
-        pertemuanId,
-        type: 'FILE_UPLOAD',
-        fileUrl: `https://lms-storage.local/uploads/${file.name}`
+      const formData = new FormData();
+      formData.append('pertemuanId', pertemuanId || '');
+      formData.append('type', 'FILE_UPLOAD');
+      formData.append('file', file);
+
+      const response = await api.post('/student/upload/tugas', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       clearInterval(interval);

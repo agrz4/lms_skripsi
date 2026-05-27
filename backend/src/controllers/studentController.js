@@ -117,13 +117,27 @@ Format respon WAJIB berupa JSON valid murni (tanpa tag markdown \`\`\`json) deng
  * Mengirim file tugas praktik mahasiswa (SCREENSHOT coding atau ZIP program).
  */
 const uploadTugas = async (req, res) => {
-  const { pertemuanId, type, fileUrl } = req.body;
+  const { pertemuanId, type } = req.body;
   const userId = req.user.id;
+  let fileUrl = req.body.fileUrl;
+
+  // Jika ada file yang diunggah secara riil
+  if (req.file) {
+    let subfolder = 'general';
+    if (req.file.mimetype.startsWith('video/')) {
+      subfolder = 'videos';
+    } else if (req.file.mimetype === 'application/pdf' || req.file.mimetype.includes('document') || req.file.mimetype.includes('pdf')) {
+      subfolder = 'documents';
+    } else if (req.file.mimetype.startsWith('image/')) {
+      subfolder = 'images';
+    }
+    fileUrl = `/public/uploads/${subfolder}/${req.file.filename}`;
+  }
 
   if (!pertemuanId || !type || !fileUrl) {
     return res.status(400).json({ 
       success: false, 
-      message: 'pertemuanId, type (SCREENSHOT/FILE_UPLOAD), dan fileUrl wajib diisi' 
+      message: 'pertemuanId, type (SCREENSHOT/FILE_UPLOAD), dan file unggahan wajib diisi' 
     });
   }
 

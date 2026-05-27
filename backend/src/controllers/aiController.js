@@ -78,17 +78,21 @@ const indexSoalHandler = async (req, res) => {
 
 const getStatsPGHandler = async (req, res) => {
   try {
-    const submissions = await prisma.submission.findMany({
-      where: { type: 'PILIHAN_GANDA' },
+    // Ambil data pengerjaan ujian/latihan pilihan ganda dari UjianSubmission
+    const submissions = await prisma.ujianSubmission.findMany({
       include: {
         user: { select: { id: true, nama: true, email: true } },
-        pertemuan: { include: { mataKuliah: true } }
+        ujian: {
+          include: {
+            mataKuliah: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
 
     const totalSubmissions = submissions.length;
-    const scores = submissions.map(s => s.score || s.aiScore || 0);
+    const scores = submissions.map(s => s.score || 0);
     const avgScore = totalSubmissions > 0 
       ? (scores.reduce((sum, val) => sum + val, 0) / totalSubmissions) 
       : 0;
@@ -105,6 +109,22 @@ const getStatsPGHandler = async (req, res) => {
       else if (score >= 80) distribution.excellent++;
       else if (score >= 60) distribution.good++;
       else distribution.poor++;
+    });
+
+    // Sesuaikan format data agar kompatibel dengan yang diharapkan frontend
+    const formattedSubmissions = submissions.map(sub => {
+      return {
+        id: sub.id,
+        user: sub.user,
+        pertemuan: {
+          urutan: 'UAS',
+          topik: 'Ujian Akhir Semester',
+          mataKuliah: sub.ujian?.mataKuliah || { nama: 'Mata Kuliah' }
+        },
+        score: sub.score,
+        aiScore: sub.score,
+        createdAt: sub.createdAt
+      };
     });
 
     if (totalSubmissions === 0) {
@@ -158,7 +178,7 @@ const getStatsPGHandler = async (req, res) => {
         totalSubmissions,
         averageScore: parseFloat(avgScore.toFixed(1)),
         distribution,
-        submissions
+        submissions: formattedSubmissions
       }
     });
   } catch (error) {

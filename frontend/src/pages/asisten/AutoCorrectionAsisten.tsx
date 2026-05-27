@@ -44,7 +44,7 @@ const AutoCorrectionAsisten: React.FC = () => {
           const scoreVal = sub.score !== null ? sub.score : (sub.aiScore !== null ? sub.aiScore : 0);
           
           const courseStr = sub.pertemuan && sub.pertemuan.mataKuliah 
-            ? `${sub.pertemuan.mataKuliah.nama} · P${sub.pertemuan.urutan}`
+            ? `${sub.pertemuan.mataKuliah.nama} · ${sub.pertemuan.urutan === 'UAS' ? 'UAS' : `P${sub.pertemuan.urutan}`}`
             : 'Mata Kuliah';
 
           const totalQuestions = 30;

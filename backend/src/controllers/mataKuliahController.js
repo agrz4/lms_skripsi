@@ -15,7 +15,9 @@ const getAllMataKuliah = async (req, res) => {
           include: {
             materi: true
           }
-        }
+        },
+        prerequisites: true,
+        prerequisiteFor: true
       }
     });
     res.json(mataKuliah);
@@ -26,7 +28,7 @@ const getAllMataKuliah = async (req, res) => {
 };
 
 const createMataKuliah = async (req, res) => {
-  const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId } = req.body;
+  const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna } = req.body;
   try {
     // 1. Create Mata Kuliah
     const mataKuliah = await prisma.mataKuliah.create({
@@ -36,6 +38,8 @@ const createMataKuliah = async (req, res) => {
         deskripsi: deskripsi || undefined,
         kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
         kategori: kategori || undefined,
+        level: level || undefined,
+        warna: warna || undefined,
         statusPendaftaran: statusPendaftaran || undefined,
         tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
         pengajarId: pengajarId || undefined
@@ -62,7 +66,7 @@ const createMataKuliah = async (req, res) => {
 
 const updateMataKuliah = async (req, res) => {
   const { id } = req.params;
-  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId } = req.body;
+  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, prerequisites } = req.body;
   try {
     const mataKuliah = await prisma.mataKuliah.update({
       where: { id },
@@ -73,9 +77,18 @@ const updateMataKuliah = async (req, res) => {
         deskripsi: deskripsi || undefined,
         kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
         kategori: kategori || undefined,
+        level: level || undefined,
+        warna: warna || undefined,
         statusPendaftaran: statusPendaftaran || undefined,
         tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
-        pengajarId: pengajarId || undefined
+        pengajarId: pengajarId || undefined,
+        prerequisites: prerequisites ? {
+          set: prerequisites.map(pId => ({ id: typeof pId === 'object' ? pId.id : pId }))
+        } : undefined
+      },
+      include: {
+        prerequisites: true,
+        prerequisiteFor: true
       }
     });
     res.json(mataKuliah);

@@ -36,6 +36,8 @@ model MataKuliah {
   deskripsi         String?
   kapasitas         Int?
   kategori          String?
+  level             String?  @default("Beginner")
+  warna             String?  @default("blue")
   statusPendaftaran String?
   tipeKursus        TipeKursus?
   pengajarId        String?
@@ -46,6 +48,10 @@ model MataKuliah {
   materi            Materi[]
   pendaftaran       Pendaftaran[]
   ujian             Ujian?
+
+  // self-referencing many-to-many relationship
+  prerequisites     MataKuliah[]  @relation("MataKuliahPrerequisites")
+  prerequisiteFor   MataKuliah[]  @relation("MataKuliahPrerequisites")
 }
 
 model Pertemuan {
