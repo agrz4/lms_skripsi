@@ -117,7 +117,7 @@ const ManajemenMateri: React.FC = () => {
                       </td>
                       <td className="py-5 px-8 text-right">
                         <Button 
-                          onClick={() => navigate(`/admin/materi/add?pertemuanId=${p.id}`)}
+                          onClick={() => navigate(`/admin/add-materi?pertemuanId=${p.id}`)}
                           className={`h-8 px-6 rounded-full text-[10px] font-bold uppercase transition-all ${
                             hasMateri ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'
                           }`}

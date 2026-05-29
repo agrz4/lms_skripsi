@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePengajarStore, type Pengajar } from '../../store/usePengajarStore';
+import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import {
   HiOutlinePlus,
   HiOutlineMagnifyingGlass,
@@ -37,6 +38,7 @@ import {
 
 const ManajemenPengajar: React.FC = () => {
   const { pengajarList, isLoading, fetchPengajar, addPengajar, removePengajar, updatePengajar } = usePengajarStore();
+  const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
 
   // UI State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,7 +63,8 @@ const ManajemenPengajar: React.FC = () => {
 
   useEffect(() => {
     fetchPengajar();
-  }, [fetchPengajar]);
+    fetchMataKuliah();
+  }, [fetchPengajar, fetchMataKuliah]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -439,13 +442,22 @@ const ManajemenPengajar: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Keahlian Pelatihan</label>
-                  <Select onValueChange={(val) => handleSelectChange('pelatihan', val)} value={formData.pelatihan}>
+                  <Select onValueChange={(val) => handleSelectChange('pelatihan', val)} value={formatPelatihan(formData.pelatihan)}>
                     <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/30 py-5 px-4 text-xs font-semibold text-slate-600">
                       <SelectValue placeholder="Pilih Pelatihan" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="web">Web Development</SelectItem>
-                      <SelectItem value="ai">AI Fundamentals</SelectItem>
+                      {mataKuliahList.map((mk) => (
+                        <SelectItem key={mk.id} value={mk.nama}>
+                          {mk.nama}
+                        </SelectItem>
+                      ))}
+                      {!mataKuliahList.some(mk => formatPelatihan(mk.nama) === 'Web Development') && (
+                        <SelectItem value="Web Development">Web Development</SelectItem>
+                      )}
+                      {!mataKuliahList.some(mk => formatPelatihan(mk.nama) === 'AI Fundamentals') && (
+                        <SelectItem value="AI Fundamentals">AI Fundamentals</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
