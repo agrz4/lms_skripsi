@@ -5,7 +5,7 @@ const getAllMataKuliah = async (req, res) => {
     const mataKuliah = await prisma.mataKuliah.findMany({
       include: {
         _count: {
-          select: { 
+          select: {
             pendaftaran: true,
             pertemuan: true
           }
@@ -32,8 +32,8 @@ const createMataKuliah = async (req, res) => {
   try {
     // 1. Create Mata Kuliah
     const mataKuliah = await prisma.mataKuliah.create({
-      data: { 
-        nama, 
+      data: {
+        nama,
         kode,
         deskripsi: deskripsi || undefined,
         kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
@@ -70,9 +70,9 @@ const updateMataKuliah = async (req, res) => {
   try {
     const mataKuliah = await prisma.mataKuliah.update({
       where: { id },
-      data: { 
-        nama, 
-        kode, 
+      data: {
+        nama,
+        kode,
         published,
         deskripsi: deskripsi || undefined,
         kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
@@ -110,7 +110,15 @@ const deleteMataKuliah = async (req, res) => {
 const getPublishedMataKuliah = async (req, res) => {
   try {
     const mataKuliah = await prisma.mataKuliah.findMany({
-      where: { published: true }
+      where: { published: true },
+      include: {
+        _count: {
+          select: {
+            pendaftaran: true,
+            pertemuan: true
+          }
+        }
+      }
     });
     res.json(mataKuliah);
   } catch (error) {

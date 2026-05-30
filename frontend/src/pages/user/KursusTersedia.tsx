@@ -49,6 +49,8 @@ const KursusTersedia: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
         {publishedMataKuliahList.map((mk) => {
           const fallback = getFallbackData(mk);
+          const isRegistered = pendaftaranList.some((p) => p.mataKuliahId === mk.id);
+          const participantCount = Math.max(mk._count?.pendaftaran || 0, isRegistered ? 1 : 0);
           return (
             <Card 
               key={mk.id} 
@@ -90,7 +92,7 @@ const KursusTersedia: React.FC = () => {
                        </div>
                        <div>
                           <p className="text-[9px] font-black text-gray-400 uppercase">Materi</p>
-                          <p className="text-[11px] font-black text-gray-800">{fallback.modules} Sesi</p>
+                          <p className="text-[11px] font-black text-gray-800">{(mk._count?.pertemuan || fallback.modules)} Sesi</p>
                        </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -99,7 +101,7 @@ const KursusTersedia: React.FC = () => {
                        </div>
                        <div>
                           <p className="text-[9px] font-black text-gray-400 uppercase">Peserta</p>
-                          <p className="text-[11px] font-black text-gray-800">450+ Mahasiswa</p>
+                          <p className="text-[11px] font-black text-gray-800">{participantCount} Mahasiswa</p>
                        </div>
                     </div>
                  </div>
