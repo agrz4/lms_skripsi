@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import api from '../../lib/api';
 
 const DetailKursus: React.FC = () => {
   const navigate = useNavigate();
@@ -20,16 +21,28 @@ const DetailKursus: React.FC = () => {
   const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
   const { jadwalList, fetchJadwal } = useJadwalStore();
 
+  const [summary, setSummary] = useState<{
+    avgRefleksi: number;
+    avgTugas: number;
+    completedMeetings: number;
+    totalMeetings: number;
+    examScore: number | null;
+  } | null>(null);
+
   useEffect(() => {
     fetchMataKuliah();
     if (courseId) {
       fetchJadwal(courseId);
+      api.get(`/student/course-summary/${courseId}`)
+        .then(res => setSummary(res.data))
+        .catch(err => console.error('Failed to fetch course summary', err));
     }
   }, [courseId, fetchMataKuliah, fetchJadwal]);
 
   const course = mataKuliahList.find(mk => mk.id === courseId);
-  const completedSessions = jadwalList.filter(s => s.tgl && s.topik).length;
-  const progressPercent = Math.round((completedSessions / 14) * 100);
+  const completedSessions = summary ? summary.completedMeetings : jadwalList.filter(s => s.tgl && s.topik).length;
+  const totalSessionsCount = summary ? summary.totalMeetings : 14;
+  const progressPercent = Math.round((completedSessions / totalSessionsCount) * 100);
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
@@ -47,8 +60,8 @@ const DetailKursus: React.FC = () => {
           </div>
           <div className="w-full md:w-[350px]">
              <div className="flex justify-between items-end mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Progress Belajar</span>
-                <span className="text-xs font-black">{completedSessions}/14 Sesi</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Progress Belajar</span>
+                 <span className="text-xs font-black">{completedSessions}/{totalSessionsCount} Sesi</span>
              </div>
              <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div 
@@ -129,25 +142,25 @@ const DetailKursus: React.FC = () => {
             <h2 className="text-xl font-black text-gray-900 mb-8">Progress Kursus</h2>
             <div className="space-y-6">
                <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    <span>Pertemuan Selesai</span>
-                    <span className="text-indigo-600">{completedSessions}/14</span>
-                 </div>
-                 <Progress value={progressPercent} className="h-2 bg-gray-100" />
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                     <span>Pertemuan Selesai</span>
+                     <span className="text-indigo-600">{completedSessions}/{totalSessionsCount}</span>
+                  </div>
+                  <Progress value={progressPercent} className="h-2 bg-gray-100" />
                </div>
                <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    <span>Refleksi Submit</span>
-                    <span className="text-emerald-600">{completedSessions}/14</span>
-                 </div>
-                 <Progress value={progressPercent} className="h-2 bg-gray-100" />
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                     <span>Refleksi Submit</span>
+                     <span className="text-emerald-600">{completedSessions}/{totalSessionsCount}</span>
+                  </div>
+                  <Progress value={progressPercent} className="h-2 bg-gray-100" />
                </div>
                <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    <span>Latihan Selesai</span>
-                    <span className="text-amber-600">{completedSessions}/14</span>
-                 </div>
-                 <Progress value={progressPercent} className="h-2 bg-gray-100" />
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                     <span>Latihan Selesai</span>
+                     <span className="text-amber-600">{completedSessions}/{totalSessionsCount}</span>
+                  </div>
+                  <Progress value={progressPercent} className="h-2 bg-gray-100" />
                </div>
             </div>
           </Card>
@@ -160,15 +173,15 @@ const DetailKursus: React.FC = () => {
             <div className="divide-y divide-gray-50">
                <div className="p-6 flex justify-between items-center">
                   <span className="text-xs font-bold text-gray-500">Rata Latihan PG</span>
-                  <span className="text-lg font-black text-gray-900">88.5</span>
+                  <span className="text-lg font-black text-gray-900">{summary && summary.avgTugas !== null ? summary.avgTugas : '—'}</span>
                </div>
                <div className="p-6 flex justify-between items-center">
                   <span className="text-xs font-bold text-gray-500">Rata Refleksi</span>
-                  <span className="text-lg font-black text-gray-900">90.2</span>
+                  <span className="text-lg font-black text-gray-900">{summary && summary.avgRefleksi !== null ? summary.avgRefleksi : '—'}</span>
                </div>
                <div className="p-6 flex justify-between items-center">
                   <span className="text-xs font-bold text-gray-500">Ujian AI</span>
-                  <span className="text-lg font-black text-gray-300">—</span>
+                  <span className="text-lg font-black text-gray-900">{summary && summary.examScore !== null ? summary.examScore : '—'}</span>
                </div>
             </div>
           </Card>

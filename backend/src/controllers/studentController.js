@@ -291,4 +291,85 @@ const getSubmissions = async (req, res) => {
   }
 };
 
-module.exports = { submitRefleksi, uploadTugas, updateProgress, getProgress, getSubmissions };
+const getCourseSummary = async (req, res) => {
+  const userId = req.user.id;
+  const { courseId } = req.params;
+
+  if (!courseId) {
+    return res.status(400).json({ success: false, message: 'courseId wajib diisi' });
+  }
+
+  try {
+    // 1. Get all submissions of this user in this course
+    const submissions = await prisma.submission.findMany({
+      where: {
+        userId,
+        pertemuan: {
+          mataKuliahId: courseId
+        }
+      }
+    });
+
+    const refleksiSubmissions = submissions.filter(s => s.type === 'REFLEKSI');
+    const avgRefleksi = refleksiSubmissions.length > 0
+      ? (refleksiSubmissions.reduce((acc, curr) => acc + (curr.score !== null ? curr.score : (curr.aiScore || 0)), 0) / refleksiSubmissions.length)
+      : 0;
+
+    const tugasSubmissions = submissions.filter(s => s.type === 'SCREENSHOT' || s.type === 'FILE_UPLOAD');
+    const avgTugas = tugasSubmissions.length > 0
+      ? (tugasSubmissions.reduce((acc, curr) => acc + (curr.score !== null ? curr.score : (curr.aiScore || 0)), 0) / tugasSubmissions.length)
+      : 0;
+
+    // 2. Get progress completed count
+    const completedProgress = await prisma.studentProgress.count({
+      where: {
+        userId,
+        pertemuan: {
+          mataKuliahId: courseId
+        },
+        isCompleted: true
+      }
+    });
+
+    // 3. Get total meetings
+    const totalMeetings = await prisma.pertemuan.count({
+      where: {
+        mataKuliahId: courseId
+      }
+    });
+
+    // 4. Get exam status / score if any
+    const ujian = await prisma.ujian.findUnique({
+      where: { mataKuliahId: courseId }
+    });
+    
+    let examScore = null;
+    if (ujian) {
+      const submissionUjian = await prisma.ujianSubmission.findUnique({
+        where: {
+          userId_ujianId: {
+            userId,
+            ujianId: ujian.id
+          }
+        }
+      });
+      if (submissionUjian) {
+        examScore = submissionUjian.score;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      avgRefleksi: Math.round(avgRefleksi * 10) / 10,
+      avgTugas: Math.round(avgTugas * 10) / 10,
+      completedMeetings: completedProgress,
+      totalMeetings: totalMeetings || 14,
+      examScore
+    });
+  } catch (error) {
+    console.error('Error in getCourseSummary:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { submitRefleksi, uploadTugas, updateProgress, getProgress, getSubmissions, getCourseSummary };

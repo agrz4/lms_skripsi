@@ -139,7 +139,13 @@ const ManajemenKursus: React.FC = () => {
                 >
                   <TableCell className="py-5 pl-8">
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-8 rounded-full ${mk.kode.startsWith('IF') ? 'bg-indigo-600' : 'bg-emerald-500'}`}></div>
+                      <div className={`w-3 h-8 rounded-full ${
+                        (mk.level || 'Beginner').toLowerCase() === 'beginner' 
+                          ? 'bg-indigo-600' 
+                          : (mk.level || 'Beginner').toLowerCase() === 'intermediate'
+                          ? 'bg-emerald-500'
+                          : 'bg-rose-500'
+                      }`}></div>
                       <div>
                         <p className="font-bold text-gray-900 leading-tight">{mk.nama}</p>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{mk.kode}</p>
@@ -148,9 +154,13 @@ const ManajemenKursus: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Badge className={`rounded-full px-4 py-1 text-[10px] font-bold uppercase border-none ${
-                      mk.kode.startsWith('IF') ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'
+                      (mk.level || 'Beginner').toLowerCase() === 'beginner' 
+                        ? 'bg-indigo-100 text-indigo-600' 
+                        : (mk.level || 'Beginner').toLowerCase() === 'intermediate'
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-rose-100 text-rose-600'
                     }`}>
-                      {mk.kode.startsWith('IF') ? 'Beginner' : 'Intermediate'}
+                      {mk.level || 'Beginner'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm font-bold text-gray-600">{pengajar?.nama || '-'}</TableCell>

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { submitRefleksi, uploadTugas, updateProgress, getProgress, getSubmissions } = require('../controllers/studentController');
+const { submitRefleksi, uploadTugas, updateProgress, getProgress, getSubmissions, getCourseSummary } = require('../controllers/studentController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
@@ -19,5 +19,8 @@ router.get('/submissions', getSubmissions);
 // Route untuk Update & Get Progres Belajar Sesi (P1-P14)
 router.post('/status/progres', updateProgress);
 router.get('/status/progres', getProgress);
+
+// Route untuk Get Ringkasan Progress & Nilai Kursus
+router.get('/course-summary/:courseId', getCourseSummary);
 
 module.exports = router;

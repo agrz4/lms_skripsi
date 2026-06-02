@@ -17,7 +17,14 @@ const getAllMataKuliah = async (req, res) => {
           }
         },
         prerequisites: true,
-        prerequisiteFor: true
+        prerequisiteFor: true,
+        pengajar: {
+          select: {
+            id: true,
+            nama: true,
+            email: true
+          }
+        }
       }
     });
     res.json(mataKuliah);
@@ -116,6 +123,13 @@ const getPublishedMataKuliah = async (req, res) => {
           select: {
             pendaftaran: true,
             pertemuan: true
+          }
+        },
+        pengajar: {
+          select: {
+            id: true,
+            nama: true,
+            email: true
           }
         }
       }

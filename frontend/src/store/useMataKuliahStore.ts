@@ -15,6 +15,11 @@ export interface MataKuliah {
   statusPendaftaran?: string;
   tipeKursus?: string;
   pengajarId?: string;
+  pengajar?: {
+    id: string;
+    nama: string;
+    email?: string;
+  };
   createdAt: string;
   _count?: {
     pendaftaran: number;

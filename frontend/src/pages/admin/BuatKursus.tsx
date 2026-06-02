@@ -32,6 +32,7 @@ const BuatKursus: React.FC = () => {
     kapasitas: 29,
     deskripsi: '',
     kategori: '',
+    level: '',
     statusPendaftaran: 'Aktif',
     tipeKursus: 'Online'
   });
@@ -87,15 +88,15 @@ const BuatKursus: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kategori</label>
-                <Select onValueChange={(val: string) => setFormData(prev => ({ ...prev, kategori: val }))}>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kategori / Level</label>
+                <Select onValueChange={(val: string) => setFormData(prev => ({ ...prev, kategori: val, level: val }))}>
                   <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
-                    <SelectValue placeholder="Pilih Kategori" />
+                    <SelectValue placeholder="Pilih Kategori / Level" />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="programming">Programming</SelectItem>
-                    <SelectItem value="design">Design</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="Beginner">Beginner</SelectItem>
+                    <SelectItem value="Intermediate">Intermediate</SelectItem>
+                    <SelectItem value="Advanced">Advanced</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
