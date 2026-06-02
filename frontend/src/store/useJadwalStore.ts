@@ -10,6 +10,7 @@ export interface Pertemuan {
   jam?: string;
   dosenId?: string;
   asistenId?: string;
+  materi?: any[];
 }
 
 interface JadwalState {

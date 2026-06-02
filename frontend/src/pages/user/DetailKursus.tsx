@@ -44,6 +44,23 @@ const DetailKursus: React.FC = () => {
   const totalSessionsCount = summary ? summary.totalMeetings : 14;
   const progressPercent = Math.round((completedSessions / totalSessionsCount) * 100);
 
+  const getSessionDescription = (pertemuan: any, isActive: boolean, isCompleted: boolean) => {
+    if (!pertemuan.materi || pertemuan.materi.length === 0) {
+      return isCompleted ? 'Review Sesi' : isActive ? 'Sesi Aktif · Menunggu Materi' : 'Belum Terbuka';
+    }
+    
+    const videoCount = pertemuan.materi.filter((m: any) => m.videoUrl).length;
+    const pdfCount = pertemuan.materi.filter((m: any) => m.fileUrl).length;
+    const hasRefleksi = pertemuan.materi.some((m: any) => m.refleksi && m.refleksi.trim());
+    
+    const parts = [];
+    if (videoCount > 0) parts.push(`${videoCount} Video`);
+    if (pdfCount > 0) parts.push(`${pdfCount} PDF`);
+    if (hasRefleksi) parts.push('Refleksi');
+    
+    return parts.length > 0 ? parts.join(' · ') : 'Review Materi';
+  };
+
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
       {/* Header Progress Section */}
@@ -105,8 +122,7 @@ const DetailKursus: React.FC = () => {
                         {isLocked && <HiOutlineLockClosed className="inline ml-2 text-sm" />}
                       </h3>
                       <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isActive ? 'text-indigo-500' : isCompleted ? 'text-emerald-600/60' : 'text-gray-400'}`}>
-                        {isCompleted ? 'Review Materi · Video · PDF · Refleksi' : 
-                         isActive ? 'Micro · 2 Video TikTok · Ada Refleksi' : 'Belum Terbuka'}
+                        {isCompleted || isActive ? getSessionDescription(s, isActive, isCompleted) : 'Belum Terbuka'}
                       </p>
                     </div>
                   </div>

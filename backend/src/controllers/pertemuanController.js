@@ -54,4 +54,25 @@ const deletePertemuan = async (req, res) => {
   }
 };
 
-module.exports = { getAllPertemuan, updatePertemuan, deletePertemuan };
+const getPertemuanById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const pertemuan = await prisma.pertemuan.findUnique({
+      where: { id },
+      include: {
+        mataKuliah: true,
+        dosen: { select: { id: true, nama: true } },
+        asisten: { select: { id: true, nama: true } },
+        materi: true
+      }
+    });
+    if (!pertemuan) {
+      return res.status(404).json({ message: 'Pertemuan tidak ditemukan' });
+    }
+    res.json(pertemuan);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getAllPertemuan, updatePertemuan, deletePertemuan, getPertemuanById };

@@ -45,15 +45,38 @@ const MateriSesi: React.FC = () => {
   // Visual feedback banner state
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Dynamic fetched pertemuan details
+  const [pertemuanDetail, setPertemuanDetail] = useState<any>(null);
+  const [progressDetail, setProgressDetail] = useState<any>(null);
+
   // Find session info
   const session = jadwalList.find(s => s.id === pertemuanId);
-  const videos = materiList.filter(m => m.videoUrl);
+  const videos = materiList.filter(m => m.videoUrl && !m.videoUrl.toLowerCase().includes('tiktok'));
+  const tiktokVideos = materiList.filter(m => m.videoUrl && m.videoUrl.toLowerCase().includes('tiktok'));
   const pdfs = materiList.filter(m => m.fileUrl);
+
+  const currentUrutan = pertemuanDetail?.urutan || session?.urutan;
+  const prevSession = currentUrutan ? jadwalList.find(s => s.urutan === currentUrutan - 1) : null;
+  const nextSession = currentUrutan ? jadwalList.find(s => s.urutan === currentUrutan + 1) : null;
 
   // Fetch materials & past submissions on load
   useEffect(() => {
     if (pertemuanId) {
       fetchMateriByPertemuan(pertemuanId);
+
+      // Fetch single pertemuan detail
+      api.get(`/pertemuan/${pertemuanId}`)
+        .then(res => setPertemuanDetail(res.data))
+        .catch(err => console.error('Failed to fetch pertemuan detail', err));
+
+      // Fetch progress list to find this meeting's progress
+      api.get('/student/status/progres')
+        .then(res => {
+          const list = res.data.data || [];
+          const prog = list.find((p: any) => p.pertemuanId === pertemuanId);
+          if (prog) setProgressDetail(prog);
+        })
+        .catch(err => console.error('Failed to fetch student progress', err));
 
       // Ambil data tugas/refleksi yang sudah dikumpulkan sebelumnya
       api.get(`/student/submissions?pertemuanId=${pertemuanId}`)
@@ -224,21 +247,32 @@ const MateriSesi: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-black text-gray-900 leading-tight text-left">
-               P{session?.urutan || '—'} — {session?.topik || 'CSS Layout & Flexbox'}
+               P{pertemuanDetail?.urutan || session?.urutan || '—'} — {pertemuanDetail?.topik || session?.topik || 'CSS Layout & Flexbox'}
             </h1>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 text-left">
-               Web Dev Bootcamp · Micro Learning · 19 Mar 2025
+               {pertemuanDetail?.mataKuliah?.nama || 'Web Dev Bootcamp'} · {pertemuanDetail?.mataKuliah?.tipeKursus || 'Online'} · {pertemuanDetail?.tgl ? new Date(pertemuanDetail.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Belum Ada Tanggal'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="bg-white border-none shadow-sm rounded-xl py-6 px-6 font-black text-xs">
-            <HiOutlineChevronLeft className="mr-2" /> P2
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white border-none shadow-lg shadow-blue-100 rounded-xl py-6 px-6 font-black text-xs">
-            P4 <HiOutlineChevronRight className="ml-2" />
-          </Button>
+          {prevSession && (
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(`/user/materi-sesi?pertemuanId=${prevSession.id}`)}
+              className="bg-white border-none shadow-sm rounded-xl py-6 px-6 font-black text-xs"
+            >
+              <HiOutlineChevronLeft className="mr-2" /> P{prevSession.urutan}
+            </Button>
+          )}
+          {nextSession && (
+            <Button 
+              onClick={() => navigate(`/user/materi-sesi?pertemuanId=${nextSession.id}`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white border-none shadow-lg shadow-blue-100 rounded-xl py-6 px-6 font-black text-xs"
+            >
+              P{nextSession.urutan} <HiOutlineChevronRight className="ml-2" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -246,14 +280,14 @@ const MateriSesi: React.FC = () => {
         {/* Main Content: Videos & Files */}
         <div className="lg:col-span-8 space-y-8">
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-10">
-            <h2 className="text-xl font-black text-gray-900 mb-8 text-left">Video Materi ({videos.length} Video)</h2>
+            <h2 className="text-xl font-black text-gray-900 mb-8 text-left">Video Materi ({videos.length + tiktokVideos.length} Video)</h2>
             
             <div className="space-y-12">
               {videos.map((v, i) => (
                 <div key={v.id} className="space-y-6">
                   <h3 className="text-sm font-black text-gray-700 text-left">Video {i + 1} — {v.nama}</h3>
                   <div className="aspect-video w-full bg-gray-100 rounded-[2rem] flex items-center justify-center border border-gray-50 overflow-hidden relative group">
-                    <HiOutlinePlayCircle className="text-8xl text-gray-300 group-hover:text-blue-500 transition-all cursor-pointer" />
+                    <HiOutlinePlayCircle className="text-8xl text-gray-300 group-hover:text-blue-500 transition-all cursor-pointer animate-pulse" />
                     <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
                       <div className="h-full bg-indigo-500 w-[40%]"></div>
                     </div>
@@ -261,19 +295,29 @@ const MateriSesi: React.FC = () => {
                 </div>
               ))}
 
-              {/* TikTok Example style as in screenshot */}
-              <div className="space-y-6">
-                 <h3 className="text-sm font-black text-gray-700 text-left">Video 2 — CSS Flexbox (TikTok)</h3>
-                 <div className="aspect-video w-full bg-gray-50 rounded-[2rem] flex items-center justify-center border-2 border-dashed border-gray-200 group cursor-pointer hover:bg-gray-100/50 transition-all">
-                    <div className="flex flex-col items-center gap-3 text-center">
-                       <HiOutlinePlayCircle className="text-6xl text-gray-300" />
-                       <div>
-                          <p className="text-xs font-black text-gray-500">tiktok.com/flexbox-guide</p>
-                          <p className="text-[10px] font-bold text-gray-400">Klik untuk buka di TikTok</p>
-                       </div>
-                    </div>
-                 </div>
-              </div>
+              {tiktokVideos.map((v, i) => (
+                <div key={v.id} className="space-y-6">
+                   <h3 className="text-sm font-black text-gray-700 text-left">Video {videos.length + i + 1} — {v.nama} (TikTok)</h3>
+                   <div 
+                     onClick={() => window.open(v.videoUrl, '_blank')}
+                     className="aspect-video w-full bg-gray-50 rounded-[2rem] flex items-center justify-center border-2 border-dashed border-gray-200 group cursor-pointer hover:bg-gray-100/50 transition-all"
+                   >
+                      <div className="flex flex-col items-center gap-3 text-center">
+                         <HiOutlinePlayCircle className="text-6xl text-gray-300 group-hover:text-indigo-500 transition-all" />
+                         <div>
+                            <p className="text-xs font-black text-gray-500">{v.videoUrl.replace('https://', '').replace('http://', '')}</p>
+                            <p className="text-[10px] font-bold text-gray-400">Klik untuk buka di TikTok</p>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+              ))}
+
+              {videos.length === 0 && tiktokVideos.length === 0 && (
+                <div className="text-center py-12 text-xs font-bold text-gray-300 italic">
+                   Belum ada video pembelajaran untuk sesi ini
+                </div>
+              )}
 
               {/* Sub Materi / PDF Section */}
               <div className="pt-10 border-t border-gray-50 space-y-6">
@@ -484,36 +528,63 @@ const MateriSesi: React.FC = () => {
           {/* Status Tracker Card */}
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white overflow-hidden">
              <div className="p-8 pb-4 text-left">
-                <h3 className="text-base font-black text-gray-900">Status P{session?.urutan}</h3>
+                <h3 className="text-base font-black text-gray-900">Status P{pertemuanDetail?.urutan || session?.urutan}</h3>
              </div>
              <div className="divide-y divide-gray-50">
-                {[
-                  { name: 'Video 1', status: '85% ditonton', color: 'text-amber-500 bg-amber-50' },
-                  { name: 'Video 2 (TikTok)', status: 'Belum', color: 'text-gray-300 bg-gray-50' },
-                  { name: 'Latihan PG', status: 'Belum', color: 'text-gray-300 bg-gray-50' },
-                  { 
-                    name: 'Upload Screenshot', 
-                    status: screenshotUrl ? 'Selesai' : 'Belum', 
-                    color: screenshotUrl ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50' 
-                  },
-                  { 
-                    name: 'Upload ZIP Program', 
-                    status: programUrl ? 'Selesai' : 'Belum', 
-                    color: programUrl ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50' 
-                  },
-                  { 
-                    name: 'Refleksi Jawaban', 
-                    status: aiScoreRef !== null ? 'Selesai' : 'Belum', 
-                    color: aiScoreRef !== null ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50' 
-                  },
-                ].map((item, idx) => (
-                  <div key={idx} className="p-6 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">{item.name}</span>
-                     <Badge className={`${item.color} border-none font-black text-[8px] px-3 py-0.5 rounded-full uppercase`}>
-                        {item.status}
-                     </Badge>
-                  </div>
-                ))}
+                {(() => {
+                  const statusItems = [];
+
+                  videos.forEach((v, idx) => {
+                    const isWatched = progressDetail && progressDetail.watchedTime >= 100;
+                    statusItems.push({
+                      name: v.nama,
+                      status: isWatched ? 'Selesai' : progressDetail?.watchedTime ? `${progressDetail.watchedTime}% ditonton` : 'Belum ditonton',
+                      color: isWatched ? 'text-emerald-500 bg-emerald-50' : progressDetail?.watchedTime ? 'text-amber-500 bg-amber-50' : 'text-gray-300 bg-gray-50'
+                    });
+                  });
+
+                  tiktokVideos.forEach((v, idx) => {
+                    const isWatched = progressDetail?.isCompleted || screenshotUrl;
+                    statusItems.push({
+                      name: `${v.nama} (TikTok)`,
+                      status: isWatched ? 'Selesai' : 'Belum',
+                      color: isWatched ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50'
+                    });
+                  });
+
+                  statusItems.push({
+                    name: 'Latihan PG',
+                    status: progressDetail?.isCompleted ? 'Selesai' : 'Belum',
+                    color: progressDetail?.isCompleted ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50'
+                  });
+
+                  statusItems.push({
+                    name: 'Upload Screenshot',
+                    status: screenshotUrl ? 'Selesai' : 'Belum',
+                    color: screenshotUrl ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50'
+                  });
+
+                  statusItems.push({
+                    name: 'Upload ZIP Program',
+                    status: programUrl ? 'Selesai' : 'Belum',
+                    color: programUrl ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50'
+                  });
+
+                  statusItems.push({
+                    name: 'Refleksi Jawaban',
+                    status: aiScoreRef !== null ? 'Selesai' : 'Belum',
+                    color: aiScoreRef !== null ? 'text-emerald-500 bg-emerald-50' : 'text-gray-300 bg-gray-50'
+                  });
+
+                  return statusItems.map((item, idx) => (
+                    <div key={idx} className="p-6 flex justify-between items-center">
+                       <span className="text-xs font-bold text-gray-500">{item.name}</span>
+                       <Badge className={`${item.color} border-none font-black text-[8px] px-3 py-0.5 rounded-full uppercase`}>
+                          {item.status}
+                       </Badge>
+                    </div>
+                  ));
+                })()}
              </div>
           </Card>
 
