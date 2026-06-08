@@ -1,816 +1,227 @@
-# 📚 LMS Hybrid - Modul Kecerdasan Artifisial (RAG)
+# 📚 Hybrid Learning Management System (LMS) - Berbasis AI (RAG & Gemini)
 
-Dokumentasi setup project dan implementasi modul AI menggunakan Retrieval-Augmented Generation (RAG) untuk evaluasi soal pada Learning Management System (LMS).
+Platform LMS Hybrid modern yang dirancang untuk mendukung berbagai metode pembelajaran (*Online Meeting*, *Micro Learning*, dan *General Learning*) serta diintegrasikan dengan kecerdasan artifisial (RAG & LLM/SLM) menggunakan model **Google Gemini AI** dan database vektor **PostgreSQL (pgvector)**.
+
+Dokumen ini merupakan panduan lengkap setup proyek, arsitektur, dan penjelasan fitur untuk keperluan penelitian/tugas akhir.
+
+> **Skripsi 2026 — Universitas Gunadarma**  
+> **Pembimbing:** Dr. Koko Bachrudin., S.Kom., MMSI
 
 ---
 
-## 🗂️ Struktur Project
+## 🗂️ Struktur Proyek
+
+Berikut adalah struktur direktori utama dari sistem LMS Hybrid yang terbagi menjadi `backend` dan `frontend`:
 
 ```
 lms-hybrid/
-├── frontend/                   # React + Vite
-│   ├── public/
+├── frontend/                   # React + Vite + TypeScript (Client)
 │   ├── src/
-│   │   ├── components/
-│   │   │   └── ai/
-│   │   │       ├── EvaluasiSoal.jsx
-│   │   │       └── HasilEvaluasi.jsx
-│   │   ├── pages/
-│   │   ├── services/
-│   │   │   └── aiService.js
-│   │   └── App.jsx
-│   ├── .env
+│   │   ├── components/         # Komponen UI Reusable (Shadcn/UI, Layouts)
+│   │   ├── layouts/            # Layout utama (AdminLayout)
+│   │   ├── lib/                # Konfigurasi Axios & utilitas (api.ts)
+│   │   ├── pages/              # Halaman dashboard berdasarkan Role
+│   │   │   ├── admin/          # Panel Admin Kursus, AI Knowledge, Auto-Correction
+│   │   │   ├── asisten/        # Panel Koreksi Asisten & Auto-Correction Log
+│   │   │   ├── pengajar/       # Panel Dosen & Monitoring Mahasiswa
+│   │   │   └── user/           # Dashboard Mahasiswa, Detail Kursus, Materi Sesi, Ujian
+│   │   ├── store/              # State Management dengan Zustand
+│   │   ├── App.tsx             # Routing & Protected Routes (App.tsx)
+│   │   └── index.css           # Styling dasar Tailwind CSS v4
 │   └── package.json
 │
-├── backend/                    # Express.js
-│   ├── src/
-│   │   ├── controllers/
-│   │   │   └── aiController.js
-│   │   ├── routes/
-│   │   │   └── aiRoutes.js
-│   │   ├── services/
-│   │   │   ├── embeddingService.js
-│   │   │   ├── ragService.js
-│   │   │   └── evaluasiService.js
-│   │   ├── middlewares/
-│   │   │   └── authMiddleware.js
-│   │   └── app.js
+├── backend/                    # Node.js + Express (Server)
 │   ├── prisma/
-│   │   └── schema.prisma
-│   ├── .env
+│   │   └── schema.prisma       # Skema Database PostgreSQL + pgvector (schema.prisma)
+│   ├── src/
+│   │   ├── config/             # Konfigurasi Database & Environment
+│   │   ├── controllers/        # Express Controllers (Logic API)
+│   │   ├── middlewares/        # Authentication, Role Checker, & File Upload
+│   │   ├── routes/             # Routing API Express
+│   │   ├── services/           # Service AI & RAG (Gemini API & pgvector)
+│   │   │   ├── embeddingService.js
+│   │   │   ├── evaluasiService.js
+│   │   │   └── ragService.js
+│   │   └── app.js              # Entrypoint Server Utama
+│   ├── .env                    # Environment Variable Backend
 │   └── package.json
 │
-└── README.md
+├── README.md                   # Dokumentasi Utama Proyek
+├── PROGRESS.md                 # Log Progress Pengerjaan Proyek
+└── BACKEND_INTEGRATION_PENDING.md # Catatan Integrasi yang Selesai/Pending
 ```
 
 ---
 
-## ⚙️ Tech Stack
+## ⚙️ Tech Stack & Spesifikasi AI
 
-| Layer | Teknologi |
-|---|---|
-| Frontend | React + Vite + Tailwind CSS |
-| Backend | Express.js |
-| ORM | Prisma |
-| Database | PostgreSQL (via Supabase) |
-| Vector DB | Supabase pgvector |
-| Embedding | OpenAI `text-embedding-3-small` |
-| LLM | OpenAI `gpt-4o-mini` |
-| Auth | JWT + bcrypt |
-
----
-
-## 🔧 Prerequisites
-
-Pastikan tools berikut sudah terinstall di komputer:
-
-- [Node.js](https://nodejs.org/) v18 atau lebih baru
-- [npm](https://www.npmjs.com/) v9 atau lebih baru
-- [Git](https://git-scm.com/)
-- Akun [Supabase](https://supabase.com/) (gratis)
-- Akun [OpenAI](https://platform.openai.com/) (untuk API key)
+| Layer | Teknologi | Deskripsi |
+|---|---|---|
+| **Frontend** | React 19 (TypeScript) + Vite | Library framework UI dengan build tool berkecepatan tinggi |
+| **Styling** | Tailwind CSS v4 + Shadcn/UI | Sistem desain modern dengan komponen UI premium |
+| **State Management** | Zustand | Manajemen state global yang ringan dan termodulasi |
+| **Backend** | Node.js + Express.js | RESTful API server dengan arsitektur bersih |
+| **ORM** | Prisma 7 | Query builder modern dan type-safe |
+| **Database** | PostgreSQL | Penyimpanan relasional utama (Dijalankan di WSL/Local) |
+| **Vector DB** | `pgvector` Extension | Ekstensi PostgreSQL untuk indexing & similarity search vektor |
+| **LLM Engine** | **Google Gemini Flash API** | Model `models/gemini-flash-latest` untuk auto-grading esai & evaluasi soal |
+| **Embedding Engine** | **Google Gemini Embedding** | Model `models/gemini-embedding-001` (Output: 768 dimensi) |
+| **Authentication** | JWT + Bcryptjs | Pengamanan rute dan hashing password pengguna |
 
 ---
 
-## 🚀 Setup Project
+## ✨ Fitur Utama Berdasarkan Peran (Roles)
 
-### 1. Clone Repository
+Sistem ini memfasilitasi 4 tingkatan akses (*roles*):
 
-```bash
-git clone https://github.com/username/lms-hybrid.git
-cd lms-hybrid
-```
+### 1. 🔑 Admin Kursus (Administrator)
+*   **Manajemen Pengguna:** CRUD data Dosen dan Asisten secara real-time.
+*   **Manajemen Kursus & Kurikulum (4-Step Wizard Flow):**
+    *   *Step 1 (Kursus):* CRUD data Mata Kuliah (Nama, Kode, Deskripsi, Level).
+    *   *Step 2 (Jadwal):* Pembagian sesi kelas, penentuan tanggal/jam, dan tugas Dosen + Asisten.
+    *   *Step 3 (Materi):* Pengunggahan bahan ajar per pertemuan.
+    *   *Step 4 (Publish):* Publikasi kursus agar bisa di-enroll oleh mahasiswa.
+*   **AI Knowledge Base:** Pemantauan real-time status indexing embedding materi (Sync Status: `WAITING`, `PROCESSING`, `SUCCESS`, `FAILED`) dan opsi untuk pemicu sinkronisasi/reindex ulang global.
+*   **Auto-Correction Queue:** Verifikasi soal yang dibuat otomatis oleh AI dengan sistem moderasi (*Approve/Reject*).
+*   **Laporan Akhir & Kelulusan:** Visualisasi nilai kumulatif, statistik lulus/tidak lulus, serta cetak/generate nomor sertifikat kelulusan digital unik.
+
+### 2. 👨‍🏫 Dosen (Pengajar)
+*   **Portal Materi Pembelajaran:** Mengunggah konten ajar sesuai kategori pertemuan:
+    *   🎥 *Online Meeting* (tautan atau rekaman Zoom).
+    *   📱 *Micro Learning* (tautan video pendek YouTube/TikTok, atau video MP4 lokal).
+    *   📄 *General Learning* (dokumen PDF materi kuliah).
+*   **Monitoring Mahasiswa:** Dashboard pemantauan perkembangan belajar mahasiswa, progres tugas, dan visualisasi nilai secara *real-time*.
+
+### 3. 🎓 Asisten (Co-Instructor)
+*   **Portal Koreksi Manual:** Review berkas pengerjaan tugas mahasiswa (teks refleksi esai, screenshot, & file ZIP tugas project).
+*   **Override & Feedback:** Memberikan umpan balik (feedback) tertulis dan mengunggah nilai final manual (0-100) untuk menimpa nilai referensi otomatis dari AI.
+*   **Monitoring Log AI:** Memantau log pengerjaan mahasiswa dan performa engine auto-correction.
+
+### 4. 👨‍🎓 Mahasiswa (Peserta Didik)
+*   **Pendaftaran & Dashboard:** Registrasi akun, pendaftaran mata kuliah aktif, dan pemantauan visual 14 sesi pertemuan yang interaktif.
+*   **Pembelajaran Interaktif:** Menonton video (Micro Learning), membaca PDF langsung pada browser via PDF Viewer, dan checklist status penyelesaian sesi otomatis.
+*   **Pengumpulan Latihan Praktik:** Upload berkas screenshot & ZIP project yang dilengkapi dengan animasi loader (0-100%).
+*   **Auto-Correction Gemini AI:** Jawaban esai reflektif dikoreksi secara instan oleh model Gemini API untuk mendapatkan skor referensi (0-100) dan umpan balik analitis.
+*   **Sistem Ujian Akhir AI:** Mengerjakan ujian akhir online (30 soal acak) dengan logika *unlock* (tombol ujian baru aktif jika ke-14 pertemuan berstatus `isCompleted`).
+*   **Sertifikasi Digital:** Mengunduh sertifikat kelulusan dalam format SVG/PDF jika dinyatakan lulus berdasarkan perhitungan nilai kumulatif (30% Refleksi + 35% Tugas + 35% Ujian).
 
 ---
 
-### 2. Setup Supabase
+## 🚀 Panduan Instalasi & Setup Proyek
 
-#### a. Buat Project Baru di Supabase
-1. Login ke [supabase.com](https://supabase.com/)
-2. Klik **New Project**
-3. Isi nama project, password database, dan pilih region terdekat
-4. Tunggu project selesai dibuat
+### 1. Prasyarat Sistem
+*   [Node.js](https://nodejs.org/) v18 atau lebih baru.
+*   [PostgreSQL](https://www.postgresql.org/) v15+ dengan ekstensi **`pgvector`** (Rekomendasi diinstal di dalam **WSL**).
+*   **Google Gemini API Key** (untuk integrasi kecerdasan buatan).
 
-#### b. Aktifkan Extension pgvector
-Buka **SQL Editor** di dashboard Supabase, lalu jalankan:
+### 2. Setup Database & pgvector (WSL / Local)
+Buka terminal database PostgreSQL (melalui psql atau DBeaver) dan jalankan perintah:
 
 ```sql
--- Aktifkan extension pgvector
+-- Buat database baru
+CREATE DATABASE lms_skripsi;
+
+-- Sambungkan ke database baru
+\c lms_skripsi
+
+-- Aktifkan ekstensi pgvector dan UUID
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ```
 
-#### c. Buat Tabel untuk RAG
-Masih di SQL Editor, jalankan query berikut:
+### 3. Setup Backend (Express Server)
 
-```sql
--- Tabel untuk menyimpan soal beserta vector embedding-nya
-CREATE TABLE soal_vectors (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  soal_id UUID NOT NULL,
-  mata_kuliah_id UUID,
-  content TEXT NOT NULL,
-  embedding VECTOR(1536),
-  metadata JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+1.  Masuk ke folder backend:
+    ```bash
+    cd backend
+    npm install
+    ```
+2.  Buat file `.env` di dalam folder `backend/` dan sesuaikan nilainya:
+    ```env
+    PORT=5000
+    NODE_ENV=development
 
--- Index untuk mempercepat pencarian similarity
-CREATE INDEX ON soal_vectors
-USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
+    # URL Database PostgreSQL
+    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/lms_skripsi?schema=public"
 
--- Function untuk similarity search
-CREATE OR REPLACE FUNCTION match_soal(
-  query_embedding VECTOR(1536),
-  match_threshold FLOAT DEFAULT 0.7,
-  match_count INT DEFAULT 5,
-  filter_mata_kuliah UUID DEFAULT NULL
-)
-RETURNS TABLE (
-  id UUID,
-  soal_id UUID,
-  content TEXT,
-  metadata JSONB,
-  similarity FLOAT
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    sv.id,
-    sv.soal_id,
-    sv.content,
-    sv.metadata,
-    1 - (sv.embedding <=> query_embedding) AS similarity
-  FROM soal_vectors sv
-  WHERE
-    1 - (sv.embedding <=> query_embedding) > match_threshold
-    AND (filter_mata_kuliah IS NULL OR sv.mata_kuliah_id = filter_mata_kuliah)
-  ORDER BY sv.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$;
-```
+    # API Key Google Gemini
+    GEMINI_API_KEY="AIzaSyD7U..."
 
-#### d. Ambil Credentials Supabase
-Buka **Project Settings > API**, catat:
-- `Project URL`
-- `anon public` key
-- `service_role` key (untuk backend)
+    # Konfigurasi Keamanan JWT
+    JWT_SECRET="rahasia_super_kuat_anda"
+    JWT_EXPIRES_IN=7d
+    ```
+3.  Jalankan migrasi Prisma untuk membuat tabel-tabel database (PENTING: Jika database berjalan di WSL, jalankan perintah ini di dalam WSL terminal):
+    ```bash
+    npx prisma migrate dev --name init
+    npx prisma generate
+    ```
+
+### 4. Setup Frontend (React Client)
+
+1.  Masuk ke folder frontend:
+    ```bash
+    cd ../frontend
+    npm install
+    ```
+2.  Secara default, client akan terhubung ke `http://localhost:5000/api` melalui modul Axios di `api.ts`.
 
 ---
 
-### 3. Setup Backend (Express.js)
+## 🏃 Menyederhanakan Menjalankan Aplikasi
 
-#### a. Install Dependencies
+Jalankan perintah development server di kedua folder secara bersamaan:
 
+**Terminal 1 (Backend):**
 ```bash
 cd backend
-npm install
-```
-
-#### b. Buat file `.env`
-
-```env
-# Server
-PORT=5000
-NODE_ENV=development
-
-# Database - Supabase
-DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres"
-DIRECT_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres"
-
-# Supabase
-SUPABASE_URL=https://[PROJECT_REF].supabase.co
-SUPABASE_SERVICE_KEY=your_service_role_key_here
-
-# OpenAI
-OPENAI_API_KEY=sk-your-openai-api-key-here
-
-# JWT
-JWT_SECRET=your_jwt_secret_key_here
-JWT_EXPIRES_IN=7d
-```
-
-#### c. Setup Prisma
-
-```bash
-# Inisialisasi Prisma (skip jika sudah ada schema.prisma)
-npx prisma init
-
-# Jalankan migrasi database
-npx prisma migrate dev --name init
-
-# Generate Prisma client
-npx prisma generate
-```
-
-#### d. Contoh `schema.prisma`
-
-```prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-
-model User {
-  id        String   @id @default(uuid())
-  nama      String
-  email     String   @unique
-  password  String
-  role      Role     @default(MAHASISWA)
-  createdAt DateTime @default(now())
-  soal      Soal[]
-}
-
-model MataKuliah {
-  id        String   @id @default(uuid())
-  nama      String
-  kode      String   @unique
-  createdAt DateTime @default(now())
-  soal      Soal[]
-}
-
-model Soal {
-  id           String     @id @default(uuid())
-  pertanyaan   String
-  tipesoal     TipeSoal
-  mataKuliahId String
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
-  dibuatOleh   String
-  pembuat      User       @relation(fields: [dibuatOleh], references: [id])
-  createdAt    DateTime   @default(now())
-  evaluasi     Evaluasi[]
-}
-
-model Evaluasi {
-  id           String   @id @default(uuid())
-  soalId       String
-  soal         Soal     @relation(fields: [soalId], references: [id])
-  skorKualitas Float
-  tingkatKesulitan String
-  isDuplikat   Boolean  @default(false)
-  saranPerbaikan String?
-  createdAt    DateTime @default(now())
-}
-
-enum Role {
-  MAHASISWA
-  DOSEN
-  ADMIN
-}
-
-enum TipeSoal {
-  PILIHAN_GANDA
-  ESSAY
-  BENAR_SALAH
-}
-```
-
-#### e. Install Dependencies Backend
-
-```bash
-npm install express prisma @prisma/client @supabase/supabase-js openai jsonwebtoken bcryptjs cors dotenv
-npm install --save-dev nodemon
-```
-
-#### f. Jalankan Backend
-
-```bash
-# Development
 npm run dev
-
-# Production
-npm start
 ```
 
----
-
-### 4. Setup Frontend (React + Vite)
-
-#### a. Install Dependencies
-
+**Terminal 2 (Frontend):**
 ```bash
 cd frontend
-npm install
-```
-
-#### b. Buat file `.env`
-
-```env
-VITE_API_URL=http://localhost:5000/api
-VITE_APP_NAME=LMS Hybrid
-```
-
-#### c. Install Dependencies Frontend
-
-```bash
-npm install axios react-router-dom tailwindcss @tailwindcss/vite
-```
-
-#### d. Jalankan Frontend
-
-```bash
 npm run dev
 ```
-
-Frontend akan berjalan di `http://localhost:5173`
+Aplikasi frontend akan tersedia di [http://localhost:5173](http://localhost:5173).
 
 ---
 
-## 🤖 Implementasi Modul AI (RAG)
+## 🤖 Mekanisme Alur Kerja Modul AI (RAG & Gemini)
 
-### Arsitektur RAG
-
+### 1. Alur Sinkronisasi & Knowledge Embedding (RAG)
 ```
-[Dosen Input Soal]
-       ↓
-[Express Backend]
-       ↓
-[Embedding Service] → Convert teks ke vector (OpenAI)
-       ↓
-[Supabase pgvector] → Simpan & cari soal serupa
-       ↓
-[RAG Service] → Retrieve konteks soal serupa
-       ↓
-[LLM Service] → Generate evaluasi dengan GPT-4o-mini
-       ↓
-[Hasil Evaluasi] → Kirim ke React Frontend
+[Bahan Ajar PDF / Video] ──> [Extract Teks & Transkrip]
+                                      │
+                                      ▼
+[Database pgvector] <── [Generate Embedding (gemini-embedding-001)]
 ```
+Materi perkuliahan yang diunggah oleh Dosen diproses secara asinkron. Teks diekstrak dan diubah menjadi vektor 768 dimensi menggunakan model `gemini-embedding-001` untuk disimpan dalam tabel `SoalVector`.
 
----
+### 2. Alur Pencarian Kemiripan (Similarity Search)
+Saat mengevaluasi soal ujian/materi baru:
+1.  Pertanyaan diubah menjadi vektor pencarian.
+2.  Melakukan perhitungan jarak kosinus (*cosine distance*) di PostgreSQL:
+    `1 - (embedding <=> query_embedding)`.
+3.  Mengambil $N$ soal dengan tingkat kemiripan tertinggi di atas threshold (0.75).
 
-### File: `backend/src/services/embeddingService.js`
-
-```javascript
-const OpenAI = require('openai');
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-/**
- * Mengubah teks soal menjadi vector embedding
- * @param {string} text - Teks soal
- * @returns {Array} - Array vector embedding (1536 dimensi)
- */
-const generateEmbedding = async (text) => {
-  try {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text,
-    });
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error('Error generating embedding:', error);
-    throw new Error('Gagal membuat embedding untuk soal');
-  }
-};
-
-module.exports = { generateEmbedding };
+### 3. Evaluasi & Auto-Correction Esai Refleksi
 ```
-
----
-
-### File: `backend/src/services/ragService.js`
-
-```javascript
-const { createClient } = require('@supabase/supabase-js');
-const { generateEmbedding } = require('./embeddingService');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
-
-/**
- * Menyimpan soal beserta embedding-nya ke vector database
- * @param {string} soalId - ID soal dari database utama
- * @param {string} content - Teks soal
- * @param {string} mataKuliahId - ID mata kuliah
- * @param {object} metadata - Data tambahan (tipe soal, dll)
- */
-const indexSoal = async (soalId, content, mataKuliahId, metadata = {}) => {
-  try {
-    const embedding = await generateEmbedding(content);
-
-    const { data, error } = await supabase
-      .from('soal_vectors')
-      .upsert({
-        soal_id: soalId,
-        mata_kuliah_id: mataKuliahId,
-        content,
-        embedding,
-        metadata,
-      });
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error indexing soal:', error);
-    throw new Error('Gagal menyimpan soal ke vector database');
-  }
-};
-
-/**
- * Mencari soal yang mirip menggunakan similarity search
- * @param {string} queryText - Teks soal yang ingin dicari kemiripannya
- * @param {number} threshold - Batas minimum similarity (0-1)
- * @param {number} limit - Jumlah maksimum hasil
- * @param {string} mataKuliahId - Filter berdasarkan mata kuliah (opsional)
- */
-const cariSoalSerupa = async (queryText, threshold = 0.75, limit = 5, mataKuliahId = null) => {
-  try {
-    const queryEmbedding = await generateEmbedding(queryText);
-
-    const { data, error } = await supabase.rpc('match_soal', {
-      query_embedding: queryEmbedding,
-      match_threshold: threshold,
-      match_count: limit,
-      filter_mata_kuliah: mataKuliahId,
-    });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error mencari soal serupa:', error);
-    throw new Error('Gagal melakukan pencarian soal serupa');
-  }
-};
-
-module.exports = { indexSoal, cariSoalSerupa };
+[Jawaban Esai Mahasiswa] ──> [Evaluasi dengan gemini-flash-latest + Konteks RAG]
+                                               │
+                                               ▼
+[Nilai Referensi & Umpan Balik] ──> [Disimpan & Ditinjau Asisten]
 ```
+Jawaban esai dikirimkan ke model `gemini-flash-latest` dengan petunjuk sistem khusus (*system prompt*) untuk memberikan penilaian yang terstruktur dalam format JSON, mengecek kesesuaian jawaban dengan materi ajar, mendeteksi plagiarism/duplikasi, serta memberikan saran perbaikan langsung kepada mahasiswa.
 
 ---
 
-### File: `backend/src/services/evaluasiService.js`
+## ⚠️ Catatan Penting & Troubleshooting (Gotchas)
 
-```javascript
-const OpenAI = require('openai');
-const { cariSoalSerupa } = require('./ragService');
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-/**
- * Mengevaluasi kualitas soal menggunakan RAG + LLM
- * @param {string} soal - Teks soal yang akan dievaluasi
- * @param {string} mataKuliah - Nama mata kuliah
- * @param {string} tipeSoal - Tipe soal (essay/pilihan_ganda/dll)
- * @param {string} mataKuliahId - ID mata kuliah untuk filter
- */
-const evaluasiSoal = async (soal, mataKuliah, tipeSoal, mataKuliahId = null) => {
-  try {
-    // Step 1: Retrieve soal serupa dari vector database (RAG)
-    const soalSerupa = await cariSoalSerupa(soal, 0.75, 5, mataKuliahId);
-
-    // Step 2: Siapkan konteks dari soal serupa
-    const konteksSoalSerupa = soalSerupa.length > 0
-      ? soalSerupa
-          .map((s, i) => `${i + 1}. "${s.content}" (similarity: ${(s.similarity * 100).toFixed(1)}%)`)
-          .join('\n')
-      : 'Tidak ada soal serupa yang ditemukan.';
-
-    // Step 3: Kirim ke LLM untuk evaluasi
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'system',
-          content: `Kamu adalah evaluator soal akademik yang berpengalaman.
-Tugasmu adalah mengevaluasi kualitas soal berdasarkan kriteria berikut:
-1. Kejelasan pertanyaan (apakah mudah dipahami)
-2. Tingkat kesulitan (mudah/sedang/sulit)
-3. Kesesuaian dengan konteks akademik
-4. Potensi duplikasi dengan soal yang sudah ada
-
-Berikan respons dalam format JSON dengan struktur:
-{
-  "skorKualitas": <angka 1-10>,
-  "tingkatKesulitan": "<mudah|sedang|sulit>",
-  "isDuplikat": <true|false>,
-  "analisis": "<penjelasan singkat evaluasi>",
-  "saranPerbaikan": "<saran perbaikan soal jika diperlukan, atau null jika sudah baik>"
-}
-
-Hanya balas dengan JSON, tanpa teks tambahan.`,
-        },
-        {
-          role: 'user',
-          content: `Mata Kuliah: ${mataKuliah}
-Tipe Soal: ${tipeSoal}
-Soal yang dievaluasi: "${soal}"
-
-Soal serupa yang sudah ada di database:
-${konteksSoalSerupa}
-
-Berikan evaluasi untuk soal di atas.`,
-        },
-      ],
-    });
-
-    // Step 4: Parse hasil evaluasi
-    const rawResult = response.choices[0].message.content.trim();
-    const hasil = JSON.parse(rawResult);
-
-    return {
-      ...hasil,
-      soalSerupa: soalSerupa.map((s) => ({
-        content: s.content,
-        similarity: parseFloat((s.similarity * 100).toFixed(1)),
-      })),
-    };
-  } catch (error) {
-    console.error('Error evaluasi soal:', error);
-    throw new Error('Gagal melakukan evaluasi soal');
-  }
-};
-
-module.exports = { evaluasiSoal };
-```
+*   **Error "pgvector extension not found"**: Terjadi karena database PostgreSQL di Windows host tidak memiliki pustaka ekstensi vector. Solusi: Gunakan PostgreSQL yang berjalan di WSL (Ubuntu) atau Docker Postgres-Vector image.
+*   **Prisma Client Error setelah Migrasi**: Pastikan untuk selalu menjalankan `npx prisma generate` di dalam terminal WSL setelah mengubah skema di `schema.prisma` agar client Javascript sinkron dengan struktur database terbaru.
+*   **Model Rate Limits**: Disarankan menggunakan model `gemini-flash-latest` untuk menjaga kecepatan respon evaluasi real-time dan menghindari pemakaian kuota API secara berlebihan selama masa pengembangan.
 
 ---
 
-### File: `backend/src/controllers/aiController.js`
-
-```javascript
-const { evaluasiSoal } = require('../services/evaluasiService');
-const { indexSoal } = require('../services/ragService');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
-
-/**
- * POST /api/ai/evaluasi
- * Mengevaluasi kualitas soal menggunakan RAG
- */
-const evaluasiSoalHandler = async (req, res) => {
-  try {
-    const { soalId, pertanyaan, mataKuliahId, mataKuliahNama, tipeSoal } = req.body;
-
-    if (!pertanyaan || !mataKuliahId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Field pertanyaan dan mataKuliahId wajib diisi',
-      });
-    }
-
-    // Jalankan evaluasi RAG
-    const hasil = await evaluasiSoal(pertanyaan, mataKuliahNama, tipeSoal, mataKuliahId);
-
-    // Simpan hasil evaluasi ke database
-    if (soalId) {
-      await prisma.evaluasi.create({
-        data: {
-          soalId,
-          skorKualitas: hasil.skorKualitas,
-          tingkatKesulitan: hasil.tingkatKesulitan,
-          isDuplikat: hasil.isDuplikat,
-          saranPerbaikan: hasil.saranPerbaikan,
-        },
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: hasil,
-    });
-  } catch (error) {
-    console.error('Error controller evaluasi:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Terjadi kesalahan pada server',
-    });
-  }
-};
-
-/**
- * POST /api/ai/index
- * Menyimpan soal ke vector database untuk keperluan RAG
- */
-const indexSoalHandler = async (req, res) => {
-  try {
-    const { soalId, pertanyaan, mataKuliahId, tipeSoal } = req.body;
-
-    if (!soalId || !pertanyaan || !mataKuliahId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Field soalId, pertanyaan, dan mataKuliahId wajib diisi',
-      });
-    }
-
-    await indexSoal(soalId, pertanyaan, mataKuliahId, { tipeSoal });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Soal berhasil diindeks ke vector database',
-    });
-  } catch (error) {
-    console.error('Error controller index:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Terjadi kesalahan pada server',
-    });
-  }
-};
-
-module.exports = { evaluasiSoalHandler, indexSoalHandler };
-```
-
----
-
-### File: `backend/src/routes/aiRoutes.js`
-
-```javascript
-const express = require('express');
-const router = express.Router();
-const { evaluasiSoalHandler, indexSoalHandler } = require('../controllers/aiController');
-const { authMiddleware, dosenOnly } = require('../middlewares/authMiddleware');
-
-// POST /api/ai/evaluasi - Evaluasi soal menggunakan RAG
-router.post('/evaluasi', authMiddleware, dosenOnly, evaluasiSoalHandler);
-
-// POST /api/ai/index - Index soal ke vector database
-router.post('/index', authMiddleware, dosenOnly, indexSoalHandler);
-
-module.exports = router;
-```
-
----
-
-### File: `frontend/src/services/aiService.js`
-
-```javascript
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-/**
- * Mengirim soal untuk dievaluasi ke backend
- */
-export const evaluasiSoal = async (payload) => {
-  const token = localStorage.getItem('token');
-  const response = await axios.post(`${API_URL}/ai/evaluasi`, payload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
-};
-
-/**
- * Mengindeks soal ke vector database
- */
-export const indexSoal = async (payload) => {
-  const token = localStorage.getItem('token');
-  const response = await axios.post(`${API_URL}/ai/index`, payload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
-};
-```
-
----
-
-## 📡 API Endpoints
-
-| Method | Endpoint | Deskripsi | Auth |
-|---|---|---|---|
-| `POST` | `/api/ai/evaluasi` | Evaluasi kualitas soal dengan RAG | Dosen |
-| `POST` | `/api/ai/index` | Index soal ke vector database | Dosen |
-
-### Contoh Request - Evaluasi Soal
-
-```json
-POST /api/ai/evaluasi
-Content-Type: application/json
-Authorization: Bearer <token>
-
-{
-  "soalId": "uuid-soal",
-  "pertanyaan": "Jelaskan perbedaan antara stack dan queue dalam struktur data!",
-  "mataKuliahId": "uuid-matkul",
-  "mataKuliahNama": "Struktur Data",
-  "tipeSoal": "ESSAY"
-}
-```
-
-### Contoh Response - Evaluasi Soal
-
-```json
-{
-  "success": true,
-  "data": {
-    "skorKualitas": 8.5,
-    "tingkatKesulitan": "sedang",
-    "isDuplikat": false,
-    "analisis": "Soal sudah jelas dan sesuai dengan materi struktur data. Pertanyaan menuntut pemahaman konseptual yang baik.",
-    "saranPerbaikan": "Pertimbangkan untuk menambahkan contoh penggunaan nyata agar lebih kontekstual.",
-    "soalSerupa": [
-      {
-        "content": "Apa perbedaan LIFO dan FIFO dalam struktur data?",
-        "similarity": 62.3
-      }
-    ]
-  }
-}
-```
-
----
-
-## 🔄 Alur Kerja Modul AI
-
-```
-1. Dosen membuat soal baru di LMS
-         ↓
-2. Frontend mengirim soal ke POST /api/ai/evaluasi
-         ↓
-3. Backend generate embedding soal (OpenAI)
-         ↓
-4. Cari soal serupa di Supabase pgvector
-         ↓
-5. Kirim soal + konteks soal serupa ke GPT-4o-mini
-         ↓
-6. LLM menghasilkan evaluasi (skor, kesulitan, duplikat, saran)
-         ↓
-7. Hasil disimpan ke tabel Evaluasi (Prisma/PostgreSQL)
-         ↓
-8. Frontend menampilkan hasil evaluasi ke Dosen
-         ↓
-9. Jika soal disetujui, index soal ke vector DB (POST /api/ai/index)
-```
-
----
-
-## 🧪 Testing API
-
-Gunakan [Postman](https://www.postman.com/) atau [Thunder Client](https://www.thunderclient.com/) (VS Code extension).
-
-### Langkah Testing:
-1. Login dan dapatkan JWT token
-2. Buat soal baru melalui endpoint soal
-3. Kirim soal ke endpoint `/api/ai/evaluasi`
-4. Cek hasil evaluasi yang dikembalikan
-5. Jika soal valid, index ke vector DB via `/api/ai/index`
-
----
-
-## ❗ Troubleshooting
-
-| Error | Solusi |
-|---|---|
-| `OPENAI_API_KEY invalid` | Pastikan API key di `.env` valid dan memiliki kredit |
-| `pgvector extension not found` | Jalankan `CREATE EXTENSION vector;` di Supabase SQL Editor |
-| `Prisma migrate failed` | Cek `DATABASE_URL` di `.env`, pastikan password dan project ref benar |
-| `CORS error` | Pastikan middleware CORS di Express sudah dikonfigurasi |
-| `Embedding dimension mismatch` | Pastikan model embedding konsisten (`text-embedding-3-small` = 1536 dimensi) |
-
----
-
-## 📦 Scripts
-
-```bash
-# Backend
-npm run dev          # Jalankan server development (nodemon)
-npm start            # Jalankan server production
-npx prisma studio    # Buka GUI database Prisma
-
-# Frontend
-npm run dev          # Jalankan frontend development
-npm run build        # Build untuk production
-npm run preview      # Preview build production
-```
-
----
-
-## 👥 Kontribusi Tim
-
-| Modul | Penanggung Jawab |
-|---|---|
-| UI/UX Design | Mahasiswa SI |
-| Modul Mahasiswa | Mahasiswa IF |
-| Modul Pengelola | Mahasiswa IF |
-| **Modul AI (RAG)** | **Mahasiswa IF** |
-
----
-
-## 📝 Catatan Penting
-
-- Gunakan **model `gpt-4o-mini`** untuk menekan biaya API saat development
-- **Simpan API key** di file `.env` dan pastikan file `.env` masuk ke `.gitignore`
-- **Backup database** secara berkala selama pengembangan
-- Untuk production, pertimbangkan menggunakan **rate limiting** pada endpoint AI untuk menghindari penggunaan API yang berlebihan
-
----
-
-*Dokumentasi ini dibuat untuk keperluan Tugas Akhir / Skripsi — LMS Hybrid dengan Modul Kecerdasan Artifisial*
+*Proyek ini dikembangkan untuk keperluan akademik dan penelitian skripsi Universitas Gunadarma.*
