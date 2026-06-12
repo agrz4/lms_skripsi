@@ -31,7 +31,13 @@ const mockFallbackTasks = [
     pertemuan: {
       urutan: 3,
       mataKuliah: {
-        nama: "Desain Web & Frontend"
+        nama: "Desain Web & Frontend",
+        pengajar: {
+          nama: "Dr. Ahmad Dosen"
+        }
+      },
+      dosen: {
+        nama: "Dr. Ahmad Dosen"
       }
     }
   },
@@ -51,7 +57,13 @@ const mockFallbackTasks = [
     pertemuan: {
       urutan: 2,
       mataKuliah: {
-        nama: "Desain Web & Frontend"
+        nama: "Desain Web & Frontend",
+        pengajar: {
+          nama: "Dr. Ahmad Dosen"
+        }
+      },
+      dosen: {
+        nama: "Dr. Ahmad Dosen"
       }
     }
   },
@@ -71,7 +83,13 @@ const mockFallbackTasks = [
     pertemuan: {
       urutan: 4,
       mataKuliah: {
-        nama: "Desain Web & Frontend"
+        nama: "Desain Web & Frontend",
+        pengajar: {
+          nama: "Dr. Ahmad Dosen"
+        }
+      },
+      dosen: {
+        nama: "Dr. Ahmad Dosen"
       }
     }
   }
@@ -252,9 +270,14 @@ const HalamanKoreksi: React.FC = () => {
                           <div className="text-[10px] font-bold text-gray-400">{task.user?.email}</div>
                        </div>
                     </div>
-                    <div className="col-span-3 text-xs font-bold text-gray-600 truncate pr-2">
-                       {task.pertemuan?.mataKuliah?.nama} · P{task.pertemuan?.urutan}
-                    </div>
+                     <div className="col-span-3 pr-2">
+                        <div className="text-xs font-bold text-gray-600 truncate">
+                           {task.pertemuan?.mataKuliah?.nama} · P{task.pertemuan?.urutan}
+                        </div>
+                        <div className="text-[10px] font-bold text-gray-400">
+                           Dosen: {task.pertemuan?.dosen?.nama || task.pertemuan?.mataKuliah?.pengajar?.nama || 'Belum Ditentukan'}
+                        </div>
+                     </div>
                     <div className="col-span-2">
                        <Badge className={`border-none font-black text-[8px] px-3 py-1 rounded-lg uppercase tracking-widest ${
                          task.type === 'REFLEKSI' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
@@ -323,6 +346,11 @@ const HalamanKoreksi: React.FC = () => {
                   <div>
                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block">Pertemuan</label>
                      <Input disabled value={`${selectedTask.pertemuan?.mataKuliah?.nama} - Pertemuan ${selectedTask.pertemuan?.urutan}`} className="bg-gray-50 border-none rounded-xl font-bold text-xs py-6 cursor-not-allowed" />
+                  </div>
+
+                  <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block">Dosen Pengampu</label>
+                     <Input disabled value={selectedTask.pertemuan?.dosen?.nama || selectedTask.pertemuan?.mataKuliah?.pengajar?.nama || 'Belum Ditentukan'} className="bg-gray-50 border-none rounded-xl font-bold text-xs py-6 cursor-not-allowed" />
                   </div>
 
                   <div>

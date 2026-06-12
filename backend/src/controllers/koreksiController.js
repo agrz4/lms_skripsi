@@ -40,7 +40,16 @@ const getKoreksiList = async (req, res) => {
         },
         pertemuan: {
           include: {
-            mataKuliah: true
+            mataKuliah: {
+              include: {
+                pengajar: {
+                  select: { nama: true }
+                }
+              }
+            },
+            dosen: {
+              select: { nama: true }
+            }
           }
         }
       },

@@ -1,0 +1,202 @@
+[
+  {
+    "id": "8673ef05-4eb2-426b-9b6e-c793fa52da1e",
+    "userId": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+    "pertemuanId": "99802a05-15b8-4190-a50c-e1a24ba576a3",
+    "type": "SCREENSHOT",
+    "content": null,
+    "fileUrl": "/public/uploads/images/1779859650058-191862721.png",
+    "score": null,
+    "aiScore": null,
+    "feedback": null,
+    "createdAt": "2026-05-27T05:27:30.069Z",
+    "user": {
+      "id": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+      "nama": "Rizky Mahasiswa",
+      "email": "mhs@lms.com",
+      "instansi": "Universitas Gunadarma"
+    },
+    "pertemuan": {
+      "id": "99802a05-15b8-4190-a50c-e1a24ba576a3",
+      "mataKuliahId": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+      "urutan": 2,
+      "topik": "Dasar-dasar dan Fundamental",
+      "tgl": "2026-05-30T04:12:21.202Z",
+      "jam": "09:00",
+      "dosenId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+      "asistenId": "c4465193-a3af-48b3-9b01-f87d9f464a33",
+      "createdAt": "2026-05-16T04:12:21.202Z",
+      "mataKuliah": {
+        "id": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+        "nama": "Dasar Pemrograman Web",
+        "kode": "MK001",
+        "published": true,
+        "deskripsi": "Mempelajari dasar-dasar HTML, CSS, dan Javascript.",
+        "kapasitas": 30,
+        "kategori": "Programming",
+        "level": "Beginner",
+        "warna": "blue",
+        "statusPendaftaran": "Aktif",
+        "tipeKursus": "ONLINE",
+        "pengajarId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+        "createdAt": "2026-05-10T06:49:37.152Z",
+        "pengajar": {
+          "nama": "Dr. Ahmad Dosen"
+        }
+      },
+      "dosen": {
+        "nama": "Dr. Ahmad Dosen"
+      }
+    }
+  },
+  {
+    "id": "341408c9-4014-4ad4-bfc9-914367f4419e",
+    "userId": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+    "pertemuanId": "99802a05-15b8-4190-a50c-e1a24ba576a3",
+    "type": "REFLEKSI",
+    "content": "belajar tentang Dasar JavaScript",
+    "fileUrl": null,
+    "score": null,
+    "aiScore": 55,
+    "feedback": "[AI Grader]: Jawaban Anda terlalu singkat dan belum merefleksikan pemahaman mendalam mengenai materi dasar JavaScript yang telah dipelajari. Cobalah untuk menjabarkan konsep spesifik yang Anda pahami dan kendala yang dihadapi pada refleksi selanjutnya.",
+    "createdAt": "2026-05-27T05:23:16.294Z",
+    "user": {
+      "id": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+      "nama": "Rizky Mahasiswa",
+      "email": "mhs@lms.com",
+      "instansi": "Universitas Gunadarma"
+    },
+    "pertemuan": {
+      "id": "99802a05-15b8-4190-a50c-e1a24ba576a3",
+      "mataKuliahId": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+      "urutan": 2,
+      "topik": "Dasar-dasar dan Fundamental",
+      "tgl": "2026-05-30T04:12:21.202Z",
+      "jam": "09:00",
+      "dosenId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+      "asistenId": "c4465193-a3af-48b3-9b01-f87d9f464a33",
+      "createdAt": "2026-05-16T04:12:21.202Z",
+      "mataKuliah": {
+        "id": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+        "nama": "Dasar Pemrograman Web",
+        "kode": "MK001",
+        "published": true,
+        "deskripsi": "Mempelajari dasar-dasar HTML, CSS, dan Javascript.",
+        "kapasitas": 30,
+        "kategori": "Programming",
+        "level": "Beginner",
+        "warna": "blue",
+        "statusPendaftaran": "Aktif",
+        "tipeKursus": "ONLINE",
+        "pengajarId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+        "createdAt": "2026-05-10T06:49:37.152Z",
+        "pengajar": {
+          "nama": "Dr. Ahmad Dosen"
+        }
+      },
+      "dosen": {
+        "nama": "Dr. Ahmad Dosen"
+      }
+    }
+  },
+  {
+    "id": "a099af59-b97c-48be-8335-51be6b0730d7",
+    "userId": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+    "pertemuanId": "129397d3-405d-4b14-9427-09a00232fb48",
+    "type": "SCREENSHOT",
+    "content": null,
+    "fileUrl": "https://lms-storage.local/uploads/pert6html.png",
+    "score": null,
+    "aiScore": null,
+    "feedback": null,
+    "createdAt": "2026-05-20T14:25:11.339Z",
+    "user": {
+      "id": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+      "nama": "Rizky Mahasiswa",
+      "email": "mhs@lms.com",
+      "instansi": "Universitas Gunadarma"
+    },
+    "pertemuan": {
+      "id": "129397d3-405d-4b14-9427-09a00232fb48",
+      "mataKuliahId": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+      "urutan": 1,
+      "topik": "Pengenalan & Kontrak Perkuliahan",
+      "tgl": "2026-05-23T00:00:00.000Z",
+      "jam": "09:00",
+      "dosenId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+      "asistenId": "c4465193-a3af-48b3-9b01-f87d9f464a33",
+      "createdAt": "2026-05-16T04:12:21.201Z",
+      "mataKuliah": {
+        "id": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+        "nama": "Dasar Pemrograman Web",
+        "kode": "MK001",
+        "published": true,
+        "deskripsi": "Mempelajari dasar-dasar HTML, CSS, dan Javascript.",
+        "kapasitas": 30,
+        "kategori": "Programming",
+        "level": "Beginner",
+        "warna": "blue",
+        "statusPendaftaran": "Aktif",
+        "tipeKursus": "ONLINE",
+        "pengajarId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+        "createdAt": "2026-05-10T06:49:37.152Z",
+        "pengajar": {
+          "nama": "Dr. Ahmad Dosen"
+        }
+      },
+      "dosen": {
+        "nama": "Dr. Ahmad Dosen"
+      }
+    }
+  },
+  {
+    "id": "d7e24deb-aab5-4b15-9a36-5f27ea1e5330",
+    "userId": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+    "pertemuanId": "129397d3-405d-4b14-9427-09a00232fb48",
+    "type": "REFLEKSI",
+    "content": "mempelajari materi yang diberikan",
+    "fileUrl": null,
+    "score": null,
+    "aiScore": 30,
+    "feedback": "[AI Grader]: Refleksi Anda terlalu singkat dan belum menggambarkan pemahaman spesifik mengenai topik pengenalan serta kontrak perkuliahan. Silakan berikan penjelasan yang lebih mendalam dan personal pada tugas refleksi berikutnya.",
+    "createdAt": "2026-05-18T05:04:30.735Z",
+    "user": {
+      "id": "ea2ee418-2103-4fe3-afd5-26aa3c3eca11",
+      "nama": "Rizky Mahasiswa",
+      "email": "mhs@lms.com",
+      "instansi": "Universitas Gunadarma"
+    },
+    "pertemuan": {
+      "id": "129397d3-405d-4b14-9427-09a00232fb48",
+      "mataKuliahId": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+      "urutan": 1,
+      "topik": "Pengenalan & Kontrak Perkuliahan",
+      "tgl": "2026-05-23T00:00:00.000Z",
+      "jam": "09:00",
+      "dosenId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+      "asistenId": "c4465193-a3af-48b3-9b01-f87d9f464a33",
+      "createdAt": "2026-05-16T04:12:21.201Z",
+      "mataKuliah": {
+        "id": "f6505518-c5b2-492a-8465-1e4330f0c9a1",
+        "nama": "Dasar Pemrograman Web",
+        "kode": "MK001",
+        "published": true,
+        "deskripsi": "Mempelajari dasar-dasar HTML, CSS, dan Javascript.",
+        "kapasitas": 30,
+        "kategori": "Programming",
+        "level": "Beginner",
+        "warna": "blue",
+        "statusPendaftaran": "Aktif",
+        "tipeKursus": "ONLINE",
+        "pengajarId": "93b2d39c-0f1b-496c-a050-c95c07cc0d41",
+        "createdAt": "2026-05-10T06:49:37.152Z",
+        "pengajar": {
+          "nama": "Dr. Ahmad Dosen"
+        }
+      },
+      "dosen": {
+        "nama": "Dr. Ahmad Dosen"
+      }
+    }
+  }
+]

@@ -21,7 +21,8 @@ const Login: React.FC = () => {
   }
 
   const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
-  const [selectedRoleTab, setSelectedRoleTab] = useState<'MAHASISWA' | 'DOSEN' | 'ASISTEN' | 'ADMIN'>('MAHASISWA');
+  const [selectedRoleTab, setSelectedRoleTab] = useState<'MAHASISWA' | 'DOSEN' | 'ASISTEN' | 'ADMIN'>('ADMIN');
+  const [activeRole, setActiveRole] = useState<'admin' | 'pengajar' | 'asisten'>('admin');
 
   React.useEffect(() => {
     const fetchDemos = async () => {
@@ -108,162 +109,276 @@ const Login: React.FC = () => {
     ? demoUsers.filter(u => u.role === selectedRoleTab)
     : defaultDemos.filter(u => u.role === selectedRoleTab);
 
+  const handleRoleChange = (newRole: 'admin' | 'pengajar' | 'asisten') => {
+    setActiveRole(newRole);
+    if (newRole === 'admin') {
+      setSelectedRoleTab('ADMIN');
+    } else if (newRole === 'pengajar') {
+      setSelectedRoleTab('DOSEN');
+    } else if (newRole === 'asisten') {
+      setSelectedRoleTab('ASISTEN');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-        {/* Left Side - Branding */}
-        <div className="md:w-1/2 bg-gradient-to-br from-emerald-600 to-teal-700 p-12 text-white flex flex-col justify-between">
-          <div>
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-white font-bold text-2xl mb-8 border border-white/30">
-              L
-            </div>
-            <h1 className="text-4xl font-extrabold mb-4 tracking-tight">Hybrid LMS</h1>
-            <p className="text-emerald-50/80 text-lg leading-relaxed">
-              Platform pembelajaran cerdas dengan integrasi AI untuk membantu manajemen kursus dan asisten pengajar.
-            </p>
-          </div>
-          
-          <div className="mt-12">
-            <div className="flex -space-x-3 mb-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-emerald-600 overflow-hidden bg-white/10 backdrop-blur-sm">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="user" />
-                </div>
-              ))}
-              <div className="w-10 h-10 rounded-full border-2 border-emerald-600 bg-emerald-500 flex items-center justify-center text-[10px] font-bold">
-                +1k
-              </div>
-            </div>
-            <p className="text-sm text-emerald-100 font-medium">Dipercaya oleh 1000+ pengguna di seluruh Indonesia</p>
-          </div>
+    <div className="min-h-screen bg-[#081e36] flex items-center justify-center p-6">
+      <div className="w-full max-w-2xl bg-[#081e36] border border-[#0d2a4a] rounded-[2.5rem] shadow-2xl p-8 md:p-12 flex flex-col items-center">
+        {/* Circular crest logo */}
+        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center border-4 border-[#0c2b4e] relative mb-4 shadow-lg">
+          <svg viewBox="0 0 100 100" className="w-20 h-20 text-[#081e36]">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="50" cy="50" r="41" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 1" />
+            
+            <path id="loginCurveTop" d="M 17 50 A 33 33 0 0 1 83 50" fill="none" />
+            <text fontSize="7.5" fontWeight="900" fill="currentColor" letterSpacing="0.8">
+              <textPath href="#loginCurveTop" startOffset="50%" textAnchor="middle">
+                LMS HYBRID
+              </textPath>
+            </text>
+            
+            <path id="loginCurveBottom" d="M 83 50 A 33 33 0 0 1 17 50" fill="none" />
+            <text fontSize="6" fontWeight="900" fill="currentColor" letterSpacing="0.8">
+              <textPath href="#loginCurveBottom" startOffset="50%" textAnchor="middle">
+                HYBRID LEARNING
+              </textPath>
+            </text>
+
+            <g transform="translate(32, 32) scale(0.72)">
+              <path d="M 12 5 L 17 9 L 25 3 L 33 9 L 38 5 L 35 12 L 15 12 Z" fill="currentColor" />
+              <path d="M 10 13 L 40 13 L 40 28 C 40 38 25 45 25 45 C 25 45 10 38 10 28 Z" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+              <line x1="25" y1="13" x2="25" y2="44" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="10" y1="28" x2="40" y2="28" stroke="currentColor" strokeWidth="1.5" />
+              
+              <g transform="translate(14, 16) scale(0.35)" fill="currentColor">
+                <path d="M 12 2 L 2 7 L 12 12 L 22 7 Z" />
+                <path d="M 5 9.5 L 5 17 C 5 20 19 20 19 17 L 19 9.5" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path d="M 20 8.5 L 20 15 L 21 15 L 21 8.5 Z" />
+              </g>
+              <g transform="translate(29, 16) scale(0.3)" fill="currentColor">
+                <path d="M20,10c0-1.1-0.9-2-2-2h-2V6c0-1.1-0.9-2-2-2h-4C8.9,4,8,4.9,8,6v2H6C4.9,8,4,8.9,4,10v4c0,1.1,0.9,2,2,2h2v2c0,1.1,0.9,2,2,2h4c1.1,0,2-0.9,2-2v-2h2c1.1,0,2-0.9,2-2V10z M14,14h-4v-4h4V14z" />
+              </g>
+              <g transform="translate(13, 31) scale(0.35)" fill="currentColor">
+                <path d="M 2 5 L 10 5 C 13 5 15 7 15 10 L 15 22 C 15 19 13 17 10 17 L 2 17 Z" />
+                <path d="M 28 5 L 20 5 C 17 5 15 7 15 10 L 15 22 C 15 19 17 17 20 17 L 28 17 Z" />
+              </g>
+              <g transform="translate(29, 31) scale(0.35)" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="9" />
+                <ellipse cx="12" cy="12" rx="4" ry="9" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+              </g>
+            </g>
+          </svg>
         </div>
 
-        {/* Right Side - Login Selection */}
-        <div className="md:w-1/2 p-12 flex flex-col justify-center bg-white">
-          <div className="mb-10 text-center md:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Selamat Datang</h2>
-            <p className="text-gray-500">Silakan pilih akses masuk Anda</p>
+        {/* Title */}
+        <h1 className="text-4xl font-extrabold mb-8 tracking-tight text-white text-center">HybridLMS</h1>
+
+        <div className="w-full flex flex-col items-stretch">
+          {/* Label: Login Sebagai */}
+          <h2 className="text-lg font-bold text-slate-200 mb-4 text-left">Login Sebagai</h2>
+
+          {/* Role Tabs Selection */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {/* Card 1: Admin Kursus */}
+            <button
+              type="button"
+              onClick={() => handleRoleChange('admin')}
+              className={`flex flex-col items-center justify-between p-4 rounded-2xl border transition-all text-center h-32 cursor-pointer ${
+                activeRole === 'admin'
+                  ? 'bg-[#052955] border-[#005cbd] text-white shadow-lg shadow-[#052955]/30'
+                  : 'bg-white border-transparent text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              {/* Custom Admin Avatar Icon */}
+              <svg viewBox="0 0 64 64" className="w-12 h-12">
+                <circle cx="32" cy="32" r="30" fill="#E2E8F0" />
+                <path d="M 16 54 C 16 42 22 38 32 38 C 42 38 48 42 48 54 Z" fill="#1E293B" />
+                <path d="M 28 38 L 32 46 L 36 38 Z" fill="#E2E8F0" />
+                <path d="M 30 38 L 32 50 L 34 38 Z" fill="#EF4444" />
+                <circle cx="32" cy="24" r="10" fill="#FDBA74" />
+                <path d="M 22 22 C 22 14 30 12 32 12 C 34 12 42 14 42 22 C 40 16 34 16 32 16 C 30 16 24 16 22 22 Z" fill="#475569" />
+              </svg>
+              <div>
+                <div className={`text-sm font-extrabold tracking-tight ${activeRole === 'admin' ? 'text-white' : 'text-slate-900'}`}>Admin Kursus</div>
+                <div className={`text-[10px] ${activeRole === 'admin' ? 'text-slate-300' : 'text-slate-500'}`}>Kelola semua kursus</div>
+              </div>
+            </button>
+
+            {/* Card 2: Pengajar */}
+            <button
+              type="button"
+              onClick={() => handleRoleChange('pengajar')}
+              className={`flex flex-col items-center justify-between p-4 rounded-2xl border transition-all text-center h-32 cursor-pointer ${
+                activeRole === 'pengajar'
+                  ? 'bg-[#052955] border-[#005cbd] text-white shadow-lg shadow-[#052955]/30'
+                  : 'bg-white border-transparent text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              {/* Custom Pengajar Avatar Icon */}
+              <svg viewBox="0 0 64 64" className="w-12 h-12">
+                <circle cx="32" cy="32" r="30" fill="#FEF3C7" />
+                <path d="M 16 54 C 16 42 22 38 32 38 C 42 38 48 42 48 54 Z" fill="#D97706" />
+                <circle cx="32" cy="24" r="10" fill="#FDBA74" />
+                <path d="M 22 22 C 22 14 30 12 32 12 C 34 12 42 14 42 22 Z" fill="#78350F" />
+                <rect x="25" y="21" width="6" height="3" rx="1" fill="none" stroke="#000" strokeWidth="1" />
+                <rect x="33" y="21" width="6" height="3" rx="1" fill="none" stroke="#000" strokeWidth="1" />
+                <line x1="31" y1="22" x2="33" y2="22" stroke="#000" strokeWidth="1" />
+              </svg>
+              <div>
+                <div className={`text-sm font-extrabold tracking-tight ${activeRole === 'pengajar' ? 'text-white' : 'text-slate-900'}`}>Pengajar</div>
+                <div className={`text-[10px] ${activeRole === 'pengajar' ? 'text-slate-300' : 'text-slate-500'}`}>Akses kursus sendiri</div>
+              </div>
+            </button>
+
+            {/* Card 3: Assisten */}
+            <button
+              type="button"
+              onClick={() => handleRoleChange('asisten')}
+              className={`flex flex-col items-center justify-between p-4 rounded-2xl border transition-all text-center h-32 cursor-pointer ${
+                activeRole === 'asisten'
+                  ? 'bg-[#052955] border-[#005cbd] text-white shadow-lg shadow-[#052955]/30'
+                  : 'bg-white border-transparent text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              {/* Custom Assisten Avatar Icon */}
+              <svg viewBox="0 0 64 64" className="w-12 h-12">
+                <circle cx="32" cy="32" r="30" fill="#E0F2FE" />
+                <path d="M 16 54 C 16 42 22 38 32 38 C 42 38 48 42 48 54 Z" fill="#0284C7" />
+                <circle cx="32" cy="24" r="10" fill="#FDBA74" />
+                <path d="M 20 22 C 20 12 44 12 44 22 L 44 32 C 44 32 40 34 32 32 C 24 34 20 32 20 32 Z" fill="#1E293B" />
+                <circle cx="32" cy="24" r="10" fill="#FDBA74" />
+              </svg>
+              <div>
+                <div className={`text-sm font-extrabold tracking-tight ${activeRole === 'asisten' ? 'text-white' : 'text-slate-900'}`}>Assisten</div>
+                <div className={`text-[10px] ${activeRole === 'asisten' ? 'text-slate-300' : 'text-slate-500'}`}>Akses kursus sendiri</div>
+              </div>
+            </button>
           </div>
 
-
-
+          {/* Form */}
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 ml-1">Email Address</label>
+              <label className="text-base font-semibold text-white ml-1 block">
+                {activeRole === 'admin' ? 'Email Admin' : activeRole === 'pengajar' ? 'Email Pengajar' : 'Email Assisten'}
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@lms.com"
-                className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:outline-none transition-all"
+                placeholder={activeRole === 'admin' ? 'admin@lms.com' : activeRole === 'pengajar' ? 'dosen@lms.com' : 'asisten@lms.com'}
+                className="w-full h-14 px-6 bg-white text-slate-900 rounded-full focus:outline-none focus:ring-2 focus:ring-[#005cbd] transition-all text-base shadow-inner"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
+              <label className="text-base font-semibold text-white ml-1 block">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:outline-none transition-all"
+                className="w-full h-14 px-6 bg-white text-slate-900 rounded-full focus:outline-none focus:ring-2 focus:ring-[#005cbd] transition-all text-base shadow-inner"
                 required
               />
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
+              <div className="p-4 bg-red-950/80 text-red-300 rounded-2xl text-sm font-medium border border-red-900/50">
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full p-4 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  Masuk Sekarang
-                  <HiOutlineArrowRight />
-                </>
-              )}
-            </button>
+            {/* Action Row */}
+            <div className="flex flex-row justify-between items-center pt-2 gap-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="h-14 px-10 bg-[#005cbd] text-white font-bold rounded-full hover:bg-blue-700 transition-all shadow-md shadow-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base cursor-pointer"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Masuk sebagai {activeRole === 'admin' ? 'Admin' : activeRole === 'pengajar' ? 'Pengajar' : 'Assisten'}
+                  </>
+                )}
+              </button>
+
+              <Link to="#" className="text-[#005cbd] hover:text-blue-400 font-semibold text-base transition-colors hover:underline shrink-0">
+                Lupa password?
+              </Link>
+            </div>
           </form>
 
-          <div className="mt-8">
-            <div className="relative mb-6">
+          {/* Bottom text */}
+          <div className="mt-8 text-center">
+            <span className="text-slate-400 text-base">
+              Bukan {activeRole === 'admin' ? 'admin' : activeRole === 'pengajar' ? 'pengajar' : 'assisten'}?{' '}
+            </span>
+            <Link to="/register" className="text-[#007bff] hover:text-blue-400 font-semibold text-base transition-colors underline">
+              Daftar sebagai Peserta
+            </Link>
+          </div>
+
+          {/* Quick Login / Demo Accounts Panel */}
+          <div className="mt-12 border border-slate-700/60 bg-slate-900/40 backdrop-blur-sm rounded-3xl p-6">
+            <div className="relative mb-5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-150"></div>
+                <div className="w-full border-t border-slate-700/60"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-4 text-gray-400 font-bold tracking-widest">Pilih Akun Demo</span>
+                <span className="bg-[#081e36] px-4 text-slate-300 font-bold tracking-widest">Pilih Akun Demo / Quick Login</span>
               </div>
             </div>
 
-            {/* Role Tabs */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4">
+            {/* Demo Role Tabs */}
+            <div className="flex gap-1 bg-slate-950/40 border border-slate-800/80 p-1 rounded-xl mb-4">
               {(['MAHASISWA', 'DOSEN', 'ASISTEN', 'ADMIN'] as const).map((tabRole) => (
                 <button
                   key={tabRole}
                   type="button"
                   onClick={() => setSelectedRoleTab(tabRole)}
-                  className={`flex-1 py-2 text-[10px] font-extrabold uppercase rounded-lg transition-all ${
+                  className={`flex-1 py-2 text-[10px] font-extrabold uppercase rounded-lg transition-all cursor-pointer ${
                     selectedRoleTab === tabRole
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-gray-400 hover:text-gray-600'
+                      ? 'bg-[#005cbd] text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {tabRole === 'MAHASISWA' ? 'MHS' : tabRole}
+                  {tabRole === 'MAHASISWA' ? 'MHS (Peserta)' : tabRole === 'DOSEN' ? 'DOSEN (Pengajar)' : tabRole}
                 </button>
               ))}
             </div>
 
             {/* Active Demo Users List */}
-            <div className="max-h-36 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-2 bg-gray-50/50 scrollbar-hide">
+            <div className="max-h-36 overflow-y-auto space-y-2 scrollbar-hide">
               {activeUsers.length > 0 ? (
                 activeUsers.map((demoUser) => (
                   <button
                     key={demoUser.id}
                     type="button"
                     onClick={() => performQuickLogin(demoUser.email, demoUser.role)}
-                    className="w-full flex items-center gap-3 p-3 bg-white hover:bg-emerald-50/50 border border-gray-100 rounded-xl transition-all text-left group"
+                    className="w-full flex items-center gap-3 p-3 bg-slate-950/20 hover:bg-[#052955]/40 border border-slate-800/80 hover:border-[#005cbd]/60 rounded-xl transition-all text-left group cursor-pointer"
                   >
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 group-hover:bg-emerald-200 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 uppercase">
+                    <div className="w-8 h-8 rounded-full bg-[#005cbd]/20 group-hover:bg-[#005cbd]/40 text-[#005cbd] font-bold text-xs flex items-center justify-center shrink-0 uppercase">
                       {demoUser.nama.substring(0, 2)}
                     </div>
                     <div className="overflow-hidden">
-                      <div className="text-xs font-black text-gray-800 truncate group-hover:text-emerald-700">
+                      <div className="text-xs font-black text-slate-200 truncate group-hover:text-white">
                         {demoUser.nama}
                       </div>
-                      <div className="text-[10px] text-gray-400 truncate">
+                      <div className="text-[10px] text-slate-400 truncate">
                         {demoUser.email}
                       </div>
                     </div>
                   </button>
                 ))
               ) : (
-                <div className="text-center py-4 text-xs text-gray-400 font-semibold">
+                <div className="text-center py-4 text-xs text-slate-400 font-semibold">
                   Tidak ada akun terdaftar untuk role ini.
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Belum punya akun?{' '}
-              <Link to="/register" className="text-emerald-600 font-bold hover:underline">
-                Daftar sebagai Peserta
-              </Link>
-            </p>
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="text-gray-400 text-xs uppercase tracking-widest font-bold">LMS Hybrid v1.0.0</p>
           </div>
         </div>
       </div>
