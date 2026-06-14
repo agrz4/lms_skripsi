@@ -100,6 +100,10 @@ const ManajemenPengajar: React.FC = () => {
   };
 
   const handleEdit = (p: Pengajar) => {
+    let rawJadwal = p.jadwal || '';
+    if (rawJadwal === 'pagi') rawJadwal = 'Senin, 09:00';
+    if (rawJadwal === 'siang') rawJadwal = 'Selasa, 13:00';
+
     setEditingId(p.id);
     setFormData({
       nama: p.nama,
@@ -108,7 +112,7 @@ const ManajemenPengajar: React.FC = () => {
       role: p.role as any,
       instansi: p.instansi || '',
       pelatihan: p.pelatihan || '',
-      jadwal: p.jadwal || ''
+      jadwal: rawJadwal
     });
     setIsModalOpen(true);
   };
@@ -131,8 +135,8 @@ const ManajemenPengajar: React.FC = () => {
   const formatJadwal = (key?: string) => {
     if (!key) return '-';
     const mapping: Record<string, string> = {
-      pagi: 'Pagi (09:00 - 12:00)',
-      siang: 'Siang (13:00 - 16:00)',
+      pagi: 'Senin, 09:00',
+      siang: 'Selasa, 13:00',
     };
     return mapping[key] || key;
   };
@@ -296,7 +300,7 @@ const ManajemenPengajar: React.FC = () => {
                         <TableCell className="py-4 px-4 text-xs font-semibold text-[#10B981]">
                           {formatPelatihan(item.pelatihan)}
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-850">{item.jadwal || '-'}</TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-850">{formatJadwal(item.jadwal)}</TableCell>
                         <TableCell className="py-4 px-4">
                           {isActive ? (
                             <span className="inline-block bg-[#e6f4ea] text-[#137333] font-bold rounded-full px-3 py-0.5 text-[10px]">
@@ -468,8 +472,16 @@ const ManajemenPengajar: React.FC = () => {
                       <SelectValue placeholder="Pilih Jadwal" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="pagi">Pagi (09:00 - 12:00)</SelectItem>
-                      <SelectItem value="siang">Siang (13:00 - 16:00)</SelectItem>
+                      <SelectItem value="Senin, 09:00">Senin, 09:00</SelectItem>
+                      <SelectItem value="Senin, 13:00">Senin, 13:00</SelectItem>
+                      <SelectItem value="Selasa, 09:00">Selasa, 09:00</SelectItem>
+                      <SelectItem value="Selasa, 13:00">Selasa, 13:00</SelectItem>
+                      <SelectItem value="Rabu, 10:00">Rabu, 10:00</SelectItem>
+                      <SelectItem value="Rabu, 13:00">Rabu, 13:00</SelectItem>
+                      <SelectItem value="Kamis, 09:00">Kamis, 09:00</SelectItem>
+                      <SelectItem value="Kamis, 15:00">Kamis, 15:00</SelectItem>
+                      <SelectItem value="Jumat, 09:00">Jumat, 09:00</SelectItem>
+                      <SelectItem value="Jumat, 13:00">Jumat, 13:00</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

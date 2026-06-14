@@ -16,10 +16,10 @@ async function main() {
   // Admin
   await prisma.user.upsert({
     where: { email: 'admin@lms.com' },
-    update: {},
+    update: { nama: 'Admin Kursus' },
     create: {
       email: 'admin@lms.com',
-      nama: 'Super Admin',
+      nama: 'Admin Kursus',
       password: adminPassword,
       role: 'ADMIN',
     },

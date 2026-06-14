@@ -31,11 +31,17 @@ const updatePertemuan = async (req, res) => {
     const pertemuan = await prisma.pertemuan.update({
       where: { id },
       data: {
-        topik: topik || undefined,
-        tgl: tgl ? new Date(tgl) : undefined,
-        jam: jam || undefined,
-        dosenId: dosenId || undefined,
-        asistenId: asistenId || undefined
+        topik: topik !== undefined ? topik : undefined,
+        tgl: tgl !== undefined ? (tgl ? new Date(tgl) : null) : undefined,
+        jam: jam !== undefined ? jam : undefined,
+        dosenId: dosenId !== undefined ? dosenId : undefined,
+        asistenId: asistenId !== undefined ? asistenId : undefined
+      },
+      include: {
+        mataKuliah: true,
+        dosen: { select: { id: true, nama: true } },
+        asisten: { select: { id: true, nama: true } },
+        materi: true
       }
     });
     res.json(pertemuan);

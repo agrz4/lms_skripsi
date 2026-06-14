@@ -25,6 +25,7 @@ import { useAuthStore } from '../store/useAuthStore';
 const Sidebar: React.FC = () => {
   const { user } = useAuthStore();
   const role = localStorage.getItem('userRole') || 'admin';
+  const isAdmin = role.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
 
   const adminSections = [
     {
@@ -135,11 +136,17 @@ const Sidebar: React.FC = () => {
           </div>
           <div className="overflow-hidden">
             <div className={`font-black text-xs truncate uppercase tracking-tight ${isBlueTheme ? 'text-white' : 'text-gray-900'}`}>
-               {user?.nama || localStorage.getItem('userName') || 'User'}
+               {(() => {
+                 const rawName = user?.nama || localStorage.getItem('userName') || 'User';
+                 const isSuperAdmin = rawName.toLowerCase().replace(/\s+/g, '') === 'superadmin';
+                 return isSuperAdmin ? 'Admin Kursus' : rawName;
+               })()}
             </div>
-            <div className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isBlueTheme ? 'text-blue-100/70' : 'text-emerald-600'}`}>
-               {user?.gelar || (role === 'admin' ? 'Super Admin' : (role === 'pengajar' ? 'Dosen' : (isAsisten ? 'Asisten Dosen' : 'Peserta')))}
-            </div>
+            {!isAdmin && (
+              <div className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isBlueTheme ? 'text-blue-100/70' : 'text-emerald-600'}`}>
+                 {user?.gelar || (role === 'pengajar' ? 'Dosen' : (isAsisten ? 'Asisten Dosen' : 'Peserta'))}
+              </div>
+            )}
           </div>
         </div>
       </div>

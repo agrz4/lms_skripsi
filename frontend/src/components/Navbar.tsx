@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/useAuthStore';
 const Navbar: React.FC = () => {
   const { user } = useAuthStore();
   const role = localStorage.getItem('userRole') || 'admin';
+  const isAdmin = role.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
   const isStudent = true; // Always use student-like blue theme styles to match other roles and the image design
 
   const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.nama || 'Mahasiswa')}`;
@@ -40,11 +41,17 @@ const Navbar: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
             <div className="text-xs font-black uppercase tracking-tight text-white">
-               {user?.nama || localStorage.getItem('userName') || 'User'}
+               {(() => {
+                 const rawName = user?.nama || localStorage.getItem('userName') || 'User';
+                 const isSuperAdmin = rawName.toLowerCase().replace(/\s+/g, '') === 'superadmin';
+                 return isSuperAdmin ? 'Admin Kursus' : rawName;
+               })()}
             </div>
-            <div className="text-[9px] font-bold uppercase tracking-widest text-blue-150">
-               {user?.gelar || (role === 'admin' ? 'Super Admin' : 'Mahasiswa')}
-            </div>
+            {!isAdmin && (
+              <div className="text-[9px] font-bold uppercase tracking-widest text-blue-150">
+                 {user?.gelar || 'Mahasiswa'}
+              </div>
+            )}
           </div>
           <div className="w-12 h-12 border-2 rounded-2xl overflow-hidden shadow-lg border-white/50 bg-white/10">
             <img 

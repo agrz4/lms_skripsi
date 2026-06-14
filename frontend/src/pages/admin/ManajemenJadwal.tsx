@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMataKuliahStore, type MataKuliah } from '../../store/useMataKuliahStore';
+import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { usePengajarStore } from '../../store/usePengajarStore';
 import { useJadwalStore, type Pertemuan } from '../../store/useJadwalStore';
 import { 
@@ -11,7 +11,6 @@ import {
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -40,7 +39,10 @@ const ManajemenJadwal: React.FC = () => {
     topik: '',
     tgl: '',
     jam: '',
+    hari: 'Senin',
     dosenId: '',
+    asistenId: '',
+    jenisPembelajaran: 'Zoom/Meet',
   });
 
   useEffect(() => {
@@ -54,55 +56,203 @@ const ManajemenJadwal: React.FC = () => {
     }
   }, [selectedCourseId, fetchJadwal]);
 
+  // Automatically select the first course on load
+  useEffect(() => {
+    if (mataKuliahList.length > 0 && !selectedCourseId) {
+      setSelectedCourseId(mataKuliahList[0].id);
+    }
+  }, [mataKuliahList, selectedCourseId]);
+
   const selectedCourse = mataKuliahList.find(mk => mk.id === selectedCourseId);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const dateVal = e.target.value;
+    setFormData(prev => {
+      const updated = { ...prev, tgl: dateVal };
+      if (dateVal) {
+        const parts = dateVal.split('-');
+        const date = new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
+        const dayIndex = date.getUTCDay();
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        updated.hari = days[dayIndex];
+      }
+      return updated;
+    });
+  };
+
+  const handleHariChange = (val: string) => {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const targetDayIndex = days.indexOf(val);
+    if (targetDayIndex === -1) return;
+
+    setFormData(prev => {
+      const updated = { ...prev, hari: val };
+      if (prev.tgl) {
+        const parts = prev.tgl.split('-');
+        const date = new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
+        const currentDayIndex = date.getUTCDay();
+        const diff = targetDayIndex - currentDayIndex;
+        date.setUTCDate(date.getUTCDate() + diff);
+        
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        updated.tgl = `${year}-${month}-${day}`;
+      }
+      return updated;
+    });
+  };
 
   const handleEditClick = (session: Pertemuan) => {
     setEditingSession(session);
+
+    let initialHari = 'Senin';
+    if (session.tgl) {
+      const date = new Date(session.tgl);
+      const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      initialHari = days[date.getUTCDay()];
+    }
+
     setFormData({
-      topik: session.topik || '',
+      topik: session.topik && session.topik !== `Pertemuan ${session.urutan}` ? session.topik : '',
       tgl: session.tgl ? new Date(session.tgl).toISOString().split('T')[0] : '',
       jam: session.jam || '',
-      dosenId: session.dosenId || '',
+      hari: initialHari,
+      dosenId: session.dosenId || 'unassigned',
+      asistenId: session.asistenId || 'unassigned',
+      jenisPembelajaran: 'Zoom/Meet',
     });
     setIsEditModalOpen(true);
   };
 
   const handleSave = async () => {
     if (editingSession) {
-      await updatePertemuan(editingSession.id, formData);
+      const payload = {
+        topik: formData.topik || `Pertemuan ${editingSession.urutan}`,
+        tgl: formData.tgl || null,
+        jam: formData.jam || null,
+        dosenId: formData.dosenId === 'unassigned' ? null : formData.dosenId,
+        asistenId: formData.asistenId === 'unassigned' ? null : formData.asistenId,
+      };
+      await updatePertemuan(editingSession.id, payload);
       setIsEditModalOpen(false);
       if (selectedCourseId) fetchJadwal(selectedCourseId);
     }
   };
 
-  const filledCount = jadwalList.filter(s => s.tgl && s.jam && s.topik).length;
+  const handleAddJadwalClick = () => {
+    // Open modal for the first unconfigured session
+    const nextSession = jadwalList.find(s => !s.tgl || !s.jam) || jadwalList[0];
+    if (nextSession) {
+      handleEditClick(nextSession);
+    }
+  };
+
+  const formatTanggal = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  };
+
+  const formatHariJam = (dateStr?: string, jamStr?: string) => {
+    if (!dateStr && !jamStr) return '—';
+    let dayName = '';
+    if (dateStr) {
+      const date = new Date(dateStr);
+      dayName = date.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'UTC' });
+    }
+    if (dayName && jamStr) {
+      return `${dayName} - ${jamStr}`;
+    }
+    return dayName || jamStr || '—';
+  };
+
+  const getStatus = (session: Pertemuan) => {
+    if (!session.tgl) return { label: 'Terjadwal', className: 'bg-gray-100 text-gray-500 border border-gray-150' };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sessionDate = new Date(session.tgl);
+    sessionDate.setHours(0, 0, 0, 0);
+    
+    if (sessionDate < today) {
+      return { label: 'Selesai', className: 'bg-emerald-50 text-emerald-600 border border-emerald-100' };
+    } else if (sessionDate.getTime() === today.getTime()) {
+      return { label: 'Berlangsung', className: 'bg-amber-50 text-amber-600 border border-amber-100' };
+    } else {
+      return { label: 'Terjadwal', className: 'bg-gray-100 text-gray-500 border border-gray-150' };
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  const getAvatarColor = (name: string) => {
+    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return hash % 2 === 0 ? 'bg-emerald-500' : 'bg-[#357ABD]';
+  };
+
+  // Determine configuration index to group trailing empty sessions
+  const lastActiveIndex = [...jadwalList].reverse().findIndex(s => {
+    const hasDate = !!s.tgl;
+    const hasTime = !!s.jam;
+    const hasInstructor = !!s.dosenId;
+    const hasCustomTopic = s.topik && s.topik !== `Pertemuan ${s.urutan}`;
+    return hasDate || hasTime || hasInstructor || hasCustomTopic;
+  });
+
+  const lastActiveUrutan = lastActiveIndex !== -1 ? (14 - lastActiveIndex) : 0;
+  const showUpToUrutan = Math.min(14, lastActiveUrutan + 1);
+
+  const individualSessions = jadwalList.filter(s => s.urutan <= showUpToUrutan);
+  const groupedSessions = jadwalList.filter(s => s.urutan > showUpToUrutan);
+  const filledCount = jadwalList.filter(s => s.tgl && s.jam).length;
+  
+  const selectedDosenName = formData.dosenId === 'unassigned' || !formData.dosenId
+    ? ''
+    : (pengajarList.find(p => p.id === formData.dosenId)?.nama || editingSession?.dosen?.nama || formData.dosenId);
+
+  const selectedAsistenName = formData.asistenId === 'unassigned' || !formData.asistenId
+    ? ''
+    : (pengajarList.find(p => p.id === formData.asistenId)?.nama || editingSession?.asisten?.nama || formData.asistenId);
+
+  const isEditMode = !!(editingSession?.tgl || editingSession?.jam);
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-1">Menu Penjadwalan</h1>
-        <p className="text-sm text-gray-500 font-medium">Pilih kursus → Tabel jadwal → Isi detail per pertemuan</p>
+        <p className="text-sm text-gray-500 font-medium">{"Pilih kursus -> Tabel jadwal -> Add jadwal per pertemuan hingga lengkap"}</p>
       </div>
 
       {/* Pilih Kursus Section */}
       <Card className="rounded-[2rem] border-none shadow-sm bg-white mb-8">
         <CardContent className="p-8">
-          <h2 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest opacity-50">Step 1: Pilih Kursus</h2>
-          <div className="flex flex-wrap gap-4">
-            {mataKuliahList.map((mk) => (
-              <button
-                key={mk.id}
-                onClick={() => setSelectedCourseId(mk.id)}
-                className={`w-40 h-16 rounded-xl transition-all border-2 flex flex-col items-center justify-center font-bold text-xs p-2 ${
-                  selectedCourseId === mk.id 
-                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200" 
-                    : "bg-white border-gray-100 text-gray-400 hover:border-gray-200"
-                }`}
-              >
-                <span className="truncate w-full text-center">{mk.nama}</span>
-                <span className={`text-[9px] mt-1 ${selectedCourseId === mk.id ? 'text-indigo-100' : 'text-gray-300'}`}>{mk.kode}</span>
-              </button>
-            ))}
+          <h2 className="text-[15px] font-extrabold text-gray-800 mb-4">Pilih Kursus</h2>
+          <div className="flex flex-wrap gap-3">
+            {mataKuliahList.map((mk) => {
+              const isSelected = selectedCourseId === mk.id;
+              return (
+                <button
+                  key={mk.id}
+                  onClick={() => setSelectedCourseId(mk.id)}
+                  className={`px-5 py-3.5 rounded-2xl transition-all border font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
+                    isSelected 
+                      ? "bg-[#ECEEFE] border-[#5D5FEF] text-[#5D5FEF] shadow-sm font-extrabold" 
+                      : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
+                  }`}
+                >
+                  {mk.nama}
+                  {isSelected && <span>✓</span>}
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -110,33 +260,34 @@ const ManajemenJadwal: React.FC = () => {
       {/* Tabel Jadwal Section */}
       {selectedCourseId && (
         <Card className="rounded-[2rem] border-none shadow-sm bg-white overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-indigo-50/20">
+          <div className="p-8 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-gray-900">
-                Tabel Jadwal: {selectedCourse?.nama}
+              <h2 className="text-lg font-black text-gray-800">
+                Step 2: Tabel Jadwal — {selectedCourse?.nama} ({jadwalList.length} Pertemuan)
               </h2>
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Lengkapi 14 Pertemuan</p>
             </div>
-            <div className="text-right">
-               <div className="text-[20px] font-black text-indigo-600 leading-none">{filledCount}/14</div>
-               <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Terisi</div>
-            </div>
+            <Button 
+              onClick={handleAddJadwalClick}
+              className="bg-[#5D5FEF] hover:bg-[#4D4FCF] text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-100 cursor-pointer border-none"
+            >
+              <HiOutlinePlus className="text-sm stroke-[3]" /> Add Jadwal
+            </Button>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50">
-                  <th className="py-4 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Sesi</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tanggal</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Waktu</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Topik Pembahasan</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Pengajar</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                  <th className="py-4 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Aksi</th>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="py-4 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">PERTEMUAN</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">TANGGAL</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">HARI & JAM</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">TOPIK</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">PENGAJAR ASSIGNED</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">STATUS</th>
+                  <th className="py-4 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {isJadwalLoading ? (
                   <tr>
                     <td colSpan={7} className="py-20 text-center">
@@ -146,67 +297,90 @@ const ManajemenJadwal: React.FC = () => {
                        </div>
                     </td>
                   </tr>
-                ) : jadwalList.map((s) => {
-                  const instructor = pengajarList.find(p => p.id === s.dosenId);
-                  const isFilled = s.tgl && s.jam && s.topik;
-                  
-                  return (
-                    <tr key={s.id} className={`${s.urutan % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'} hover:bg-gray-100/50 transition-colors`}>
-                      <td className="py-5 px-8">
-                        <span className="text-[11px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">P-{s.urutan}</span>
-                      </td>
-                      <td className="py-5 px-4 text-[11px] font-bold text-gray-900">
-                        {s.tgl ? new Date(s.tgl).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                      </td>
-                      <td className="py-5 px-4 text-[11px] font-bold text-gray-500">{s.jam || '—'}</td>
-                      <td className="py-5 px-4 text-[11px] font-bold text-gray-900 max-w-xs truncate">{s.topik || 'Belum diatur'}</td>
-                      <td className="py-5 px-4">
-                        {instructor ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black text-white bg-emerald-500">
-                              {instructor.nama.charAt(0)}
-                            </div>
-                            <span className="text-[11px] font-bold text-gray-600">{instructor.nama}</span>
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-gray-300 font-bold italic">Belum dipilih</span>
-                        )}
-                      </td>
-                      <td className="py-5 px-4">
-                        <Badge className={`rounded-full px-3 py-0.5 text-[9px] font-black uppercase tracking-wider border-none ${
-                          isFilled ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
-                        }`}>
-                          {isFilled ? 'Siap' : 'Pending'}
-                        </Badge>
-                      </td>
-                      <td className="py-5 px-8 text-center">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleEditClick(s)}
-                          className={`h-8 rounded-lg font-bold text-[10px] ${isFilled ? 'border-gray-200 text-gray-500' : 'border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
-                        >
-                          <HiOutlinePencilSquare className="mr-1 text-sm" /> {isFilled ? 'Edit' : 'Set Jadwal'}
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                ) : (
+                  <>
+                    {individualSessions.map((s) => {
+                      const instructor = pengajarList.find(p => p.id === s.dosenId);
+                      const status = getStatus(s);
+                      
+                      return (
+                        <tr key={s.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-4 px-8 text-xs font-semibold text-gray-800">
+                            Pertemuan {s.urutan}
+                          </td>
+                          <td className="py-4 px-4 text-xs font-medium text-gray-600">
+                            {s.tgl ? formatTanggal(s.tgl) : '—'}
+                          </td>
+                          <td className="py-4 px-4 text-xs font-medium text-gray-600">
+                            {formatHariJam(s.tgl, s.jam)}
+                          </td>
+                          <td className="py-4 px-4 text-xs font-semibold text-gray-800 max-w-xs truncate">
+                            {s.topik && s.topik !== `Pertemuan ${s.urutan}` ? s.topik : '—'}
+                          </td>
+                          <td className="py-4 px-4">
+                            {instructor ? (
+                              <div className="flex items-center gap-2">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black text-white ${getAvatarColor(instructor.nama)}`}>
+                                  {getInitials(instructor.nama)}
+                                </div>
+                                <span className="text-xs font-semibold text-gray-800">{instructor.nama}</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs font-medium text-gray-400">Belum diassign</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className={`inline-block rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wider ${status.className}`}>
+                              {status.label}
+                            </span>
+                          </td>
+                          <td className="py-4 px-8">
+                            {s.tgl && s.jam ? (
+                              <button
+                                onClick={() => handleEditClick(s)}
+                                className="text-[#5D5FEF] hover:text-[#4D4FCF] text-lg cursor-pointer transition-all hover:scale-110 bg-transparent border-none p-0 flex items-center"
+                                title="Edit Jadwal"
+                              >
+                                <HiOutlinePencilSquare />
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => handleEditClick(s)}
+                                className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold px-3 py-1.5 rounded-xl text-[10px] cursor-pointer transition-all border border-emerald-100 flex items-center gap-1"
+                              >
+                                <HiOutlinePlus className="text-[10px]" /> Add Jadwal
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {groupedSessions.length > 0 && (
+                      <tr className="bg-indigo-50/20">
+                        <td className="py-4 px-8 text-xs font-semibold text-gray-400">
+                          Pertemuan {groupedSessions[0].urutan}-{groupedSessions[groupedSessions.length - 1].urutan}
+                        </td>
+                        <td colSpan={6} className="py-4 px-4 text-xs font-medium text-gray-400">
+                          Belum ada materi · <span className="text-[#5D5FEF] font-bold cursor-pointer hover:underline" onClick={handleAddJadwalClick}>Klik Add Jadwal untuk mengisi</span>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )}
               </tbody>
             </table>
           </div>
 
-          <div className="p-10 bg-indigo-600 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-indigo-100 font-bold mb-1">Total Progres Penjadwalan</p>
-              <p className="text-xs text-white/60 font-medium">Lengkapi semua sesi untuk mempublikasikan kursus secara resmi</p>
+          {/* Table Footer with Progress */}
+          <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-white">
+            <div className="text-xs text-gray-500 font-bold">
+              {filledCount} dari {jadwalList.length} pertemuan terisi · Progress: {filledCount}/{jadwalList.length}
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="text-2xl font-black text-white">{Math.round((filledCount/14)*100)}%</div>
-              <div className="w-64 h-3 bg-white/10 rounded-full overflow-hidden border border-white/10">
+            <div className="flex items-center gap-2">
+              <div className="w-64 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)] transition-all duration-1000" 
-                  style={{ width: `${(filledCount/14)*100}%` }}
+                  className="h-full bg-[#5D5FEF] transition-all duration-500" 
+                  style={{ width: `${(filledCount / (jadwalList.length || 14)) * 100}%` }}
                 ></div>
               </div>
             </div>
@@ -216,91 +390,201 @@ const ManajemenJadwal: React.FC = () => {
 
       {/* Edit Session Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-[1.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-          <DialogHeader className="p-8 border-b border-gray-100 flex-row items-center gap-4">
-             <div className="w-2.5 h-12 bg-indigo-600 rounded-full"></div>
-             <div>
-                <DialogTitle className="text-2xl font-black text-gray-800">
-                  Set Jadwal Sesi {editingSession?.urutan}
-                </DialogTitle>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{selectedCourse?.nama}</p>
-             </div>
+        <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
+          <DialogHeader className={`p-6 ${isEditMode ? 'bg-[#5D5FEF]' : 'bg-emerald-600'} text-white flex-row items-center justify-between transition-colors duration-350`}>
+            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+              {isEditMode ? <HiOutlinePencilSquare className="text-xl" /> : <HiOutlinePlus className="text-xl stroke-[3]" />}
+              {isEditMode ? 'Form Edit Jadwal' : 'Form Add Jadwal'}
+            </DialogTitle>
           </DialogHeader>
           
-          <div className="p-8 space-y-6">
-            <div className="space-y-2">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                 <HiOutlineAcademicCap className="text-indigo-600" /> Topik Pembahasan
+          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            {/* Kursus */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Kursus
+               </label>
+               <div className="h-11 px-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center justify-between text-xs text-gray-500 font-semibold">
+                 <span>{selectedCourse?.nama}</span>
+                 <span>▼</span>
+               </div>
+            </div>
+
+            {/* Nomor Pertemuan */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Nomor Pertemuan
+               </label>
+               <div className="h-11 px-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center text-xs text-gray-500 font-semibold">
+                 Pertemuan ke-{editingSession?.urutan} (1-14)
+               </div>
+            </div>
+
+            {/* Tanggal */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Tanggal
                </label>
                <Input 
-                 placeholder="Contoh: Pengenalan HTML & CSS Modern"
-                 value={formData.topik}
-                 onChange={(e) => setFormData({...formData, topik: e.target.value})}
-                 className="h-12 rounded-xl border-gray-100 bg-gray-50/50 font-bold text-gray-700"
+                 type="date"
+                 value={formData.tgl}
+                 onChange={handleDateChange}
+                 className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 focus:ring-2 focus:ring-[#5D5FEF] bg-white shadow-none"
                />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                   <HiOutlineCalendar className="text-indigo-600" /> Tanggal
-                 </label>
+            {/* Hari & Jam */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Hari & Jam
+               </label>
+               <div className="grid grid-cols-2 gap-4">
+                 <Select 
+                   value={formData.hari} 
+                   onValueChange={handleHariChange}
+                 >
+                   <SelectTrigger className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white">
+                     <SelectValue placeholder="Pilih Hari" />
+                   </SelectTrigger>
+                   <SelectContent className="rounded-xl border-gray-200">
+                     {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(d => (
+                       <SelectItem key={d} value={d} className="font-semibold text-xs py-2">
+                         {d}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+
                  <Input 
-                   type="date"
-                   value={formData.tgl}
-                   onChange={(e) => setFormData({...formData, tgl: e.target.value})}
-                   className="h-12 rounded-xl border-gray-100 bg-gray-50/50 font-bold text-gray-700"
-                 />
-              </div>
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                   <HiOutlineClock className="text-indigo-600" /> Jam Mulai
-                 </label>
-                 <Input 
-                   type="time"
+                   type="text"
+                   placeholder="09:00"
                    value={formData.jam}
                    onChange={(e) => setFormData({...formData, jam: e.target.value})}
-                   className="h-12 rounded-xl border-gray-100 bg-gray-50/50 font-bold text-gray-700"
+                   className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white shadow-none"
                  />
-              </div>
+               </div>
             </div>
 
-            <div className="space-y-2">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                 <HiOutlineAcademicCap className="text-indigo-600" /> Pilih Pengajar Sesi
+            {/* Assign Pengajar */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Assign Pengajar
                </label>
                <Select 
                  value={formData.dosenId} 
                  onValueChange={(val) => setFormData({...formData, dosenId: val})}
                >
-                 <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50/50 font-bold text-gray-700">
-                   <SelectValue placeholder="Pilih Dosen/Instruktur" />
+                 <SelectTrigger className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white">
+                    <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-800">
+                      {selectedDosenName || "Pilih pengajar"}
+                    </span>
                  </SelectTrigger>
-                 <SelectContent className="rounded-xl border-gray-100">
-                   {pengajarList.map(p => (
-                     <SelectItem key={p.id} value={p.id} className="font-bold text-xs py-3">
+                 <SelectContent className="rounded-xl border-gray-200 animate-none">
+                   <SelectItem value="unassigned" className="font-semibold text-xs py-2 text-gray-400">Belum diassign / Pilih pengajar</SelectItem>
+                   {pengajarList.filter(p => p.role?.toUpperCase() === 'DOSEN' || p.role?.toUpperCase() === 'ADMIN').map(p => (
+                     <SelectItem key={p.id} value={p.id} className="font-semibold text-xs py-2">
                         {p.nama} ({p.role})
                      </SelectItem>
                    ))}
+                   {/* Fallback to show the name from editingSession or full list if not found in filtered list */}
+                   {formData.dosenId && formData.dosenId !== 'unassigned' && !pengajarList.filter(p => p.role?.toUpperCase() === 'DOSEN' || p.role?.toUpperCase() === 'ADMIN').some(p => p.id === formData.dosenId) && (() => {
+                     const foundUser = pengajarList.find(p => p.id === formData.dosenId);
+                     const labelText = foundUser ? `${foundUser.nama} (${foundUser.role})` : (editingSession?.dosen?.nama || 'Dosen');
+                     return (
+                       <SelectItem key={formData.dosenId} value={formData.dosenId} className="font-semibold text-xs py-2">
+                         {labelText}
+                       </SelectItem>
+                     );
+                   })()}
                  </SelectContent>
                </Select>
             </div>
+
+            {/* Assign Asisten */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Assign Asisten
+               </label>
+               <Select 
+                 value={formData.asistenId} 
+                 onValueChange={(val) => setFormData({...formData, asistenId: val})}
+               >
+                 <SelectTrigger className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white">
+                    <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-800">
+                      {selectedAsistenName || "Pilih asisten"}
+                    </span>
+                 </SelectTrigger>
+                 <SelectContent className="rounded-xl border-gray-200 animate-none">
+                   <SelectItem value="unassigned" className="font-semibold text-xs py-2 text-gray-400">Belum diassign / Pilih asisten</SelectItem>
+                   {pengajarList.filter(p => p.role?.toUpperCase() === 'ASISTEN').map(p => (
+                     <SelectItem key={p.id} value={p.id} className="font-semibold text-xs py-2">
+                        {p.nama}
+                     </SelectItem>
+                   ))}
+                   {/* Fallback to show the name from editingSession or full list if not found in filtered list */}
+                   {formData.asistenId && formData.asistenId !== 'unassigned' && !pengajarList.filter(p => p.role?.toUpperCase() === 'ASISTEN').some(p => p.id === formData.asistenId) && (() => {
+                     const foundUser = pengajarList.find(p => p.id === formData.asistenId);
+                     const labelText = foundUser ? foundUser.nama : (editingSession?.asisten?.nama || 'Asisten');
+                     return (
+                       <SelectItem key={formData.asistenId} value={formData.asistenId} className="font-semibold text-xs py-2">
+                         {labelText}
+                       </SelectItem>
+                     );
+                   })()}
+                 </SelectContent>
+               </Select>
+            </div>
+
+            {/* Topik Pertemuan */}
+            <div className="space-y-1.5">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                 Topik Pertemuan
+               </label>
+               <Input 
+                 placeholder="Judul topik pertemuan ini..."
+                 value={formData.topik}
+                 onChange={(e) => setFormData({...formData, topik: e.target.value})}
+                 className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white shadow-none"
+               />
+            </div>
+
+            {/* Jenis Pembelajaran */}
+            <div className="space-y-1.5 pt-2">
+               <label className="text-xs font-bold text-gray-900 uppercase tracking-wider block mb-2">
+                 Jenis Pembelajaran
+               </label>
+               <div className="flex items-center gap-6">
+                 {(['Zoom/Meet', 'Micro', 'PDF'] as const).map((type) => (
+                   <label key={type} className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
+                     <input 
+                       type="radio" 
+                       name="jenisPembelajaran" 
+                       value={type} 
+                       checked={formData.jenisPembelajaran === type}
+                       onChange={(e) => setFormData({...formData, jenisPembelajaran: e.target.value})}
+                       className="w-4 h-4 text-[#5D5FEF] border-gray-300 focus:ring-[#5D5FEF]"
+                     />
+                     <span>{type}</span>
+                   </label>
+                 ))}
+               </div>
+            </div>
           </div>
 
-          <DialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 gap-3">
+          <DialogFooter className="p-6 bg-white border-t border-gray-100 flex flex-row items-center justify-between sm:justify-between gap-4">
              <Button 
-               variant="ghost" 
+               variant="outline" 
                onClick={() => setIsEditModalOpen(false)}
-               className="rounded-full h-12 px-8 font-black text-gray-400 uppercase tracking-widest text-[10px]"
+               className="h-10 px-8 font-bold text-gray-700 rounded-xl border-gray-300 hover:bg-gray-50 text-xs w-[45%]"
              >
                 Batal
              </Button>
              <Button 
-               onClick={handleSave}
-               className="rounded-full h-12 px-8 bg-indigo-600 hover:bg-indigo-700 font-black text-white uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-200"
-             >
-                Simpan Jadwal
-             </Button>
+                onClick={handleSave}
+                className={`h-10 px-8 ${isEditMode ? 'bg-[#1D60C1] hover:bg-[#154D9E]' : 'bg-emerald-600 hover:bg-emerald-700'} font-bold text-white rounded-xl border-none shadow-none text-xs w-[45%] flex items-center justify-center gap-1.5 transition-all`}
+              >
+                 {isEditMode ? 'Update Jadwal' : 'Tambah Jadwal'}
+              </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -309,3 +593,4 @@ const ManajemenJadwal: React.FC = () => {
 };
 
 export default ManajemenJadwal;
+

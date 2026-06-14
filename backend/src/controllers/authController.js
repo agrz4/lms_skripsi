@@ -113,12 +113,12 @@ const getMe = async (req, res) => {
     }
 
     const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nama)}&background=random&color=fff&size=128`;
-    
+
     let gelar = 'Mahasiswa';
     let assignedMaterials = [];
 
     if (user.role === 'ADMIN') {
-      gelar = 'Administrator';
+      gelar = '';
     } else if (user.role === 'DOSEN') {
       gelar = 'Dosen Pengampu';
       assignedMaterials = (user.mataKuliah || []).map(mk => ({

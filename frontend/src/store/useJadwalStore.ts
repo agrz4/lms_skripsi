@@ -10,6 +10,8 @@ export interface Pertemuan {
   jam?: string;
   dosenId?: string;
   asistenId?: string;
+  dosen?: { id: string; nama: string };
+  asisten?: { id: string; nama: string };
   materi?: any[];
 }
 

@@ -99,7 +99,7 @@ const Login: React.FC = () => {
   };
 
   const defaultDemos: DemoUser[] = [
-    { id: '1', nama: 'Super Admin', email: 'admin@lms.com', role: 'ADMIN' },
+    { id: '1', nama: 'Admin Kursus', email: 'admin@lms.com', role: 'ADMIN' },
     { id: '2', nama: 'Dr. Ahmad Dosen', email: 'dosen@lms.com', role: 'DOSEN' },
     { id: '3', nama: 'Budi Asisten', email: 'asisten@lms.com', role: 'ASISTEN' },
     { id: '4', nama: 'Rizky Mahasiswa', email: 'mhs@lms.com', role: 'MAHASISWA' }
