@@ -22,13 +22,14 @@ const ManajemenMateri: React.FC = () => {
 
   // Real materials logic based on pertemuan data
   const meetings = selectedCourse?.pertemuan || [];
+  const totalMeetings = selectedCourse?.jumlahPertemuan || meetings.length || 14;
   const filledMaterialsCount = meetings.filter(p => p.materi && p.materi.length > 0).length;
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-1">Menu Materi</h1>
-        <p className="text-sm text-gray-500 font-medium">Pilih kursus → Lihat 14 jadwal → Klik Add Materi per pertemuan</p>
+        <p className="text-sm text-gray-500 font-medium">Pilih kursus → Lihat jadwal ({totalMeetings} sesi) → Klik Add Materi per pertemuan</p>
       </div>
 
       {/* Pilih Kursus Section */}
@@ -54,14 +55,14 @@ const ManajemenMateri: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* 14 Pertemuan Section */}
+      {/* Pertemuan Section */}
       {selectedCourseId && (
         <Card className="rounded-[2rem] border-none shadow-sm bg-white overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-8 border-b border-gray-50 bg-gray-50/20">
             <h2 className="text-xl font-black text-gray-900">
               Materi Pembelajaran: {selectedCourse?.nama}
             </h2>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Kelola Materi per Sesi (14 Pertemuan)</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Kelola Materi per Sesi ({totalMeetings} Pertemuan)</p>
           </div>
 
           <div className="overflow-x-auto">
@@ -135,17 +136,17 @@ const ManajemenMateri: React.FC = () => {
           <div className="p-8 bg-indigo-600 flex items-center justify-between">
             <div className="text-white">
               <p className="text-sm font-bold opacity-80">Progres Kelengkapan Materi</p>
-              <p className="text-[10px] font-medium opacity-60 uppercase tracking-widest mt-1">Lengkapi 14 materi untuk publish</p>
+              <p className="text-[10px] font-medium opacity-60 uppercase tracking-widest mt-1">Lengkapi {totalMeetings} materi untuk publish</p>
             </div>
             <div className="flex items-center gap-6">
                <div className="text-right">
-                 <p className="text-2xl font-black text-white leading-none">{filledMaterialsCount}/14</p>
+                 <p className="text-2xl font-black text-white leading-none">{filledMaterialsCount}/{totalMeetings}</p>
                  <p className="text-[9px] font-bold text-indigo-200 uppercase mt-1">Sesi Terisi</p>
                </div>
                <div className="w-64 h-3 bg-white/10 rounded-full overflow-hidden border border-white/10">
                   <div 
                     className="h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-1000" 
-                    style={{ width: `${(filledMaterialsCount/14)*100}%` }}
+                    style={{ width: `${(filledMaterialsCount / totalMeetings) * 100}%` }}
                   ></div>
                </div>
             </div>

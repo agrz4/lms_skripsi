@@ -41,8 +41,8 @@ const DetailKursus: React.FC = () => {
 
   const course = mataKuliahList.find(mk => mk.id === courseId);
   const completedSessions = summary ? summary.completedMeetings : jadwalList.filter(s => s.tgl && s.topik).length;
-  const totalSessionsCount = summary ? summary.totalMeetings : 14;
-  const progressPercent = Math.round((completedSessions / totalSessionsCount) * 100);
+  const totalSessionsCount = summary ? summary.totalMeetings : (course?.jumlahPertemuan || 14);
+  const progressPercent = totalSessionsCount > 0 ? Math.round((completedSessions / totalSessionsCount) * 100) : 0;
 
   const getSessionDescription = (pertemuan: any, isActive: boolean, isCompleted: boolean) => {
     if (!pertemuan.materi || pertemuan.materi.length === 0) {
@@ -205,13 +205,24 @@ const DetailKursus: React.FC = () => {
           {/* AI Exam Card */}
           <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-8 rounded-[2.5rem] border-2 border-indigo-100 shadow-xl shadow-indigo-100/50">
              <h3 className="text-lg font-black text-indigo-900 mb-2">Ujian AI</h3>
-             <p className="text-xs text-indigo-700/60 font-bold mb-8">Tersedia setelah semua 14 pertemuan selesai</p>
+             <p className="text-xs text-indigo-700/60 font-bold mb-8">Tersedia setelah semua {totalSessionsCount} pertemuan selesai</p>
              
-             <Button disabled className="w-full bg-gray-400 text-white font-black py-8 rounded-2xl flex flex-col gap-1 grayscale opacity-50 cursor-not-allowed">
-                <div className="flex items-center gap-2">
-                   <HiOutlineLockClosed /> <span>Selesaikan semua pertemuan dulu</span>
-                </div>
-             </Button>
+             {completedSessions >= totalSessionsCount ? (
+               <Button 
+                 onClick={() => navigate(`/user/ujian?courseId=${courseId}`)}
+                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-8 rounded-2xl flex flex-col gap-1 shadow-lg shadow-indigo-200 transition-all cursor-pointer"
+               >
+                 <div className="flex items-center gap-2">
+                    <span>Mulai Ujian Sekarang</span>
+                 </div>
+               </Button>
+             ) : (
+               <Button disabled className="w-full bg-gray-400 text-white font-black py-8 rounded-2xl flex flex-col gap-1 grayscale opacity-50 cursor-not-allowed">
+                  <div className="flex items-center gap-2">
+                     <HiOutlineLockClosed /> <span>Selesaikan semua pertemuan dulu</span>
+                  </div>
+               </Button>
+             )}
           </div>
         </div>
       </div>

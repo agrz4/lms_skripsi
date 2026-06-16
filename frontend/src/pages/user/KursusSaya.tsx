@@ -35,15 +35,15 @@ const KursusSaya: React.FC = () => {
     }
   };
 
-  const getCourseProgress = (courseId: string) => {
+  const getCourseProgress = (mk: any) => {
     // Filter progress items that belong to meetings of this course and are completed
     const completedSessions = progressData.filter(
-      (prog) => prog.pertemuan?.mataKuliahId === courseId && prog.isCompleted
+      (prog) => prog.pertemuan?.mataKuliahId === mk.id && prog.isCompleted
     ).length;
 
-    // A course has 14 sessions (standard)
-    const totalSessions = 14;
-    const percentage = Math.min(Math.round((completedSessions / totalSessions) * 100), 100);
+    // A course has custom sessions count
+    const totalSessions = mk.jumlahPertemuan || 14;
+    const percentage = totalSessions > 0 ? Math.min(Math.round((completedSessions / totalSessions) * 100), 100) : 0;
 
     return {
       completed: completedSessions,
@@ -101,7 +101,7 @@ const KursusSaya: React.FC = () => {
           {pendaftaranList.map((pendaftar) => {
             const mk = pendaftar.mataKuliah;
             if (!mk) return null;
-            const progress = getCourseProgress(mk.id);
+            const progress = getCourseProgress(mk);
 
             return (
               <Card 

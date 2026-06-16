@@ -46,7 +46,7 @@ const assignPengajar = async (req, res) => {
 
       const updatedCourse = await prisma.mataKuliah.update({
         where: { id: targetId },
-        data: { pengajarId: userId },
+        data: { pengajar: { connect: { id: userId } } },
         include: {
           pengajar: {
             select: { id: true, nama: true, email: true, role: true }

@@ -18,7 +18,7 @@ const getUjianSoal = async (req, res) => {
   }
 
   try {
-    // 1. Validasi "Unlock Logic" (Semua 14 sesi pertemuan harus completed)
+    // 1. Validasi "Unlock Logic" (Semua sesi pertemuan harus completed)
     if (bypass !== 'true') {
       const progressCount = await prisma.studentProgress.count({
         where: {
@@ -30,10 +30,16 @@ const getUjianSoal = async (req, res) => {
         }
       });
 
-      if (progressCount < 14) {
+      const targetCourse = await prisma.mataKuliah.findUnique({
+        where: { id: mataKuliahId },
+        select: { jumlahPertemuan: true }
+      });
+      const requiredCount = targetCourse ? targetCourse.jumlahPertemuan : 14;
+
+      if (progressCount < requiredCount) {
         return res.status(403).json({
           success: false,
-          message: `Ujian terkunci. Anda baru menyelesaikan ${progressCount} dari 14 sesi pertemuan. Selesaikan semua sesi untuk membuka ujian.`
+          message: `Ujian terkunci. Anda baru menyelesaikan ${progressCount} dari ${requiredCount} sesi pertemuan. Selesaikan semua sesi untuk membuka ujian.`
         });
       }
     }

@@ -207,8 +207,9 @@ const ManajemenJadwal: React.FC = () => {
     return hasDate || hasTime || hasInstructor || hasCustomTopic;
   });
 
-  const lastActiveUrutan = lastActiveIndex !== -1 ? (14 - lastActiveIndex) : 0;
-  const showUpToUrutan = Math.min(14, lastActiveUrutan + 1);
+  const totalMeetings = selectedCourse?.jumlahPertemuan || jadwalList.length || 14;
+  const lastActiveUrutan = lastActiveIndex !== -1 ? (totalMeetings - lastActiveIndex) : 0;
+  const showUpToUrutan = Math.min(totalMeetings, lastActiveUrutan + 1);
 
   const individualSessions = jadwalList.filter(s => s.urutan <= showUpToUrutan);
   const groupedSessions = jadwalList.filter(s => s.urutan > showUpToUrutan);
@@ -300,7 +301,7 @@ const ManajemenJadwal: React.FC = () => {
                 ) : (
                   <>
                     {individualSessions.map((s) => {
-                      const instructor = pengajarList.find(p => p.id === s.dosenId);
+                      const instructor = s.dosen || pengajarList.find(p => p.id === s.dosenId);
                       const status = getStatus(s);
                       
                       return (
@@ -416,7 +417,7 @@ const ManajemenJadwal: React.FC = () => {
                  Nomor Pertemuan
                </label>
                <div className="h-11 px-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center text-xs text-gray-500 font-semibold">
-                 Pertemuan ke-{editingSession?.urutan} (1-14)
+                 Pertemuan ke-{editingSession?.urutan} (1-{totalMeetings})
                </div>
             </div>
 

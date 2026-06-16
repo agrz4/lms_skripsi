@@ -35,8 +35,9 @@ const getAllMataKuliah = async (req, res) => {
 };
 
 const createMataKuliah = async (req, res) => {
-  const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna } = req.body;
+  const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, jumlahPertemuan } = req.body;
   try {
+    const numMeetings = jumlahPertemuan ? parseInt(jumlahPertemuan) : 14;
     // 1. Create Mata Kuliah
     const mataKuliah = await prisma.mataKuliah.create({
       data: {
@@ -49,12 +50,13 @@ const createMataKuliah = async (req, res) => {
         warna: warna || undefined,
         statusPendaftaran: statusPendaftaran || undefined,
         tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
-        pengajarId: pengajarId || undefined
+        pengajar: pengajarId ? { connect: { id: pengajarId } } : undefined,
+        jumlahPertemuan: numMeetings
       }
     });
 
-    // 2. Automatically create 14 empty sessions (Pertemuan)
-    const meetingsData = Array.from({ length: 14 }, (_, i) => ({
+    // 2. Automatically create empty sessions (Pertemuan)
+    const meetingsData = Array.from({ length: numMeetings }, (_, i) => ({
       mataKuliahId: mataKuliah.id,
       urutan: i + 1,
       topik: `Pertemuan ${i + 1}`
@@ -73,8 +75,15 @@ const createMataKuliah = async (req, res) => {
 
 const updateMataKuliah = async (req, res) => {
   const { id } = req.params;
-  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, prerequisites } = req.body;
+  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, prerequisites, jumlahPertemuan } = req.body;
   try {
+    const existingCourse = await prisma.mataKuliah.findUnique({
+      where: { id },
+      include: { pertemuan: { orderBy: { urutan: 'asc' } } }
+    });
+
+    const targetMeetingsCount = jumlahPertemuan ? parseInt(jumlahPertemuan) : (existingCourse?.jumlahPertemuan || 14);
+
     const mataKuliah = await prisma.mataKuliah.update({
       where: { id },
       data: {
@@ -88,7 +97,8 @@ const updateMataKuliah = async (req, res) => {
         warna: warna || undefined,
         statusPendaftaran: statusPendaftaran || undefined,
         tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
-        pengajarId: pengajarId || undefined,
+        pengajar: pengajarId ? { connect: { id: pengajarId } } : { disconnect: true },
+        jumlahPertemuan: targetMeetingsCount,
         prerequisites: prerequisites ? {
           set: prerequisites.map(pId => ({ id: typeof pId === 'object' ? pId.id : pId }))
         } : undefined
@@ -98,6 +108,52 @@ const updateMataKuliah = async (req, res) => {
         prerequisiteFor: true
       }
     });
+
+    // Adjust meeting count if changed
+    if (existingCourse) {
+      const currentMeetings = existingCourse.pertemuan;
+      const currentCount = currentMeetings.length;
+
+      if (targetMeetingsCount > currentCount) {
+        // Create additional meetings
+        const additionalMeetings = Array.from({ length: targetMeetingsCount - currentCount }, (_, i) => ({
+          mataKuliahId: id,
+          urutan: currentCount + i + 1,
+          topik: `Pertemuan ${currentCount + i + 1}`
+        }));
+        await prisma.pertemuan.createMany({ data: additionalMeetings });
+      } else if (targetMeetingsCount < currentCount) {
+        // Delete meetings with urutan > targetMeetingsCount
+        const meetingsToDelete = currentMeetings.filter(m => m.urutan > targetMeetingsCount);
+        const meetingIdsToDelete = meetingsToDelete.map(m => m.id);
+
+        if (meetingIdsToDelete.length > 0) {
+          // Cascade delete related entities
+          // 1. Delete submissions
+          await prisma.submission.deleteMany({
+            where: { pertemuanId: { in: meetingIdsToDelete } }
+          });
+          // 2. Delete progress
+          await prisma.studentProgress.deleteMany({
+            where: { pertemuanId: { in: meetingIdsToDelete } }
+          });
+          // 3. Delete materi
+          await prisma.materi.deleteMany({
+            where: { pertemuanId: { in: meetingIdsToDelete } }
+          });
+          // 4. Update soal to remove references to the deleted meetings
+          await prisma.soal.updateMany({
+            where: { pertemuanId: { in: meetingIdsToDelete } },
+            data: { pertemuanId: null }
+          });
+          // 5. Finally delete the meetings themselves
+          await prisma.pertemuan.deleteMany({
+            where: { id: { in: meetingIdsToDelete } }
+          });
+        }
+      }
+    }
+
     res.json(mataKuliah);
   } catch (error) {
     res.status(400).json({ message: error.message });

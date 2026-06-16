@@ -266,7 +266,7 @@ const UjianPage: React.FC = () => {
           <div className="space-y-2">
             <h3 className="text-2xl font-black text-gray-900">Ujian Belum Terbuka</h3>
             <p className="text-sm text-gray-500 font-medium leading-relaxed">
-              {lockMessage || 'Anda harus menyelesaikan seluruh 14 sesi pertemuan untuk membuka ujian akhir.'}
+              {lockMessage || 'Anda harus menyelesaikan seluruh sesi pertemuan untuk membuka ujian akhir.'}
             </p>
           </div>
           <Button 

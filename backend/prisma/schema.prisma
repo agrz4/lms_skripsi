@@ -42,6 +42,7 @@ model MataKuliah {
   tipeKursus        TipeKursus?
   pengajarId        String?
   pengajar          User?    @relation("PengajarMataKuliah", fields: [pengajarId], references: [id])
+  jumlahPertemuan   Int      @default(14)
   createdAt         DateTime @default(now())
   soal              Soal[]
   pertemuan         Pertemuan[]

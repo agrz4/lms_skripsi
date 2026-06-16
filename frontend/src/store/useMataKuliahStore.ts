@@ -20,6 +20,7 @@ export interface MataKuliah {
     nama: string;
     email?: string;
   };
+  jumlahPertemuan?: number;
   createdAt: string;
   _count?: {
     pendaftaran: number;

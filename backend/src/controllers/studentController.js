@@ -331,12 +331,12 @@ const getCourseSummary = async (req, res) => {
       }
     });
 
-    // 3. Get total meetings
-    const totalMeetings = await prisma.pertemuan.count({
-      where: {
-        mataKuliahId: courseId
-      }
+    // 3. Get total meetings configuration
+    const course = await prisma.mataKuliah.findUnique({
+      where: { id: courseId },
+      select: { jumlahPertemuan: true }
     });
+    const totalMeetings = course ? course.jumlahPertemuan : 14;
 
     // 4. Get exam status / score if any
     const ujian = await prisma.ujian.findUnique({
@@ -363,7 +363,7 @@ const getCourseSummary = async (req, res) => {
       avgRefleksi: Math.round(avgRefleksi * 10) / 10,
       avgTugas: Math.round(avgTugas * 10) / 10,
       completedMeetings: completedProgress,
-      totalMeetings: totalMeetings || 14,
+      totalMeetings: totalMeetings,
       examScore
     });
   } catch (error) {

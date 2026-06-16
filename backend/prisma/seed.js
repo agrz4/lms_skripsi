@@ -74,7 +74,7 @@ async function main() {
       kategori: 'Programming',
       statusPendaftaran: 'Aktif',
       tipeKursus: 'ONLINE',
-      pengajarId: dosen.id
+      pengajar: { connect: { id: dosen.id } }
     },
   });
 
@@ -90,7 +90,7 @@ async function main() {
       kategori: 'Design',
       statusPendaftaran: 'Segera',
       tipeKursus: 'HYBRID',
-      pengajarId: dosen.id
+      pengajar: { connect: { id: dosen.id } }
     },
   });
 

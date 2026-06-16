@@ -23,7 +23,7 @@ const KursusTersedia: React.FC = () => {
       description: mk.deskripsi || 'Pelajari materi ini untuk meningkatkan keahlian Anda secara komprehensif dengan bantuan AI.',
       tag: mk.kategori || 'Informatika',
       level: mk.level || 'Beginner',
-      modules: 14,
+      modules: mk.jumlahPertemuan || 14,
       instructor: mk.pengajar?.nama || 'Dr. Budi Santoso',
       status: isRegistered ? ('registered' as const) : ('enroll' as const),
     };

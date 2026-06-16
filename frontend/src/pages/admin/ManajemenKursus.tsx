@@ -98,7 +98,8 @@ const ManajemenKursus: React.FC = () => {
     kategori: 'Beginner',
     level: 'Beginner',
     statusPendaftaran: 'Aktif',
-    tipeKursus: 'Online'
+    tipeKursus: 'Online',
+    jumlahPertemuan: 14
   });
 
   useEffect(() => {
@@ -111,7 +112,7 @@ const ManajemenKursus: React.FC = () => {
     const pengajar = pengajarList.find(p => p.id === mk.pengajarId);
     
     // Calculate real progress
-    const totalSessions = 14;
+    const totalSessions = mk.jumlahPertemuan || 14;
     const jadwalCount = mk._count?.pertemuan || 0;
     const materiCount = mk.pertemuan?.filter(p => p.materi && p.materi.length > 0).length || 0;
     
@@ -121,14 +122,15 @@ const ManajemenKursus: React.FC = () => {
     } else if (jadwalCount > 0 || materiCount > 0) {
       aiStatus = 'Proses';
     }
-
+ 
     return {
       id: mk.id,
       nama: mk.nama,
       kode: mk.kode,
       level: mk.level || 'Beginner',
-      pengajarNama: pengajar?.nama || '-',
-      pengajarId: mk.pengajarId || '',
+      pengajarNama: mk.pengajar?.nama || pengajar?.nama || '-',
+      pengajarId: mk.pengajar?.id || mk.pengajarId || '',
+      jumlahPertemuan: totalSessions,
       jadwalText: jadwalCount > 0 ? `${jadwalCount}/${totalSessions}` : (mk.published ? `0/${totalSessions}` : ''),
       materiText: materiCount > 0 ? `${materiCount}/${totalSessions}` : (mk.published ? `0/${totalSessions}` : ''),
       pesertaCount: mk._count?.pendaftaran || 0,
@@ -148,6 +150,7 @@ const ManajemenKursus: React.FC = () => {
   }) : dummyCourses.map(c => ({
     ...c,
     pengajarId: '',
+    jumlahPertemuan: 14,
     rawJadwalCount: c.jadwalText ? parseInt(c.jadwalText.split('/')[0]) : 0,
     rawMateriCount: c.materiText ? parseInt(c.materiText.split('/')[0]) : 0,
     rawPublished: c.published,
@@ -178,17 +181,17 @@ const ManajemenKursus: React.FC = () => {
   // Dynamic progress values for the requirements footer card
   const requirements = selectedCourse ? {
     isCreated: true,
-    isJadwalFilled: selectedCourse.rawJadwalCount >= 14,
-    jadwalText: selectedCourse.rawJadwalCount >= 14 ? '14 jadwal terisi' : `${selectedCourse.rawJadwalCount}/14 jadwal terisi`,
-    isMateriUploaded: selectedCourse.rawMateriCount >= 14,
-    materiText: selectedCourse.rawMateriCount >= 14 ? '14 materi upload' : `${selectedCourse.rawMateriCount}/14 materi upload`,
+    isJadwalFilled: selectedCourse.rawJadwalCount >= selectedCourse.jumlahPertemuan,
+    jadwalText: selectedCourse.rawJadwalCount >= selectedCourse.jumlahPertemuan ? `${selectedCourse.jumlahPertemuan} jadwal terisi` : `${selectedCourse.rawJadwalCount}/${selectedCourse.jumlahPertemuan} jadwal terisi`,
+    isMateriUploaded: selectedCourse.rawMateriCount >= selectedCourse.jumlahPertemuan,
+    materiText: selectedCourse.rawMateriCount >= selectedCourse.jumlahPertemuan ? `${selectedCourse.jumlahPertemuan} materi upload` : `${selectedCourse.rawMateriCount}/${selectedCourse.jumlahPertemuan} materi upload`,
     isAiApproved: selectedCourse.rawPublished, // Using published status as indicator for AI approved
   } : {
     isCreated: true,
     isJadwalFilled: true,
-    jadwalText: '14 jadwal terisi',
+    jadwalText: 'Semua jadwal terisi',
     isMateriUploaded: true,
-    materiText: '14 materi upload',
+    materiText: 'Semua materi upload',
     isAiApproved: false, // Hourglass by default to match screenshot
   };
 
@@ -208,6 +211,13 @@ const ManajemenKursus: React.FC = () => {
     const foundInFullList = pengajarList.find(p => p.id === formData.pengajarId);
     if (foundInFullList) {
       displayInstructors.push(foundInFullList);
+    } else if (selectedCourse && selectedCourse.pengajarId === formData.pengajarId && selectedCourse.pengajarNama !== '-') {
+      displayInstructors.push({
+        id: formData.pengajarId,
+        nama: selectedCourse.pengajarNama,
+        role: 'DOSEN',
+        createdAt: ''
+      });
     } else {
       displayInstructors.push({
         id: formData.pengajarId,
@@ -229,7 +239,8 @@ const ManajemenKursus: React.FC = () => {
       kategori: course.kategori || 'Beginner',
       level: course.level || 'Beginner',
       statusPendaftaran: course.statusPendaftaran || 'Aktif',
-      tipeKursus: course.tipeKursus || 'Online'
+      tipeKursus: course.tipeKursus || 'Online',
+      jumlahPertemuan: course.jumlahPertemuan || 14
     });
     setIsModalOpen(true);
   };
@@ -270,7 +281,8 @@ const ManajemenKursus: React.FC = () => {
           kategori: formData.kategori,
           level: formData.level,
           statusPendaftaran: formData.statusPendaftaran,
-          tipeKursus: finalTipeKursus
+          tipeKursus: finalTipeKursus,
+          jumlahPertemuan: formData.jumlahPertemuan
         });
         alert('Kursus berhasil diperbarui!');
         fetchMataKuliah();
@@ -286,7 +298,8 @@ const ManajemenKursus: React.FC = () => {
         level: formData.level,
         statusPendaftaran: formData.statusPendaftaran,
         tipeKursus: finalTipeKursus,
-        published: false
+        published: false,
+        jumlahPertemuan: formData.jumlahPertemuan
       });
       alert('Kursus berhasil dibuat!');
       fetchMataKuliah();
@@ -298,7 +311,7 @@ const ManajemenKursus: React.FC = () => {
 
   const renderPublishButton = (course: typeof displayCourses[0]) => {
     const isPublished = course.published;
-    const isPublishable = course.rawJadwalCount === 14 && course.rawMateriCount === 14;
+    const isPublishable = course.rawJadwalCount === (course.jumlahPertemuan || 14) && course.rawMateriCount === (course.jumlahPertemuan || 14);
 
     if (isPublished) {
       return (
@@ -538,7 +551,7 @@ const ManajemenKursus: React.FC = () => {
           {/* Pagination */}
           <div className="p-6 bg-white flex items-center justify-between border-t border-gray-100">
             <span className="text-xs text-gray-400 font-bold italic">
-              {filteredCourses.length} kursus · Publish aktif jika Jadwal & Materi = 14/14
+              {filteredCourses.length} kursus · Publish aktif jika Jadwal & Materi Lengkap
             </span>
             <div className="flex items-center gap-4">
               <button
@@ -626,29 +639,30 @@ const ManajemenKursus: React.FC = () => {
               />
             </div>
 
-            {/* Pilih Pengajar & Kapasitas Peserta */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 block">Pilih Pengajar</label>
-                <Select 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val }))} 
-                  value={formData.pengajarId}
-                >
-                  <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
-                    <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-700">
-                      {displayInstructors.find(p => p.id === formData.pengajarId)?.nama || "Pilih Pengajar"}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {displayInstructors.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.nama}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Pilih Pengajar */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Pilih Pengajar</label>
+              <Select 
+                onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val }))} 
+                value={formData.pengajarId}
+              >
+                <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
+                  <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-700">
+                    {displayInstructors.find(p => p.id === formData.pengajarId)?.nama || "Pilih Pengajar"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {displayInstructors.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nama}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
+            {/* Kapasitas Peserta & Jumlah Pertemuan */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 block">Kapasitas Peserta</label>
                 <Input
@@ -658,6 +672,19 @@ const ManajemenKursus: React.FC = () => {
                   className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-800 focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all"
                   placeholder="29"
                   min={1}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 block">Jumlah Pertemuan</label>
+                <Input
+                  type="number"
+                  value={formData.jumlahPertemuan}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jumlahPertemuan: parseInt(e.target.value) || 14 }))}
+                  className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-800 focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all"
+                  placeholder="14"
+                  min={1}
+                  max={30}
                 />
               </div>
             </div>
