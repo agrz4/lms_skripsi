@@ -15,7 +15,8 @@ const getAllPertemuan = async (req, res) => {
         mataKuliah: true,
         dosen: { select: { id: true, nama: true } },
         asisten: { select: { id: true, nama: true } },
-        materi: true
+        materi: true,
+        soal: true
       }
     });
     res.json(pertemuan);
@@ -41,7 +42,8 @@ const updatePertemuan = async (req, res) => {
         mataKuliah: true,
         dosen: { select: { id: true, nama: true } },
         asisten: { select: { id: true, nama: true } },
-        materi: true
+        materi: true,
+        soal: true
       }
     });
     res.json(pertemuan);
@@ -69,7 +71,8 @@ const getPertemuanById = async (req, res) => {
         mataKuliah: true,
         dosen: { select: { id: true, nama: true } },
         asisten: { select: { id: true, nama: true } },
-        materi: true
+        materi: true,
+        soal: true
       }
     });
     if (!pertemuan) {

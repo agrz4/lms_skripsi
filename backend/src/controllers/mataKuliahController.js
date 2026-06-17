@@ -13,7 +13,8 @@ const getAllMataKuliah = async (req, res) => {
         pertemuan: {
           orderBy: { urutan: 'asc' },
           include: {
-            materi: true
+            materi: true,
+            soal: true
           }
         },
         prerequisites: true,

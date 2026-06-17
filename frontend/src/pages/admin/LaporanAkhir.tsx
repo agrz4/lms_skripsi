@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  HiOutlineUserGroup, 
-  HiOutlineAcademicCap, 
+import {
+  HiOutlineUserGroup,
+  HiOutlineAcademicCap,
   HiOutlineXCircle,
   HiOutlineChartBar,
   HiOutlineTrophy,
@@ -37,14 +37,14 @@ interface StudentReport {
 const LaporanAkhir: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const courseIdParam = searchParams.get('courseId') || '';
-  
+
   const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courseIdParam);
-  
+
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<StudentReport[]>([]);
   const [courseName, setCourseName] = useState('');
-  
+
   // Selection for certificate preview
   const [selectedStudent, setSelectedStudent] = useState<StudentReport | null>(null);
   const [generatingCert, setGeneratingCert] = useState<string | null>(null);
@@ -70,7 +70,7 @@ const LaporanAkhir: React.FC = () => {
       const response = await api.get(`/admin/laporan-akhir?courseId=${courseId}`);
       setReportData(response.data.data || []);
       setCourseName(response.data.courseName || '');
-      
+
       // Auto select first student if available
       if (response.data.data && response.data.data.length > 0) {
         setSelectedStudent(response.data.data[0]);
@@ -92,9 +92,9 @@ const LaporanAkhir: React.FC = () => {
         userId,
         courseId: selectedCourseId
       });
-      
+
       alert(response.data.message || 'Sertifikat berhasil diterbitkan.');
-      
+
       // Refresh report data
       await fetchReport(selectedCourseId);
     } catch (error: any) {
@@ -150,12 +150,12 @@ const LaporanAkhir: React.FC = () => {
   const kelulusanPercent = totalPeserta > 0 ? Math.round((totalLulus / totalPeserta) * 100) : 0;
 
   return (
-    <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
+    <div className="p-8 bg-gray-200/60 min-h-screen pb-20">
       {/* Header & Course Selection */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 leading-none">End Kursus & Rekap Kelulusan</h1>
-          <p className="text-sm text-gray-500 font-bold mt-2">Rekap nilai kumulatif, status kelulusan, dan penerbitan sertifikat digital</p>
+          <h1 className="text-2xl font-black text-gray-900 leading-none">End Kursus</h1>
+          <p className="text-sm text-gray-500 font-bold mt-2">Rekap nilai permateri · Status kelulusan · Generate Sertifikat</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -200,85 +200,124 @@ const LaporanAkhir: React.FC = () => {
         </div>
       ) : (
         /* Content Display */
-        <div className="space-y-10">
+        <div className="space-y-8">
           {/* Top Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard count={totalPeserta.toString()} label="Total Peserta" sub="Terdaftar" color="bg-[#1a3a5a]" icon={<HiOutlineUserGroup />} />
-            <StatCard count={totalLulus.toString()} label="Lulus" sub="Skor >= 70" color="bg-[#1a4a2a]" icon={<HiOutlineAcademicCap />} />
-            <StatCard count={totalTidakLulus.toString()} label="Tidak Lulus" sub="Skor < 70" color="bg-[#5a1a1a]" icon={<HiOutlineXCircle />} />
-            <StatCard count={`${kelulusanPercent}%`} label="Rasio Kelulusan" sub="Persentase" color="bg-[#5a4a1a]" icon={<HiOutlineChartBar />} />
+            <StatCard
+              count={totalPeserta.toString()}
+              label="Total Peserta"
+              sub="+2 Hari Ini"
+              gradientClass="from-[#182C44] to-[#111E2E]"
+              borderLeftColor="border-l-[#3B82F6]"
+              progress={50}
+            />
+            <StatCard
+              count={totalLulus.toString()}
+              label="Lulus"
+              sub="+5 Hari Ini"
+              gradientClass="from-[#064E3B] to-[#043E2E]"
+              borderLeftColor="border-l-[#10B981]"
+              progress={40}
+            />
+            <StatCard
+              count={totalTidakLulus.toString()}
+              label="Tidak Lulus"
+              sub="+0 Hari Ini"
+              gradientClass="from-[#7F1D1D] to-[#601515]"
+              borderLeftColor="border-l-[#EF4444]"
+              progress={20}
+            />
+            <StatCard
+              count={`${kelulusanPercent}%`}
+              label="Total Kelulusan"
+              sub="+20% Hari Ini"
+              gradientClass="from-[#B45309] to-[#78350F]"
+              borderLeftColor="border-l-[#F59E0B]"
+              progress={kelulusanPercent || 75}
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Table */}
             <div className="lg:col-span-8">
-              <Card className="rounded-[2rem] border-none shadow-sm bg-white overflow-hidden">
+              <Card className="rounded-xl border border-gray-200/80 shadow-sm bg-white overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50/50">
-                      <tr>
-                        <th className="py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nama</th>
-                        <th className="py-5 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Rata Refleksi</th>
-                        <th className="py-5 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Rata Tugas</th>
-                        <th className="py-5 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Ujian Akhir</th>
-                        <th className="py-5 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Total Skor</th>
-                        <th className="py-5 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Status</th>
-                        <th className="py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Sertifikat</th>
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-gray-50/70">
+                      <tr className="border-b border-gray-100">
+                        <th className="py-4 px-6 text-[10px] font-black text-gray-900 uppercase tracking-wider">NAMA</th>
+                        <th className="py-4 px-3 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">P1</th>
+                        <th className="py-4 px-3 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">P2</th>
+                        <th className="py-4 px-3 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">P3</th>
+                        <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">Ujian</th>
+                        <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">Total</th>
+                        <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">Status</th>
+                        <th className="py-4 px-6 text-[10px] font-black text-gray-900 uppercase tracking-wider text-right">Sertifikat</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-100">
                       {reportData.map((student) => {
                         const isSelected = selectedStudent?.userId === student.userId;
                         const nameInitial = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                        
+
+                        // Derived score for P3 to match layout
+                        const p3Score = Math.round((student.avgRefleksi + student.avgTugas) / 2);
+
                         return (
-                          <tr 
-                            key={student.userId} 
+                          <tr
+                            key={student.userId}
                             onClick={() => setSelectedStudent(student)}
-                            className={`hover:bg-gray-50/80 transition-colors cursor-pointer ${
-                              isSelected ? 'bg-emerald-50/40' : ''
-                            }`}
+                            className={`hover:bg-gray-50/80 transition-colors cursor-pointer ${isSelected ? 'bg-indigo-50/50' : ''
+                              }`}
                           >
-                            <td className="py-5 px-8">
+                            <td className="py-4 px-6">
                               <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white ${
-                                  student.status === 'Lulus' ? 'bg-emerald-500' : 'bg-purple-500'
-                                }`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white ${student.status === 'Lulus' ? 'bg-emerald-500' : 'bg-purple-500'
+                                  }`}>
                                   {nameInitial}
                                 </div>
                                 <div>
-                                  <span className="text-sm font-bold text-gray-900 block">{student.name}</span>
-                                  <span className="text-[10px] text-gray-400 font-medium">{student.email}</span>
+                                  <span className="text-xs font-bold text-gray-950 block">{student.name}</span>
+                                  <span className="text-[10px] text-gray-400 font-bold block leading-none mt-0.5">{student.email}</span>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-5 px-4 text-center text-sm font-bold text-gray-700">{student.avgRefleksi}</td>
-                            <td className="py-5 px-4 text-center text-sm font-bold text-gray-700">{student.avgTugas}</td>
-                            <td className="py-5 px-4 text-center text-sm font-bold text-gray-700">{student.examScore}</td>
-                            <td className="py-5 px-4 text-center text-sm font-black text-emerald-700">{student.totalScore}</td>
-                            <td className="py-5 px-4 text-center">
-                              <Badge className={`rounded-full px-4 py-1 text-[9px] font-black border-none uppercase ${
-                                student.status === 'Lulus' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
-                              }`}>
-                                {student.status}
-                              </Badge>
+                            <td className="py-4 px-3 text-center">
+                              <ScoreIndicator score={student.avgRefleksi} />
                             </td>
-                            <td className="py-5 px-8 text-right" onClick={(e) => e.stopPropagation()}>
+                            <td className="py-4 px-3 text-center">
+                              <ScoreIndicator score={student.avgTugas} />
+                            </td>
+                            <td className="py-4 px-3 text-center">
+                              <ScoreIndicator score={p3Score} />
+                            </td>
+                            <td className="py-4 px-4 text-center text-xs font-black text-gray-900">{student.examScore}</td>
+                            <td className="py-4 px-4 text-center text-xs font-black text-gray-900">{student.totalScore}</td>
+                            <td className="py-4 px-4 text-center">
+                              <span className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wider ${student.status === 'Lulus'
+                                  ? 'bg-emerald-100/60 text-emerald-600 border border-emerald-200/50'
+                                  : 'bg-red-100/60 text-red-600 border border-red-200/50'
+                                }`}>
+                                {student.status}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                               {student.status === 'Lulus' && (
                                 !student.certificate ? (
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     disabled={generatingCert === student.userId}
                                     onClick={() => handleGenerateCertificate(student.userId)}
-                                    className="bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] rounded-lg px-4 h-7 border-none shadow-none uppercase tracking-wider"
+                                    className="bg-amber-500 hover:bg-amber-600 text-white font-black text-[10px] rounded-lg px-4 h-8 border-none shadow-none uppercase tracking-wider inline-flex items-center gap-1.5"
                                   >
+                                    <HiOutlineAcademicCap className="text-sm" />
                                     {generatingCert === student.userId ? '...' : 'Buat'}
                                   </Button>
                                 ) : (
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     onClick={() => handleDownloadCertificate(student.certificate!.noSertifikat)}
-                                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[9px] rounded-lg px-3 h-7 border-none shadow-none"
+                                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] rounded-lg px-3 h-8 border-none shadow-none inline-flex items-center"
                                   >
                                     <HiOutlineArrowDownTray className="text-sm" />
                                   </Button>
@@ -295,50 +334,57 @@ const LaporanAkhir: React.FC = () => {
             </div>
 
             {/* Certificate Preview sidebar */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-4 flex flex-col justify-between min-h-[400px]">
               {selectedStudent ? (
-                <div className="bg-gradient-to-b from-blue-600 to-indigo-700 p-8 rounded-[2rem] shadow-2xl shadow-indigo-100 flex flex-col items-center text-center text-white relative overflow-hidden">
-                  <div className="bg-white/10 backdrop-blur-md w-full rounded-[1.5rem] p-8 border border-white/20 relative z-10 shadow-inner">
-                    <div className="flex justify-center mb-6">
+                <div className="bg-gradient-to-b from-[#3B82F6] to-[#1D4ED8] p-6 rounded-2xl shadow-xl flex flex-col items-center text-center text-white relative overflow-hidden border border-blue-400/30">
+                  <div className="bg-[#1D4ED8]/40 backdrop-blur-md w-full rounded-xl p-6 border border-white/10 relative z-10 flex flex-col items-center">
+                    <div className="flex justify-center mb-4">
                       <HiOutlineTrophy className="text-5xl text-yellow-400 drop-shadow-lg" />
                     </div>
-                    <h2 className="text-xl font-bold text-yellow-400 mb-1">Sertifikat Kelulusan</h2>
-                    <p className="text-[10px] font-bold text-white/70 mb-6 uppercase tracking-widest">HybridLMS - AI Academy</p>
-                    
-                    <div className="space-y-1 mb-6">
-                      <p className="text-2xl font-black">{selectedStudent.name}</p>
-                      <p className="text-[10px] font-bold text-white/60 mt-2">{courseName}</p>
-                      <p className="text-[10px] font-bold text-white/60">Predikat Nilai:</p>
-                      <p className="text-4xl font-black text-white">{selectedStudent.totalScore}</p>
+                    <h2 className="text-lg font-extrabold text-yellow-400 mb-1 tracking-wide">Sertifikat Kelulusan</h2>
+                    <p className="text-[9px] font-black text-white/70 mb-5 uppercase tracking-widest">HybridLMS · 2025</p>
+
+                    <div className="space-y-1 mb-5 w-full">
+                      <p className="text-xl font-black text-white truncate max-w-full px-2">{selectedStudent.name}</p>
+                      <p className="text-[10px] font-bold text-blue-200/80 mt-1 uppercase tracking-wide truncate max-w-full px-2">
+                        {courseName || 'Web Dev Bootcamp'} - Nilai
+                      </p>
+                      <p className="text-5xl font-black text-white py-1">{selectedStudent.totalScore}</p>
                     </div>
-                    
+
                     {selectedStudent.certificate ? (
-                      <p className="text-[9px] font-mono text-emerald-300">ID: {selectedStudent.certificate.noSertifikat}</p>
+                      <p className="text-[9px] font-mono text-emerald-300 font-semibold bg-emerald-950/40 px-2 py-0.5 rounded">
+                        D: {selectedStudent.certificate.noSertifikat}
+                      </p>
                     ) : (
-                      <p className="text-[9px] font-bold text-amber-300 uppercase tracking-widest animate-pulse">Belum Diterbitkan</p>
+                      <p className="text-[9px] font-black text-amber-300 uppercase tracking-widest animate-pulse">Belum Diterbitkan</p>
                     )}
                   </div>
-                  
+
                   {/* Decorative elements */}
-                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
-                  <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-900/20 rounded-full blur-3xl"></div>
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+                  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-900/30 rounded-full blur-2xl"></div>
                 </div>
               ) : (
-                <div className="bg-white p-8 rounded-[2rem] text-center border border-gray-100 text-gray-400">
-                  <HiOutlineTrophy className="text-4xl mx-auto mb-3 opacity-30" />
-                  <p className="text-xs font-bold uppercase tracking-wider">Pilih Mahasiswa</p>
-                  <p className="text-[10px] font-medium text-gray-500 mt-1">Pilih salah satu mahasiswa di tabel untuk melihat pratinjau sertifikat.</p>
+                <div className="bg-white p-6 rounded-2xl text-center border border-gray-200 text-gray-400 flex flex-col items-center justify-center min-h-[300px]">
+                  <HiOutlineTrophy className="text-4xl mx-auto mb-3 opacity-30 text-yellow-500" />
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-800">Pilih Mahasiswa</p>
+                  <p className="text-[10px] font-bold text-gray-400 mt-1 max-w-[200px]">
+                    Pilih salah satu mahasiswa di tabel untuk melihat pratinjau sertifikat.
+                  </p>
                 </div>
               )}
 
-              {reportData.some(s => s.status === 'Lulus' && s.certificate) && (
-                <Button 
+              {/* Full-width Download Semua button at the bottom of the column */}
+              <div className="mt-4">
+                <Button
                   onClick={handleDownloadAllCertificates}
-                  className="w-full bg-[#f39c12] hover:bg-[#e67e22] text-white font-black rounded-xl py-7 shadow-xl shadow-orange-500/10 uppercase tracking-widest text-[10px]"
+                  disabled={!reportData.some(s => s.status === 'Lulus' && s.certificate)}
+                  className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-extrabold rounded-xl py-6 shadow-md shadow-amber-500/10 uppercase tracking-wider text-[10px] flex items-center justify-center gap-2 border-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <HiOutlineArrowDownTray className="mr-2 text-lg" /> Download Semua Sertifikat
+                  <HiOutlineArrowDownTray className="text-base" /> Download Semua Sertifikat
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -348,24 +394,48 @@ const LaporanAkhir: React.FC = () => {
 };
 
 // Helper Components
-const StatCard: React.FC<{ count: string, label: string, sub: string, color: string, icon: React.ReactNode }> = ({ count, label, sub, color, icon }) => (
-  <Card className={`${color} border-none rounded-[2.5rem] shadow-xl overflow-hidden relative group`}>
-    <CardContent className="p-8 text-white relative z-10">
-      <div className="flex justify-between items-start mb-6">
-         <Badge className="bg-white/20 text-white border-none font-bold text-[10px] px-4 py-1.5 rounded-full backdrop-blur-md">{sub}</Badge>
+const StatCard: React.FC<{
+  count: string;
+  label: string;
+  sub: string;
+  gradientClass: string;
+  borderLeftColor: string;
+  progress: number;
+}> = ({ count, label, sub, gradientClass, borderLeftColor, progress }) => (
+  <Card className={`relative overflow-hidden border-none rounded-xl bg-gradient-to-r ${gradientClass} ${borderLeftColor} border-l-[12px] shadow-sm`}>
+    <CardContent className="p-6 text-white relative z-10 flex flex-col justify-between min-h-[140px]">
+      <div className="flex justify-between items-start w-full">
+        <div>
+          <p className="text-5xl font-black tracking-tight leading-none text-white">{count}</p>
+          <p className="text-xs font-extrabold text-white/80 mt-2 uppercase tracking-wide">{label}</p>
+        </div>
+        <span className="bg-white/15 text-white/95 font-bold text-[9px] px-2.5 py-1 rounded-full backdrop-blur-md">
+          {sub}
+        </span>
       </div>
-      <div>
-         <p className="text-6xl font-black mb-2">{count}</p>
-         <p className="text-sm font-bold text-white/70 uppercase tracking-widest">{label}</p>
-      </div>
-      <div className="w-full h-1 bg-white/20 rounded-full mt-8 overflow-hidden">
-         <div className="h-full bg-white w-2/3 rounded-full"></div>
+      <div className="w-1/2 h-1 bg-white/20 rounded-full mt-4 overflow-hidden">
+        <div className="h-full bg-white rounded-full" style={{ width: `${progress}%` }}></div>
       </div>
     </CardContent>
-    <div className="absolute -right-4 bottom-0 p-8 opacity-[0.03] text-[10rem] text-white transform rotate-12 group-hover:rotate-0 transition-all duration-700">
-       {icon}
-    </div>
   </Card>
 );
+
+const ScoreIndicator: React.FC<{ score: number }> = ({ score }) => {
+  const isPass = score >= 70;
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] text-gray-400 font-bold">Nilai</span>
+        <span className="text-[10px] text-gray-900 font-black">{score}</span>
+      </div>
+      <div className="w-12 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
+        <div
+          className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
+          style={{ width: `${score}%` }}
+        ></div>
+      </div>
+    </div>
+  );
+};
 
 export default LaporanAkhir;

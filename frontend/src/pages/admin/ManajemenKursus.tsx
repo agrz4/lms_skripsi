@@ -80,11 +80,16 @@ const ManajemenKursus: React.FC = () => {
   const { pengajarList, fetchPengajar } = usePengajarStore();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   // Modal Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -162,11 +167,16 @@ const ManajemenKursus: React.FC = () => {
     isDummy: true
   }));
 
-  // Filter based on search query
-  const filteredCourses = displayCourses.filter(c => 
-    c.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.kode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter based on search query and status filter
+  const filteredCourses = displayCourses.filter(c => {
+    const matchesSearch = c.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.kode.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (statusFilter === 'all') return matchesSearch;
+    if (statusFilter === 'aktif') return matchesSearch && c.published;
+    if (statusFilter === 'draft') return matchesSearch && !c.published;
+    return matchesSearch;
+  });
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredCourses.length / entriesPerPage) || 1;
@@ -428,7 +438,7 @@ const ManajemenKursus: React.FC = () => {
           />
         </div>
 
-        <Select defaultValue="all">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-24 h-8 bg-[#5850ec] text-white hover:bg-[#4f46e5] font-semibold rounded-lg text-xs px-3 shadow-sm border-none flex items-center justify-between">
             <SelectValue placeholder="Status" />
           </SelectTrigger>

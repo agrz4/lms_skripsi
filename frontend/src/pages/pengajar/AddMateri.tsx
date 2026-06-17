@@ -3,28 +3,30 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   HiOutlinePlayCircle, 
   HiOutlinePlus,
-  HiOutlineLink,
-  HiOutlineVideoCamera,
   HiOutlineTrash,
   HiOutlineArrowLeft,
   HiOutlineFolder,
   HiOutlineCheck,
-  HiOutlineSparkles
+  HiOutlineDocumentText
 } from 'react-icons/hi2';
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from '../../lib/api';
 
-interface MateriItem {
+interface VideoItem {
   id?: string;
   nama: string;
-  videoSource: 'tiktok' | 'upload' | 'zoom';
-  videoUrl: string;
-  fileUrl: string;
-  refleksi: string;
-  uploadingVideo?: boolean;
-  uploadingFile?: boolean;
+  source: 'tiktok' | 'upload' | 'zoom';
+  url: string;
+  uploading?: boolean;
+}
+
+interface SubMateriItem {
+  id?: string;
+  nama: string;
+  url: string;
+  uploading?: boolean;
 }
 
 const AddMateri: React.FC = () => {
@@ -35,9 +37,15 @@ const AddMateri: React.FC = () => {
   const [allMeetings, setAllMeetings] = useState<any[]>([]);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
   const [meeting, setMeeting] = useState<any>(null);
-  const [materiItems, setMateriItems] = useState<MateriItem[]>([
-    { nama: '', videoSource: 'upload', videoUrl: '', fileUrl: '', refleksi: '' }
+  
+  const [videos, setVideos] = useState<VideoItem[]>([
+    { nama: '', source: 'upload', url: '' }
   ]);
+  const [subMateri, setSubMateri] = useState<SubMateriItem[]>([
+    { nama: '', url: '' }
+  ]);
+  const [refleksi, setRefleksi] = useState<string>('');
+
   const [pgQuestions, setPgQuestions] = useState<string>('');
   const [newQuestion, setNewQuestion] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -65,19 +73,48 @@ const AddMateri: React.FC = () => {
         const materiRes = await api.get(`/materi?pertemuanId=${pertemuanId}`);
         const existingMateri = materiRes.data || [];
         
-        if (existingMateri.length > 0) {
-          const mapped = existingMateri.map((m: any) => ({
-            id: m.id,
-            nama: m.nama,
-            videoSource: m.videoUrl && (m.videoUrl.includes('tiktok') || m.videoUrl.includes('youtube') || m.videoUrl.includes('http')) ? 'tiktok' : 'upload',
-            videoUrl: m.videoUrl || '',
-            fileUrl: m.fileUrl || '',
-            refleksi: m.refleksi || ''
-          }));
-          setMateriItems(mapped);
-        } else {
-          setMateriItems([{ nama: '', videoSource: 'upload', videoUrl: '', fileUrl: '', refleksi: '' }]);
+        const loadedVideos: VideoItem[] = [];
+        const loadedSubMateri: SubMateriItem[] = [];
+        let loadedRefleksi = '';
+
+        existingMateri.forEach((m: any) => {
+          if (m.refleksi && !loadedRefleksi) {
+            loadedRefleksi = m.refleksi;
+          }
+
+          if (m.videoUrl) {
+            let src: 'tiktok' | 'upload' | 'zoom' = 'upload';
+            if (m.videoUrl.includes('zoom.us') || m.videoUrl.includes('zoomLink')) {
+              src = 'zoom';
+            } else if (m.videoUrl.includes('tiktok') || m.videoUrl.includes('youtube') || m.videoUrl.includes('instagram') || m.videoUrl.startsWith('http')) {
+              src = 'tiktok';
+            }
+            loadedVideos.push({
+              id: m.id,
+              nama: m.nama || `Video ${loadedVideos.length + 1}`,
+              source: src,
+              url: m.videoUrl
+            });
+          } else if (m.fileUrl) {
+            loadedSubMateri.push({
+              id: m.id,
+              nama: m.nama || `Sub Materi ${loadedSubMateri.length + 1}`,
+              url: m.fileUrl
+            });
+          }
+        });
+
+        // Initialize defaults if empty
+        if (loadedVideos.length === 0) {
+          loadedVideos.push({ nama: 'Video 1', source: 'upload', url: '' });
         }
+        if (loadedSubMateri.length === 0) {
+          loadedSubMateri.push({ nama: 'Sub Materi 1', url: '' });
+        }
+
+        setVideos(loadedVideos);
+        setSubMateri(loadedSubMateri);
+        setRefleksi(loadedRefleksi);
 
         const pgRes = await api.get(`/materi/latihan-pg?pertemuanId=${pertemuanId}`);
         const existingPg = pgRes.data || [];
@@ -90,7 +127,9 @@ const AddMateri: React.FC = () => {
       } else {
         setSelectedMeetingId('');
         setMeeting(null);
-        setMateriItems([{ nama: '', videoSource: 'upload', videoUrl: '', fileUrl: '', refleksi: '' }]);
+        setVideos([{ nama: 'Video 1', source: 'upload', url: '' }]);
+        setSubMateri([{ nama: 'Sub Materi 1', url: '' }]);
+        setRefleksi('');
         setPgQuestions('');
       }
     } catch (error) {
@@ -108,34 +147,38 @@ const AddMateri: React.FC = () => {
     }
   };
 
-  const handleAddField = () => {
-    setMateriItems([...materiItems, { nama: '', videoSource: 'upload', videoUrl: '', fileUrl: '', refleksi: '' }]);
+  const handleAddVideo = () => {
+    setVideos([...videos, { nama: `Video ${videos.length + 1}`, source: 'upload', url: '' }]);
   };
 
-  const handleRemoveField = async (index: number) => {
-    const item = materiItems[index];
-    if (item.id) {
-      if (confirm('Apakah Anda yakin ingin menghapus sub-materi ini secara permanen dari database?')) {
-        try {
-          await api.delete(`/materi/${item.id}`);
-        } catch (err: any) {
-          alert('Gagal menghapus sub-materi: ' + (err.response?.data?.message || err.message));
-          return;
-        }
-      }
-    }
-    const newItems = materiItems.filter((_, idx) => idx !== index);
-    setMateriItems(newItems.length > 0 ? newItems : [{ nama: '', videoSource: 'upload', videoUrl: '', fileUrl: '', refleksi: '' }]);
+  const handleRemoveVideo = (index: number) => {
+    const updated = videos.filter((_, idx) => idx !== index);
+    setVideos(updated.length > 0 ? updated : [{ nama: 'Video 1', source: 'upload', url: '' }]);
   };
 
-  const handleUpdateItem = (index: number, key: keyof MateriItem, value: any) => {
-    const newItems = [...materiItems];
-    newItems[index] = { ...newItems[index], [key]: value };
-    setMateriItems(newItems);
+  const handleUpdateVideo = (index: number, key: keyof VideoItem, value: any) => {
+    const updated = [...videos];
+    updated[index] = { ...updated[index], [key]: value };
+    setVideos(updated);
+  };
+
+  const handleAddSubMateri = () => {
+    setSubMateri([...subMateri, { nama: `Sub Materi ${subMateri.length + 1}`, url: '' }]);
+  };
+
+  const handleRemoveSubMateri = (index: number) => {
+    const updated = subMateri.filter((_, idx) => idx !== index);
+    setSubMateri(updated.length > 0 ? updated : [{ nama: 'Sub Materi 1', url: '' }]);
+  };
+
+  const handleUpdateSubMateri = (index: number, key: keyof SubMateriItem, value: any) => {
+    const updated = [...subMateri];
+    updated[index] = { ...updated[index], [key]: value };
+    setSubMateri(updated);
   };
 
   const handleVideoUpload = async (index: number, file: File) => {
-    handleUpdateItem(index, 'uploadingVideo', true);
+    handleUpdateVideo(index, 'uploading', true);
     const formData = new FormData();
     formData.append('video', file);
     try {
@@ -143,18 +186,18 @@ const AddMateri: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data && res.data.success) {
-        handleUpdateItem(index, 'videoUrl', res.data.fileUrl);
+        handleUpdateVideo(index, 'url', res.data.fileUrl);
       }
     } catch (error: any) {
       console.error(error);
       alert('Gagal upload video: ' + (error.response?.data?.message || error.message));
     } finally {
-      handleUpdateItem(index, 'uploadingVideo', false);
+      handleUpdateVideo(index, 'uploading', false);
     }
   };
 
   const handlePdfUpload = async (index: number, file: File) => {
-    handleUpdateItem(index, 'uploadingFile', true);
+    handleUpdateSubMateri(index, 'uploading', true);
     const formData = new FormData();
     formData.append('file', file);
     try {
@@ -162,13 +205,13 @@ const AddMateri: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data && res.data.success) {
-        handleUpdateItem(index, 'fileUrl', res.data.fileUrl);
+        handleUpdateSubMateri(index, 'url', res.data.fileUrl);
       }
     } catch (error: any) {
       console.error(error);
-      alert('Gagal upload dokumen: ' + (error.response?.data?.message || error.message));
+      alert('Gagal upload modul: ' + (error.response?.data?.message || error.message));
     } finally {
-      handleUpdateItem(index, 'uploadingFile', false);
+      handleUpdateSubMateri(index, 'uploading', false);
     }
   };
 
@@ -179,25 +222,58 @@ const AddMateri: React.FC = () => {
     }
     setSaving(true);
     try {
-      for (const item of materiItems) {
-        if (!item.nama.trim()) continue;
-
-        const payload = {
-          nama: item.nama,
-          mataKuliahId: meeting.mataKuliahId,
-          pertemuanId: meeting.id,
-          fileUrl: item.fileUrl || null,
-          videoUrl: item.videoUrl || null,
-          refleksi: item.refleksi || null
-        };
-
-        if (item.id) {
-          await api.put(`/materi/${item.id}`, payload);
-        } else {
-          await api.post('/materi', payload);
-        }
+      // 1. Delete existing materi for this meeting
+      const existingRes = await api.get(`/materi?pertemuanId=${meeting.id}`);
+      const existingMateri = existingRes.data || [];
+      for (const m of existingMateri) {
+        await api.delete(`/materi/${m.id}`);
       }
 
+      // 2. Prepare payloads
+      const payloads: any[] = [];
+
+      // Add videos
+      videos.forEach((v, idx) => {
+        if (v.url.trim() || v.nama.trim()) {
+          payloads.push({
+            nama: v.nama || `Video ${idx + 1}`,
+            videoUrl: v.url || null,
+            fileUrl: null
+          });
+        }
+      });
+
+      // Add sub-materi PDFs
+      subMateri.forEach((sm, idx) => {
+        if (sm.url.trim() || sm.nama.trim()) {
+          payloads.push({
+            nama: sm.nama || `Sub Materi ${idx + 1}`,
+            videoUrl: null,
+            fileUrl: sm.url || null
+          });
+        }
+      });
+
+      // If no payloads were created, add a default record
+      if (payloads.length === 0) {
+        payloads.push({
+          nama: 'Materi Utama',
+          videoUrl: null,
+          fileUrl: null
+        });
+      }
+
+      // Attach reflection text to the first record
+      payloads[0].refleksi = refleksi || null;
+
+      // 3. Post to backend
+      for (const p of payloads) {
+        p.pertemuanId = meeting.id;
+        p.mataKuliahId = meeting.mataKuliahId;
+        await api.post('/materi', p);
+      }
+
+      // 4. Save PG questions
       const questions = pgQuestions
         .split('\n')
         .map(q => q.trim())
@@ -245,70 +321,40 @@ const AddMateri: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8 bg-[#F3F4F6] min-h-screen flex items-center justify-center">
+      <div className="p-8 bg-[#F3F4F6] min-h-screen flex items-center justify-center font-sans">
         <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Loading data materi...</p>
       </div>
     );
   }
 
-  const topicName = meeting 
-    ? `Pertemuan ${meeting.urutan}` 
-    : 'Pilih Pertemuan';
-
-  const formattedDate = meeting?.tgl 
-    ? new Date(meeting.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-    : '—';
-  
-  const formattedDay = meeting?.tgl 
-    ? new Date(meeting.tgl).toLocaleDateString('id-ID', { weekday: 'long' })
-    : '—';
-
-  const formattedTime = meeting?.jam ? `${formattedDay} ${meeting.jam}` : '—';
-  const lecturerName = meeting?.dosen?.nama || meeting?.mataKuliah?.pengajar?.nama || 'Dosen Belum Ditentukan';
-
   const questionsList = pgQuestions.split('\n').map(q => q.trim()).filter(q => q.length > 0);
 
-  const hasVideo = materiItems.some(item => item.videoUrl);
-  const hasPdf = materiItems.some(item => item.fileUrl);
-  const hasReflection = materiItems.some(item => item.refleksi);
-
   return (
-    <div className="p-8 bg-[#F3F4F6] min-h-screen pb-36 text-left">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div className="flex items-center gap-4">
-          <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-sm cursor-pointer hover:bg-gray-50 transition-colors border border-slate-200/50" onClick={() => navigate('/pengajar/monitoring')}>
-            <HiOutlineArrowLeft className="text-gray-700 text-base" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 leading-tight">
-              Add Materi — {topicName}
-            </h1>
-            <p className="text-xs font-semibold text-gray-400 mt-0.5">
-              {meeting?.mataKuliah?.nama || 'Mata Kuliah'} · {formattedDate} · {formattedTime} · {lecturerName}
-            </p>
-          </div>
-        </div>
+    <div className="p-8 bg-[#F3F4F6] min-h-screen pb-36 text-left font-sans">
+      {/* Title & Subtitle */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-black text-gray-900 mb-1">Edit/Add Materi</h1>
+        <p className="text-xs text-gray-500 font-medium">Bisa tambah banyak video · Sub materi dalam satu pertemuan</p>
+      </div>
 
-        {/* Meeting Dropdown Selector */}
-        <div className="w-72 bg-white rounded-xl shadow-sm border border-slate-200/50 p-1 flex items-center">
-          <select
-            value={selectedMeetingId}
-            onChange={(e) => handleMeetingChange(e.target.value)}
-            className="w-full bg-transparent border-none text-xs font-bold text-gray-700 focus:outline-none cursor-pointer p-2"
-          >
-            <option value="">-- Pilih Pertemuan --</option>
-            {allMeetings.map((p: any) => (
-              <option key={p.id} value={p.id}>
-                Pertemuan {p.urutan} - {p.topik || 'Tanpa Topik'} ({p.mataKuliah?.nama || 'Tanpa MK'})
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Dropdown Selector */}
+      <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6">
+        <select
+          value={selectedMeetingId}
+          onChange={(e) => handleMeetingChange(e.target.value)}
+          className="w-full bg-transparent border-none text-xs font-bold text-gray-700 focus:outline-none cursor-pointer p-2"
+        >
+          <option value="">-- Pilih Pertemuan --</option>
+          {allMeetings.map((p: any) => (
+            <option key={p.id} value={p.id}>
+              P{p.urutan} {p.topik || 'Tanpa Topik'}
+            </option>
+          ))}
+        </select>
       </div>
 
       {!selectedMeetingId ? (
-        <Card className="rounded-2xl border border-slate-200/50 shadow-sm bg-white p-16 text-center">
+        <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-16 text-center">
           <div className="max-w-md mx-auto space-y-5">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto">
               <HiOutlinePlayCircle />
@@ -327,378 +373,333 @@ const AddMateri: React.FC = () => {
           {/* Left Column: Media & Sub-Materi */}
           <div className="lg:col-span-7 space-y-6">
             
-            {materiItems.map((item, idx) => (
-              <Card key={idx} className="rounded-2xl border border-slate-200/50 shadow-sm bg-white p-8 space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <h2 className="text-base font-black text-gray-950">Sub-Materi {idx + 1}</h2>
-                  {materiItems.length > 1 && (
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => handleRemoveField(idx)} 
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50/50 p-2 rounded-lg"
-                    >
-                      <HiOutlineTrash className="text-lg" />
-                    </Button>
-                  )}
-                </div>
+            {/* Konten Video Card */}
+            <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-6 space-y-6">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Konten Video (Bisa Lebih dari 1)</h2>
+              </div>
 
-                {/* Sub-Materi Name Input */}
-                <div className="space-y-2">
-                  <Input 
-                    value={item.nama}
-                    onChange={(e) => handleUpdateItem(idx, 'nama', e.target.value)}
-                    className="bg-slate-50 border-none rounded-xl py-5 px-4 text-xs font-semibold text-gray-800 placeholder:text-gray-450 focus:bg-white focus:ring-2 focus:ring-purple-500/20 transition-all"
-                    placeholder="Masukkan nama sub-materi..."
-                  />
-                </div>
-
-                {/* Segmented Radio Tab Selector */}
-                <div className="flex bg-slate-100/80 p-1 rounded-xl w-fit">
-                  {[
-                    { key: 'zoom', label: 'Zoom/Meet' },
-                    { key: 'tiktok', label: 'Micro Learning' },
-                    { key: 'upload', label: 'General PDF' }
-                  ].map((sourceOpt) => (
-                    <button
-                      key={sourceOpt.key}
-                      type="button"
-                      onClick={() => handleUpdateItem(idx, 'videoSource', sourceOpt.key)}
-                      className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all ${
-                        item.videoSource === sourceOpt.key 
-                          ? 'bg-purple-600 text-white shadow-sm' 
-                          : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/30'
-                      }`}
-                    >
-                      {sourceOpt.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Dashed upload container */}
-                <div className="border border-dashed border-slate-200 rounded-xl p-6 bg-slate-50/30 space-y-4">
-                  
-                  {/* File Upload Lists (Folder-style) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    
-                    {/* Video Folder Slot */}
-                    <div className="relative">
-                      {item.videoUrl ? (
-                        <div className="h-14 bg-white border border-slate-200/80 rounded-xl flex items-center justify-between px-4 shadow-sm">
-                          <div className="flex items-center gap-2.5 truncate pr-2">
-                            <HiOutlineFolder className="text-amber-500 text-xl shrink-0" />
-                            <span className="text-xs font-semibold text-gray-700 truncate">
-                              {item.videoUrl.substring(item.videoUrl.lastIndexOf('/') + 1) || 'Video Uploaded'}
-                            </span>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => handleUpdateItem(idx, 'videoUrl', '')}
-                            className="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase shrink-0"
-                          >
-                            Hapus
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/50 transition-colors cursor-pointer">
-                          <input 
-                            type="file" 
-                            accept="video/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleVideoUpload(idx, file);
-                            }}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <div className="flex items-center gap-2.5">
-                            <HiOutlineFolder className="text-gray-300 text-xl" />
-                            <span className="text-xs font-semibold text-gray-400">
-                              {item.uploadingVideo ? 'Mengunggah...' : 'Upload Video (.mp4)'}
-                            </span>
-                          </div>
-                        </div>
+              <div className="space-y-6">
+                {videos.map((v, idx) => (
+                  <div key={idx} className="p-4 border border-gray-150 rounded-xl bg-slate-50/50 space-y-4 relative">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-gray-800">
+                        Video {idx + 1} — {v.nama || 'Intro CSS'}
+                      </label>
+                      {videos.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => handleRemoveVideo(idx)}
+                          className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px]"
+                        >
+                          Hapus Video
+                        </button>
                       )}
                     </div>
 
-                    {/* PDF Folder Slot */}
-                    <div className="relative">
-                      {item.fileUrl ? (
-                        <div className="h-14 bg-white border border-slate-200/80 rounded-xl flex items-center justify-between px-4 shadow-sm">
-                          <div className="flex items-center gap-2.5 truncate pr-2">
-                            <HiOutlineFolder className="text-amber-500 text-xl shrink-0" />
-                            <span className="text-xs font-semibold text-gray-700 truncate">
-                              {item.fileUrl.substring(item.fileUrl.lastIndexOf('/') + 1) || 'PDF Uploaded'}
-                            </span>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => handleUpdateItem(idx, 'fileUrl', '')}
-                            className="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase shrink-0"
-                          >
-                            Hapus
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/50 transition-colors cursor-pointer">
-                          <input 
-                            type="file" 
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handlePdfUpload(idx, file);
-                            }}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <div className="flex items-center gap-2.5">
-                            <HiOutlineFolder className="text-gray-300 text-xl" />
-                            <span className="text-xs font-semibold text-gray-400">
-                              {item.uploadingFile ? 'Mengunggah...' : 'Upload PDF (.pdf)'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                    <div className="space-y-2">
+                      <Input
+                        value={v.nama}
+                        onChange={(e) => handleUpdateVideo(idx, 'nama', e.target.value)}
+                        className="bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-semibold text-gray-850"
+                        placeholder="Nama video..."
+                      />
                     </div>
 
+                    {/* Radio Options */}
+                    <div className="flex gap-4 items-center">
+                      {([
+                        { key: 'tiktok', label: 'TikTok/Link' },
+                        { key: 'upload', label: 'Upload Lokal' },
+                        { key: 'zoom', label: 'Zoom' }
+                      ] as const).map((opt) => (
+                        <label key={opt.key} className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700">
+                          <input
+                            type="radio"
+                            name={`video-source-${idx}`}
+                            checked={v.source === opt.key}
+                            onChange={() => handleUpdateVideo(idx, 'source', opt.key)}
+                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Upload or View Block */}
+                    {v.source === 'tiktok' ? (
+                      <div className="bg-[#efeefd] text-[#5850ec] rounded-lg p-4 border border-[#c5c0f9] space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-700">Link TikTok / Reels:</label>
+                        <Input
+                          value={v.url}
+                          onChange={(e) => handleUpdateVideo(idx, 'url', e.target.value)}
+                          className="bg-white border-none rounded-md py-4 px-3 text-xs font-semibold text-gray-800 placeholder:text-gray-400"
+                          placeholder="https://tiktok.com/@..."
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {v.url ? (
+                          <div className="bg-[#d2e3fc] text-[#1967d2] font-semibold text-xs py-4 px-6 rounded-lg flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-2.5 truncate">
+                              <span className="shrink-0">▶</span>
+                              <span className="truncate">{v.url.substring(v.url.lastIndexOf('/') + 1)} · 12:34</span>
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={() => handleUpdateVideo(idx, 'url', '')}
+                              className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px] shrink-0"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
+                            <input 
+                              type="file" 
+                              accept="video/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleVideoUpload(idx, file);
+                              }}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                            <div className="flex items-center gap-2.5">
+                              <HiOutlineFolder className="text-gray-300 text-xl" />
+                              <span className="text-xs font-semibold text-gray-400">
+                                {v.uploading ? 'Mengunggah...' : 'Upload Video (.mp4)'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
+                ))}
+              </div>
 
-                  {/* Add Video/Content Link Button */}
-                  <div className="pt-1">
-                    <button 
-                      type="button"
-                      onClick={() => handleUpdateItem(idx, 'videoSource', 'upload')} 
-                      className="text-xs font-bold text-gray-600 flex items-center gap-1.5 hover:text-gray-900 transition-colors"
-                    >
-                      <HiOutlinePlus className="text-sm" /> Tambah video
-                    </button>
-                  </div>
-
-                </div>
-
-                {/* TikTok Micro Learning input Section */}
-                <div className={`space-y-3 p-5 border border-dashed rounded-xl transition-all ${
-                  item.videoSource === 'tiktok' ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200 bg-slate-50/20 opacity-50'
-                }`}>
-                  <label className="text-xs font-bold text-gray-700 flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 fill-current text-gray-800" viewBox="0 0 24 24">
-                      <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.94-1.72-.01 2.92 0 5.85-.01 8.78-.04 1.9-.6 3.79-1.8 5.23-1.4 1.73-3.7 2.76-5.94 2.72-2.67.05-5.26-1.37-6.53-3.72-1.39-2.51-1.2-5.77.49-8.08 1.4-1.97 3.76-3.1 6.18-2.95v4.06c-1.22-.12-2.5.38-3.15 1.43-.7 1.09-.55 2.65.37 3.55.93.97 2.53 1.08 3.58.21.65-.52.96-1.4.92-2.23V0h3.29z"/>
-                    </svg>
-                    Micro Learning (aktif):
-                  </label>
-                  
-                  <div className="relative">
-                    <Input 
-                      value={item.videoSource === 'tiktok' ? item.videoUrl : ''}
-                      onChange={(e) => handleUpdateItem(idx, 'videoUrl', e.target.value)}
-                      disabled={item.videoSource !== 'tiktok'}
-                      className="bg-white border-slate-200 rounded-lg py-5 px-3.5 text-xs font-semibold text-gray-800 placeholder:text-gray-400"
-                      placeholder="Masukkan link video TikTok / Reels / YouTube Shorts..."
-                    />
-                  </div>
-                </div>
-
-              </Card>
-            ))}
-
-            {/* Add Sub-Materi Button */}
-            <div className="pt-2 flex justify-center">
-              <Button 
-                onClick={handleAddField}
-                className="bg-white hover:bg-gray-50 border border-slate-200 text-gray-800 font-bold text-xs py-5 px-6 rounded-xl flex items-center gap-2 shadow-sm"
+              {/* Add Video Button */}
+              <button 
+                type="button"
+                onClick={handleAddVideo}
+                className="w-full bg-white hover:bg-gray-50 border border-dashed border-gray-300 text-gray-500 font-bold py-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <HiOutlinePlus className="text-base" /> Tambah Sub-Materi
-              </Button>
-            </div>
+                + Tambah Video/Link Lagi
+              </button>
+            </Card>
+
+            {/* Sub Materi Card */}
+            <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-6 space-y-6">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Sub Materi dalam Pertemuan Ini</h2>
+                <p className="text-[10px] font-bold text-gray-400 mt-1">Setiap kursus bisa punya banyak sub-materi dalam satu pertemuan</p>
+              </div>
+
+              <div className="space-y-4">
+                {subMateri.map((sm, idx) => (
+                  <div key={idx} className="space-y-3">
+                    <Input
+                      value={sm.nama}
+                      onChange={(e) => handleUpdateSubMateri(idx, 'nama', e.target.value)}
+                      className="bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-semibold text-gray-850"
+                      placeholder="Nama sub-materi..."
+                    />
+
+                    {sm.url ? (
+                      <div className={`p-4 rounded-xl flex items-center justify-between font-bold text-xs ${
+                        idx === 0 
+                          ? 'bg-[#e6f4ea] text-[#137333] border border-green-150' 
+                          : 'bg-white text-gray-700 border border-gray-200 shadow-sm'
+                      }`}>
+                        <div className="flex items-center gap-2.5 truncate pr-2">
+                          <HiOutlineDocumentText className="text-lg shrink-0" />
+                          <span className="truncate">{sm.nama || `Sub Materi ${idx + 1}`}</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveSubMateri(idx)}
+                          className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px] shrink-0"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
+                        <input 
+                          type="file" 
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handlePdfUpload(idx, file);
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                        <div className="flex items-center gap-2.5">
+                          <HiOutlineFolder className="text-gray-300 text-xl" />
+                          <span className="text-xs font-semibold text-gray-400">
+                            {sm.uploading ? 'Mengunggah...' : 'Upload PDF (.pdf)'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Sub-Materi Button */}
+              <button 
+                type="button"
+                onClick={handleAddSubMateri}
+                className="w-full bg-white hover:bg-gray-50 border border-dashed border-gray-300 text-gray-500 font-bold py-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                + Tambah Sub Materi
+              </button>
+            </Card>
 
           </div>
 
           {/* Right Column: Quiz, Tasks & Reflection */}
           <div className="lg:col-span-5 space-y-6">
             
-            {/* Main Details Configuration Card */}
-            <Card className="rounded-2xl border border-slate-200/50 shadow-sm bg-white p-8 space-y-8">
+            {/* Latihan & Refleksi Configuration Card */}
+            <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-6 space-y-6">
               
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 pb-2 border-b border-gray-100">Latihan & Refleksi</h2>
+              </div>
+
               {/* Latihan PG (Green Dot) */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                  <h3 className="text-xs font-extrabold uppercase text-gray-450 tracking-wider">Latihan Pilihan Ganda</h3>
+                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Latihan PG (Opsional)</h3>
                 </div>
 
-                {/* PG List */}
-                {questionsList.length > 0 && (
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {questionsList.map((q, qidx) => (
-                      <div key={qidx} className="flex items-center justify-between p-3 bg-slate-50/80 border border-slate-100/50 rounded-xl group hover:border-slate-200 transition-colors">
-                        <span className="text-xs font-bold text-gray-700 truncate pr-2">
-                          Soal {qidx + 1} — {q}
-                        </span>
+                {/* PG List Box */}
+                <div className="bg-gray-50 border border-gray-150 rounded-xl p-4 space-y-2 max-h-56 overflow-y-auto">
+                  {questionsList.length > 0 ? (
+                    questionsList.map((q, qidx) => (
+                      <div key={qidx} className="flex items-center justify-between text-xs font-bold text-gray-700 py-1">
+                        <span className="truncate pr-2">Soal {qidx + 1} — {q}</span>
                         <button 
                           type="button"
                           onClick={() => handleRemoveQuestion(qidx)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          className="text-red-500 hover:text-red-700 text-[10px] uppercase font-bold shrink-0"
                         >
-                          <HiOutlineTrash className="text-base" />
+                          Hapus
                         </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* PG Input Box */}
-                <div className="relative flex items-center">
-                  <Input 
-                    value={newQuestion}
-                    onChange={(e) => setNewQuestion(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddQuestion();
-                      }
-                    }}
-                    className="bg-slate-50 border-none rounded-xl py-5 pl-4 pr-12 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                    placeholder="Tambah pertanyaan PG..."
-                  />
-                  <div className="absolute right-4 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-                    <HiOutlineCheck className="text-xs stroke-[3px]" />
-                  </div>
+                    ))
+                  ) : (
+                    <p className="text-xs font-medium text-gray-400 italic">Belum ada soal PG</p>
+                  )}
+                  <p className="text-[10px] font-bold text-gray-400 italic pt-2 border-t border-gray-200/50">...hingga 10 soal</p>
                 </div>
 
-                <Button 
-                  type="button"
-                  onClick={handleAddQuestion}
-                  className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/10 transition-all"
-                >
-                  + Soal PG
-                </Button>
+                {/* Add PG Input */}
+                <div className="space-y-3">
+                  <div className="relative flex items-center">
+                    <Input 
+                      value={newQuestion}
+                      onChange={(e) => setNewQuestion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddQuestion();
+                        }
+                      }}
+                      className="bg-slate-50 border border-gray-200 rounded-xl py-5 pl-4 pr-12 text-xs font-semibold text-gray-800 placeholder:text-gray-450 focus:bg-white transition-all shadow-none"
+                      placeholder="Masukkan Soal PG..."
+                    />
+                    <div className="absolute right-4 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                      <HiOutlineCheck className="text-xs stroke-[3px]" />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      onClick={handleAddQuestion}
+                      className="flex-1 bg-[#10b981] hover:bg-[#059669] text-white font-bold h-9 text-xs rounded-lg"
+                    >
+                      + Soal PG
+                    </Button>
+                    <Button 
+                      type="button"
+                      className="bg-[#f3f4f6] hover:bg-[#e5e7eb] text-gray-700 border border-gray-300 rounded-lg h-9 text-xs font-bold px-4"
+                    >
+                      Import
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              {/* Tugas Coding (Purple Dot) */}
-              <div className="space-y-4 pt-6 border-t border-slate-100">
+              {/* Latihan Upload */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                  <h3 className="text-xs font-extrabold uppercase text-gray-450 tracking-wider">Tugas Praktikum / Coding</h3>
+                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Latihan Upload</h3>
                 </div>
 
-                <textarea 
-                  value={tugasCoding}
-                  onChange={(e) => setTugasCoding(e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  placeholder="Instruksi Tugas Coding..."
-                />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                  Peserta akan upload screenshot coding / file program sebagai bukti latihan.
-                </p>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-650">Deskripsi Tugas Upload</label>
+                  <textarea 
+                    value={tugasCoding}
+                    onChange={(e) => setTugasCoding(e.target.value)}
+                    className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none transition-all resize-none"
+                    placeholder="Instruksi tugas coding..."
+                  />
+                  <p className="text-[10px] font-bold text-gray-400">Peserta upload screenshot/file sebagai bukti</p>
+                </div>
               </div>
 
               {/* Refleksi (Red Dot) */}
-              <div className="space-y-4 pt-6 border-t border-slate-100">
+              <div className="space-y-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <h3 className="text-xs font-extrabold uppercase text-gray-450 tracking-wider">Refleksi Materi</h3>
+                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Refleksi Materi (Input Peserta)</h3>
                 </div>
 
                 {/* AI Review Alert Box */}
-                <div className="p-4 bg-rose-50/80 border border-rose-100/50 rounded-xl">
-                  <p className="text-[10px] text-rose-700 font-bold leading-relaxed">
-                    Refleksi di-input oleh peserta secara manual. AI akan memberi saran skor sebagai referensi untuk Asisten.
-                  </p>
+                <div className="p-3 bg-[#fce8e6] text-[#c5221f] rounded-lg text-[10px] font-bold leading-normal">
+                  Peserta input refleksi manual - AI beri skor referensi untuk Asisten
                 </div>
 
-                <textarea 
-                  value={materiItems[0]?.refleksi || ''}
-                  onChange={(e) => handleUpdateItem(0, 'refleksi', e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                  placeholder="Tuliskan pertanyaan refleksi utama untuk pertemuan ini..."
-                />
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-650">Pertanyaan Refleksi</label>
+                  <textarea 
+                    value={refleksi}
+                    onChange={(e) => setRefleksi(e.target.value)}
+                    className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none transition-all resize-none"
+                    placeholder="Tuliskan pertanyaan refleksi utama..."
+                  />
+                </div>
               </div>
+
+              {/* Save Button */}
+              <Button 
+                type="button"
+                onClick={() => handleSaveMateri(false)}
+                disabled={saving}
+                className="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all"
+              >
+                {saving ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    💾 Simpan Materi
+                  </>
+                )}
+              </Button>
 
             </Card>
 
-            {/* Status Card (Blue Dot & Slate background) */}
-            <div className="bg-[#1E293B] p-6 rounded-2xl text-white shadow-xl space-y-5">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-300">Status Upload</h3>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center bg-white/5 rounded-xl p-3 border border-white/5">
-                  <span className="text-xs font-bold text-slate-200">Video Modul</span>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                    hasVideo ? 'bg-emerald-500/20 text-emerald-450' : 'bg-white/10 text-white/50'
-                  }`}>
-                    {hasVideo ? 'Lengkap' : 'Belum Ada'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center bg-white/5 rounded-xl p-3 border border-white/5">
-                  <span className="text-xs font-bold text-slate-200">Dokumen PDF</span>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                    hasPdf ? 'bg-emerald-500/20 text-emerald-450' : 'bg-white/10 text-white/50'
-                  }`}>
-                    {hasPdf ? 'Lengkap' : 'Belum Ada'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center bg-white/5 rounded-xl p-3 border border-white/5">
-                  <span className="text-xs font-bold text-slate-200">Refleksi</span>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                    hasReflection ? 'bg-emerald-500/20 text-emerald-450' : 'bg-white/10 text-white/50'
-                  }`}>
-                    {hasReflection ? 'Lengkap' : 'Draft'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center bg-white/5 rounded-xl p-3 border border-white/5">
-                  <span className="text-xs font-bold text-slate-200">Latihan PG</span>
-                  <span className="px-3 py-1 rounded-full text-[9px] font-black bg-white/10 text-white/60 uppercase tracking-wider">
-                    {questionsList.length} Soal
-                  </span>
-                </div>
-              </div>
-            </div>
-
           </div>
 
         </div>
       )}
 
-      {/* Floating Action Bar / Footer Bar */}
-      {selectedMeetingId && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] lg:w-[calc(100%-4rem)] max-w-7xl bg-white/95 backdrop-blur-md border border-slate-250 py-4 px-8 rounded-2xl flex justify-between items-center shadow-xl z-40">
-          <div className="hidden sm:block">
-            <p className="text-xs font-bold text-gray-500">
-              {meeting?.topik ? `Topik: ${meeting.topik}` : 'Materi Draf Baru'}
-            </p>
-          </div>
-          
-          <div className="flex gap-3 ml-auto">
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={() => navigate('/pengajar/monitoring')}
-              className="bg-slate-50 border-none hover:bg-slate-100 text-gray-700 font-bold text-xs py-5 px-6 rounded-xl transition-all"
-              disabled={saving}
-            >
-              ← Kembali
-            </Button>
 
-            <Button 
-              type="button"
-              onClick={() => handleSaveMateri(true)}
-              disabled={saving}
-              className="bg-[#059669] hover:bg-[#047857] text-white font-black py-5 px-6 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/10 transition-all"
-            >
-              {saving ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  💾 Simpan & Add Pertemuan Berikutnya +
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
 
     </div>
   );
