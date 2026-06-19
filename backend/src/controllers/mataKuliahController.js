@@ -184,6 +184,8 @@ const getPublishedMataKuliah = async (req, res) => {
             pertemuan: true
           }
         },
+        prerequisites: true,
+        prerequisiteFor: true,
         pengajar: {
           select: {
             id: true,
