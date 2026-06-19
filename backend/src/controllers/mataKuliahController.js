@@ -98,7 +98,9 @@ const updateMataKuliah = async (req, res) => {
         warna: warna || undefined,
         statusPendaftaran: statusPendaftaran || undefined,
         tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
-        pengajar: pengajarId ? { connect: { id: pengajarId } } : { disconnect: true },
+        pengajar: nama !== undefined 
+          ? (pengajarId ? { connect: { id: pengajarId } } : { disconnect: true })
+          : undefined,
         jumlahPertemuan: targetMeetingsCount,
         prerequisites: prerequisites ? {
           set: prerequisites.map(pId => ({ id: typeof pId === 'object' ? pId.id : pId }))
