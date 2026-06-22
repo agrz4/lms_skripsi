@@ -7,6 +7,7 @@ interface User {
   email: string;
   role: string;
   instansi?: string;
+  pelatihan?: string;
 }
 
 interface UpdateProfileData {

@@ -53,6 +53,7 @@ model MataKuliah {
   // self-referencing many-to-many relationship
   prerequisites     MataKuliah[]  @relation("MataKuliahPrerequisites")
   prerequisiteFor   MataKuliah[]  @relation("MataKuliahPrerequisites")
+  pakets            Paket[]       @relation("PaketMataKuliah")
 }
 
 model Pertemuan {
@@ -231,4 +232,14 @@ model UjianSubmission {
   createdAt DateTime @default(now())
 
   @@unique([userId, ujianId])
+}
+
+model Paket {
+  id          String       @id @default(uuid())
+  nama        String
+  deskripsi   String?
+  hargaPaket  String       @default("0")
+  hargaAsli   String       @default("0")
+  createdAt   DateTime     @default(now())
+  courses     MataKuliah[] @relation("PaketMataKuliah")
 }

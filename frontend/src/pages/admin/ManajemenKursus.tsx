@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useMataKuliahStore, type MataKuliah } from '../../store/useMataKuliahStore';
 import { usePengajarStore } from '../../store/usePengajarStore';
 import { useNavigate } from 'react-router-dom';
-import { 
-  HiOutlinePlus, 
+import {
+  HiOutlinePlus,
   HiOutlineMagnifyingGlass,
   HiOutlinePencilSquare,
   HiOutlineComputerDesktop,
@@ -36,11 +36,11 @@ import {
 
 // Fallback dummy data to ensure visual parity with the screenshot when DB is empty
 const dummyCourses = [
-  { 
-    id: 'dummy-1', 
-    nama: 'Web Dev Beginner', 
-    kode: 'WD-2025-01', 
-    level: 'Beginner', 
+  {
+    id: 'dummy-1',
+    nama: 'Web Dev Beginner',
+    kode: 'WD-2025-01',
+    level: 'Beginner',
     pengajarNama: 'Dr. Andi',
     jadwalText: '10/14',
     materiText: '8/14',
@@ -48,11 +48,11 @@ const dummyCourses = [
     aiStatus: 'Siap',
     published: true
   },
-  { 
-    id: 'dummy-2', 
-    nama: 'Web Dev Intermediate', 
-    kode: 'WD-2025-02', 
-    level: 'Intermediate', 
+  {
+    id: 'dummy-2',
+    nama: 'Web Dev Intermediate',
+    kode: 'WD-2025-02',
+    level: 'Intermediate',
     pengajarNama: 'Dr. Siti',
     jadwalText: '',
     materiText: '',
@@ -60,11 +60,11 @@ const dummyCourses = [
     aiStatus: 'Proses',
     published: false
   },
-  { 
-    id: 'dummy-3', 
-    nama: 'Web Dev Advance', 
-    kode: 'WD-2025-03', 
-    level: 'Advance', 
+  {
+    id: 'dummy-3',
+    nama: 'Web Dev Advance',
+    kode: 'WD-2025-03',
+    level: 'Advance',
     pengajarNama: 'Dr. Reza',
     jadwalText: '0/14',
     materiText: '0/14',
@@ -78,7 +78,7 @@ const ManajemenKursus: React.FC = () => {
   const navigate = useNavigate();
   const { mataKuliahList, isLoading, fetchMataKuliah, updateMataKuliah, addMataKuliah } = useMataKuliahStore();
   const { pengajarList, fetchPengajar } = usePengajarStore();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -115,19 +115,19 @@ const ManajemenKursus: React.FC = () => {
   // Determine display courses: fall back to dummy if database is empty
   const displayCourses = mataKuliahList.length > 0 ? mataKuliahList.map(mk => {
     const pengajar = pengajarList.find(p => p.id === mk.pengajarId);
-    
+
     // Calculate real progress
     const totalSessions = mk.jumlahPertemuan || 14;
     const jadwalCount = mk._count?.pertemuan || 0;
     const materiCount = mk.pertemuan?.filter(p => p.materi && p.materi.length > 0).length || 0;
-    
+
     let aiStatus = 'Belum';
     if (mk.published) {
       aiStatus = 'Siap';
     } else if (jadwalCount > 0 || materiCount > 0) {
       aiStatus = 'Proses';
     }
- 
+
     return {
       id: mk.id,
       nama: mk.nama,
@@ -171,7 +171,7 @@ const ManajemenKursus: React.FC = () => {
   const filteredCourses = displayCourses.filter(c => {
     const matchesSearch = c.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.kode.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (statusFilter === 'all') return matchesSearch;
     if (statusFilter === 'aktif') return matchesSearch && c.published;
     if (statusFilter === 'draft') return matchesSearch && !c.published;
@@ -207,7 +207,7 @@ const ManajemenKursus: React.FC = () => {
 
   const instructors = pengajarList.filter(p => p.role === 'DOSEN' || p.role === 'ADMIN' || p.role === 'ASISTEN');
   const displayInstructors: any[] = [...instructors];
-  
+
   if (displayInstructors.length === 0) {
     displayInstructors.push(
       { id: 'dummy-andi', nama: 'Dr. Andi', role: 'DOSEN', createdAt: '' },
@@ -325,7 +325,7 @@ const ManajemenKursus: React.FC = () => {
 
     if (isPublished) {
       return (
-        <Button 
+        <Button
           className="bg-[#e6f4ea] text-[#137333] font-bold text-[10px] h-8 px-4 rounded-lg border-none cursor-default hover:bg-[#e6f4ea] shadow-none"
           onClick={(e) => e.stopPropagation()}
         >
@@ -336,7 +336,7 @@ const ManajemenKursus: React.FC = () => {
 
     if (isPublishable) {
       return (
-        <Button 
+        <Button
           className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-bold text-[10px] h-8 px-4 rounded-lg border-none shadow-sm transition-all"
           onClick={async (e) => {
             e.stopPropagation();
@@ -352,7 +352,7 @@ const ManajemenKursus: React.FC = () => {
     }
 
     return (
-      <Button 
+      <Button
         className="bg-[#f1f3f4] text-[#a8aab0] font-bold text-[10px] h-8 px-4 rounded-lg border-none cursor-not-allowed shadow-none hover:bg-[#f1f3f4]"
         onClick={(e) => e.stopPropagation()}
         disabled
@@ -401,7 +401,7 @@ const ManajemenKursus: React.FC = () => {
 
       {/* Top Actions */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
-        <Button 
+        <Button
           onClick={() => {
             setEditingId(null);
             setFormData({
@@ -421,7 +421,7 @@ const ManajemenKursus: React.FC = () => {
         >
           <HiOutlinePlus className="mr-1.5 text-sm" /> Buat Kursus Baru
         </Button>
-        <Button 
+        <Button
           onClick={() => navigate('/admin/course-map')}
           className="bg-[#0070f3] hover:bg-[#0060df] text-white font-semibold rounded-lg text-xs h-9 px-4 shadow-sm transition-all"
         >
@@ -430,8 +430,8 @@ const ManajemenKursus: React.FC = () => {
 
         <div className="relative w-72 ml-auto">
           <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-          <Input 
-            placeholder="Cari Kursus" 
+          <Input
+            placeholder="Cari Kursus"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-8 rounded-lg border-gray-200 bg-white text-xs font-medium text-gray-800 placeholder:text-gray-400 focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all"
@@ -482,22 +482,20 @@ const ManajemenKursus: React.FC = () => {
                   paginatedCourses.map((item) => {
                     const isSelected = selectedCourseId === item.id;
                     return (
-                      <TableRow 
-                        key={item.id} 
-                        className={`transition-colors border-b border-gray-100 cursor-pointer ${
-                          isSelected ? 'bg-indigo-50/40' : 'hover:bg-gray-50/50'
-                        }`}
+                      <TableRow
+                        key={item.id}
+                        className={`transition-colors border-b border-gray-100 cursor-pointer ${isSelected ? 'bg-indigo-50/40' : 'hover:bg-gray-50/50'
+                          }`}
                         onClick={() => setSelectedCourseId(item.id)}
                       >
                         <TableCell className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            <div className={`w-1.5 h-8 rounded-full shrink-0 ${
-                              item.level.toLowerCase() === 'beginner' 
-                                ? 'bg-[#5850ec]' 
+                            <div className={`w-1.5 h-8 rounded-full shrink-0 ${item.level.toLowerCase() === 'beginner'
+                                ? 'bg-[#5850ec]'
                                 : item.level.toLowerCase() === 'intermediate'
-                                ? 'bg-[#10b981]'
-                                : 'bg-[#3b82f6]'
-                            }`}></div>
+                                  ? 'bg-[#10b981]'
+                                  : 'bg-[#3b82f6]'
+                              }`}></div>
                             <div>
                               <p className="text-xs font-semibold text-gray-800 leading-none mb-0.5">{item.nama}</p>
                               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{item.kode}</p>
@@ -519,11 +517,10 @@ const ManajemenKursus: React.FC = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="py-4 px-4">
-                          <Badge className={`rounded-full px-3.5 py-0.5 text-[10px] font-bold border-none shadow-none uppercase ${
-                            item.published 
-                              ? 'bg-[#e6f4ea] text-[#137333]' 
+                          <Badge className={`rounded-full px-3.5 py-0.5 text-[10px] font-bold border-none shadow-none uppercase ${item.published
+                              ? 'bg-[#e6f4ea] text-[#137333]'
                               : 'bg-[#f1f3f4] text-[#5f6368]'
-                          }`}>
+                            }`}>
                             {item.published ? 'Aktif' : 'Draft'}
                           </Badge>
                         </TableCell>
@@ -576,11 +573,10 @@ const ManajemenKursus: React.FC = () => {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`w-7 h-7 rounded-md font-bold text-xs transition-all ${
-                      currentPage === page
+                    className={`w-7 h-7 rounded-md font-bold text-xs transition-all ${currentPage === page
                         ? "bg-[#5850ec] text-white shadow-sm"
                         : "bg-[#e5e7eb] text-gray-700 hover:bg-gray-300"
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -608,19 +604,16 @@ const ManajemenKursus: React.FC = () => {
           <div className="flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 text-[#137333] font-bold text-xs">
             ✓ Kursus dibuat
           </div>
-          <div className={`flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-bold text-xs ${
-            requirements.isJadwalFilled ? 'text-[#137333]' : 'text-[#b06000]'
-          }`}>
+          <div className={`flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-bold text-xs ${requirements.isJadwalFilled ? 'text-[#137333]' : 'text-[#b06000]'
+            }`}>
             {requirements.isJadwalFilled ? '✓' : '⌛'} {requirements.jadwalText}
           </div>
-          <div className={`flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-bold text-xs ${
-            requirements.isMateriUploaded ? 'text-[#137333]' : 'text-[#b06000]'
-          }`}>
+          <div className={`flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-bold text-xs ${requirements.isMateriUploaded ? 'text-[#137333]' : 'text-[#b06000]'
+            }`}>
             {requirements.isMateriUploaded ? '✓' : '⌛'} {requirements.materiText}
           </div>
-          <div className={`flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-bold text-xs ${
-            requirements.isAiApproved ? 'text-[#137333]' : 'text-[#b06000]'
-          }`}>
+          <div className={`flex items-center gap-1.5 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-bold text-xs ${requirements.isAiApproved ? 'text-[#137333]' : 'text-[#b06000]'
+            }`}>
             {requirements.isAiApproved ? '✓' : '⌛'} AI soal approved
           </div>
         </div>
@@ -652,8 +645,8 @@ const ManajemenKursus: React.FC = () => {
             {/* Pilih Pengajar */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-500 block">Pilih Pengajar</label>
-              <Select 
-                onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val }))} 
+              <Select
+                onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val }))}
                 value={formData.pengajarId}
               >
                 <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
@@ -714,8 +707,8 @@ const ManajemenKursus: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 block">Kategori</label>
-                <Select 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, kategori: val, level: val }))} 
+                <Select
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, kategori: val, level: val }))}
                   value={formData.kategori}
                 >
                   <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
@@ -731,8 +724,8 @@ const ManajemenKursus: React.FC = () => {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 block">Status Pendaftaran</label>
-                <Select 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, statusPendaftaran: val }))} 
+                <Select
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, statusPendaftaran: val }))}
                   value={formData.statusPendaftaran}
                 >
                   <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
@@ -778,8 +771,8 @@ const ManajemenKursus: React.FC = () => {
               >
                 Batal
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="rounded-full h-11 bg-[#0fc26a] hover:bg-[#0db05f] text-white font-bold text-sm shadow-sm transition-all"
               >
                 {editingId ? 'Simpan Perubahan' : 'Buat Kursus'}
