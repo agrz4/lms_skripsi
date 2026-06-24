@@ -262,7 +262,23 @@ const MateriSesi: React.FC = () => {
       // Fetch Latihan PG
       api.get(`/materi/latihan-pg?pertemuanId=${pertemuanId}`)
         .then(res => {
-          setPgSoalList(res.data || []);
+          const parsedSoal = (res.data || []).map((s: any) => {
+            try {
+              if (s.pertanyaan && (s.pertanyaan.trim().startsWith('{') || s.pertanyaan.trim().startsWith('['))) {
+                const parsed = JSON.parse(s.pertanyaan);
+                return {
+                  ...s,
+                  pertanyaan: parsed.pertanyaan || s.pertanyaan,
+                  options: parsed.options || {},
+                  correctAnswer: parsed.correctAnswer || 'A'
+                };
+              }
+            } catch (e) {
+              console.error('Failed to parse question JSON:', e);
+            }
+            return s;
+          });
+          setPgSoalList(parsedSoal);
         })
         .catch(err => console.error('Failed to fetch pg questions', err));
 
@@ -794,48 +810,11 @@ const MateriSesi: React.FC = () => {
                {/* Content Area */}
                <div className="flex-1 p-12 bg-gray-100 flex flex-col items-center overflow-y-auto custom-scrollbar relative">
                   {activePdfUrl ? (
-                    <div 
-                      className="w-full max-w-4xl bg-white shadow-2xl rounded-sm p-16 space-y-12 min-h-[1000px] transition-all duration-300 relative" 
-                      style={{ transform: `scale(${pdfZoom/100})`, transformOrigin: 'top center' }}
-                    >
-                       <h2 className="text-3xl font-black text-center text-gray-800 mb-16">CSS Flexbox Layout</h2>
-                       
-                       <div className="space-y-6 text-left">
-                          <h3 className="text-xl font-black text-gray-850">1. Pengertian Flexbox</h3>
-                          <p className="text-sm font-medium text-gray-600 leading-relaxed">
-                            Flexbox (Flexible Box Layout) adalah sistem tata letak 1 dimensi yang digunakan untuk menyelaraskan dan mendistribusikan ruang antar item dalam wadah, bahkan ketika ukurannya tidak diketahui atau dinamis.
-                          </p>
-                          <div className="space-y-3">
-                             <div className="h-2 w-full bg-gray-100 rounded-full"></div>
-                             <div className="h-2 w-full bg-gray-100 rounded-full"></div>
-                             <div className="h-2 w-[80%] bg-gray-100 rounded-full"></div>
-                          </div>
-                       </div>
-
-                       <div className="space-y-6 text-left">
-                          <h3 className="text-xl font-black text-gray-850">2. Flex Container Properties</h3>
-                          <p className="text-sm font-medium text-gray-600 leading-relaxed">
-                            Beberapa properti utama pada container adalah display, flex-direction, justify-content, dan align-items.
-                          </p>
-                          <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 font-mono text-xs text-indigo-900 space-y-2 mt-4 shadow-inner">
-                             <p className="font-bold"><span className="text-pink-600">.container</span> &#123;</p>
-                             <p className="pl-6"><span className="text-blue-600">display</span>: flex;</p>
-                             <p className="pl-6"><span className="text-blue-600">flex-direction</span>: row;</p>
-                             <p className="pl-6"><span className="text-blue-600">justify-content</span>: space-between;</p>
-                             <p className="pl-6"><span className="text-blue-600">align-items</span>: center;</p>
-                             <p>&#125;</p>
-                          </div>
-                       </div>
-
-                       <div className="space-y-6 text-left">
-                          <h3 className="text-xl font-black text-gray-850">3. Flex Item Properties</h3>
-                          <div className="space-y-3">
-                             <div className="h-2 w-full bg-gray-100 rounded-full"></div>
-                             <div className="h-2 w-full bg-gray-100 rounded-full"></div>
-                             <div className="h-2 w-[70%] bg-gray-100 rounded-full"></div>
-                          </div>
-                       </div>
-                    </div>
+                    <iframe 
+                      src={activePdfUrl} 
+                      className="w-full max-w-5xl bg-white shadow-2xl rounded-2xl min-h-[750px] border-none"
+                      title={activePdfName}
+                    />
                   ) : (
                     <div className="text-center py-20 text-gray-400 font-bold italic text-xs">
                       Silakan pilih sub-materi PDF di tab "View Materi" terlebih dahulu

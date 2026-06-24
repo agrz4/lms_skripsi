@@ -63,11 +63,21 @@ const AddMateri: React.FC = () => {
     try {
       const pertemuanRes = await api.get('/pertemuan');
       const allPertemuan = pertemuanRes.data || [];
-      setAllMeetings(allPertemuan);
+      
+      // Sort: first by course name, then by meeting order (urutan)
+      const sortedPertemuan = [...allPertemuan].sort((a: any, b: any) => {
+        const nameA = a.mataKuliah?.nama || '';
+        const nameB = b.mataKuliah?.nama || '';
+        const cmp = nameA.localeCompare(nameB);
+        if (cmp !== 0) return cmp;
+        return a.urutan - b.urutan;
+      });
+      
+      setAllMeetings(sortedPertemuan);
 
       if (pertemuanId) {
         setSelectedMeetingId(pertemuanId);
-        const currentMeeting = allPertemuan.find((p: any) => p.id === pertemuanId);
+        const currentMeeting = sortedPertemuan.find((p: any) => p.id === pertemuanId);
         setMeeting(currentMeeting || null);
 
         const materiRes = await api.get(`/materi?pertemuanId=${pertemuanId}`);
@@ -157,9 +167,13 @@ const AddMateri: React.FC = () => {
   };
 
   const handleUpdateVideo = (index: number, key: keyof VideoItem, value: any) => {
-    const updated = [...videos];
-    updated[index] = { ...updated[index], [key]: value };
-    setVideos(updated);
+    setVideos((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [key]: value };
+      }
+      return updated;
+    });
   };
 
   const handleAddSubMateri = () => {
@@ -172,9 +186,13 @@ const AddMateri: React.FC = () => {
   };
 
   const handleUpdateSubMateri = (index: number, key: keyof SubMateriItem, value: any) => {
-    const updated = [...subMateri];
-    updated[index] = { ...updated[index], [key]: value };
-    setSubMateri(updated);
+    setSubMateri((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [key]: value };
+      }
+      return updated;
+    });
   };
 
   const handleVideoUpload = async (index: number, file: File) => {
@@ -186,7 +204,17 @@ const AddMateri: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data && res.data.success) {
-        handleUpdateVideo(index, 'url', res.data.fileUrl);
+        setVideos((prev) => {
+          const updated = [...prev];
+          if (updated[index]) {
+            updated[index] = { 
+              ...updated[index], 
+              url: res.data.fileUrl,
+              nama: updated[index].nama && !updated[index].nama.startsWith('Video') ? updated[index].nama : file.name
+            };
+          }
+          return updated;
+        });
       }
     } catch (error: any) {
       console.error(error);
@@ -205,7 +233,17 @@ const AddMateri: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data && res.data.success) {
-        handleUpdateSubMateri(index, 'url', res.data.fileUrl);
+        setSubMateri((prev) => {
+          const updated = [...prev];
+          if (updated[index]) {
+            updated[index] = { 
+              ...updated[index], 
+              url: res.data.fileUrl,
+              nama: updated[index].nama && !updated[index].nama.startsWith('Sub Materi') ? updated[index].nama : file.name
+            };
+          }
+          return updated;
+        });
       }
     } catch (error: any) {
       console.error(error);
@@ -309,9 +347,34 @@ const AddMateri: React.FC = () => {
 
   const handleAddQuestion = () => {
     if (!newQuestion.trim()) return;
-    const updated = pgQuestions ? `${pgQuestions}\n${newQuestion.trim()}` : newQuestion.trim();
+    const parts = newQuestion.split('|').map(p => p.trim());
+    let formatted = newQuestion.trim();
+    if (parts.length >= 6) {
+      const qObj = {
+        pertanyaan: parts[0],
+        options: {
+          A: parts[1],
+          B: parts[2],
+          C: parts[3],
+          D: parts[4]
+        },
+        correctAnswer: parts[5].toUpperCase()
+      };
+      formatted = JSON.stringify(qObj);
+    }
+    const updated = pgQuestions ? `${pgQuestions}\n${formatted}` : formatted;
     setPgQuestions(updated);
     setNewQuestion('');
+  };
+
+  const getQuestionDisplay = (qStr: string) => {
+    try {
+      if (qStr.trim().startsWith('{')) {
+        const parsed = JSON.parse(qStr);
+        return `${parsed.pertanyaan} (Kunci: ${parsed.correctAnswer})`;
+      }
+    } catch (e) {}
+    return qStr;
   };
 
   const handleRemoveQuestion = (indexToRemove: number) => {
@@ -347,7 +410,7 @@ const AddMateri: React.FC = () => {
           <option value="">-- Pilih Pertemuan --</option>
           {allMeetings.map((p: any) => (
             <option key={p.id} value={p.id}>
-              P{p.urutan} {p.topik || 'Tanpa Topik'}
+              {p.mataKuliah ? `[${p.mataKuliah.nama}] ` : ''}P{p.urutan} - {p.topik || 'Tanpa Topik'}
             </option>
           ))}
         </select>
@@ -580,7 +643,7 @@ const AddMateri: React.FC = () => {
                   {questionsList.length > 0 ? (
                     questionsList.map((q, qidx) => (
                       <div key={qidx} className="flex items-center justify-between text-xs font-bold text-gray-700 py-1">
-                        <span className="truncate pr-2">Soal {qidx + 1} — {q}</span>
+                        <span className="truncate pr-2">Soal {qidx + 1} — {getQuestionDisplay(q)}</span>
                         <button 
                           type="button"
                           onClick={() => handleRemoveQuestion(qidx)}
@@ -609,7 +672,7 @@ const AddMateri: React.FC = () => {
                         }
                       }}
                       className="bg-slate-50 border border-gray-200 rounded-xl py-5 pl-4 pr-12 text-xs font-semibold text-gray-800 placeholder:text-gray-450 focus:bg-white transition-all shadow-none"
-                      placeholder="Masukkan Soal PG..."
+                      placeholder="Format: Soal | A | B | C | D | Kunci (Contoh: Apa itu HTML? | Markup | Script | Style | Lang | A)"
                     />
                     <div className="absolute right-4 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
                       <HiOutlineCheck className="text-xs stroke-[3px]" />
