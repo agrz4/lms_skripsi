@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useMataKuliahStore, type MataKuliah } from '../../store/useMataKuliahStore';
 import { usePaketStore } from '../../store/usePaketStore';
-import { 
+import {
   HiOutlineClock,
   HiOutlineTrophy
 } from 'react-icons/hi2';
@@ -78,66 +77,21 @@ const getCourseCardStyles = (level: string, index: number) => {
   }
 };
 
-// Helper matching mockup courses if database is empty
-const getMockNodes = (path: string = 'Web Development') => {
-  const normPath = path.toLowerCase();
-  
-  if (normPath.includes('science')) {
-    // Data Science
-    return [
-      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ds-4', kode: 'DS-04', nama: 'Analisis Data & Visualisasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ds-5', kode: 'DS-05', nama: 'Pengantar Machine Learning', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ds-6', kode: 'DS-06', nama: 'Capstone Data Science', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, exists: false }
-    ];
-  } else if (normPath.includes('security') || normPath.includes('cyber')) {
-    // Cyber Security
-    return [
-      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-cs-4', kode: 'CS-04', nama: 'Analisis Forensik Digital', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-cs-5', kode: 'CS-05', nama: 'Audit Keamanan Informasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-cs-6', kode: 'CS-06', nama: 'Cyber Defense Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, exists: false }
-    ];
-  } else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) {
-    // UI/UX Design
-    return [
-      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ui-4', kode: 'UI-04', nama: 'Wireframing & Prototyping', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ui-5', kode: 'UI-05', nama: 'Usability Testing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ui-6', kode: 'UI-06', nama: 'UI/UX Capstone Portfolio', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, exists: false }
-    ];
-  } else if (normPath.includes('ai') || normPath.includes('intelligence')) {
-    // AI Fundamentals
-    return [
-      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ai-4', kode: 'AI-04', nama: 'Deep Learning Basics', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ai-5', kode: 'AI-05', nama: 'Natural Language Processing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-ai-6', kode: 'AI-06', nama: 'AI Capstone Project', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, exists: false }
-    ];
-  } else {
-    // Default Web Development
-    return [
-      { id: 'mock-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-4', kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-5', kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, exists: false },
-      { id: 'mock-6', kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, exists: false }
-    ];
-  }
-};
+// Mockup nodes helper removed to display only database entries
+
+interface MapCourse extends Partial<MataKuliah> {
+  exists: boolean;
+  id: string;
+  nama: string;
+  kode: string;
+  level: string;
+  warna?: string;
+  published: boolean;
+  jumlahPertemuan?: number;
+}
 
 const CourseMap: React.FC = () => {
-  const navigate = useNavigate();
-  const { mataKuliahList, isLoading, fetchMataKuliah, updateMataKuliah } = useMataKuliahStore();
+  const { mataKuliahList, isLoading, fetchMataKuliah, updateMataKuliah, addMataKuliah } = useMataKuliahStore();
   const { paketList, fetchPaket, addPaket, removePaket } = usePaketStore();
   const selectRef = useRef<HTMLSelectElement>(null);
 
@@ -146,6 +100,8 @@ const CourseMap: React.FC = () => {
 
   // Form states
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [newCourseName, setNewCourseName] = useState<string>('');
+  const [newCourseCode, setNewCourseCode] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('Beginner');
   const [harga, setHarga] = useState<string>('0');
   const [published, setPublished] = useState<boolean>(false);
@@ -160,73 +116,109 @@ const CourseMap: React.FC = () => {
   const [deskripsiPaket, setDeskripsiPaket] = useState<string>('');
   const [selectedBundledCourses, setSelectedBundledCourses] = useState<string[]>([]);
   const [hargaPaket, setHargaPaket] = useState<string>('');
-  const [hargaAsliPaket, setHargaAsliPaket] = useState<number>(0);
 
   useEffect(() => {
     fetchMataKuliah();
     fetchPaket();
   }, [fetchMataKuliah, fetchPaket]);
 
-  // Dynamically calculate Harga Asli
-  useEffect(() => {
-    const pathPrefix = selectedPath.toLowerCase().includes('science') ? 'DS' :
-                       selectedPath.toLowerCase().includes('security') || selectedPath.toLowerCase().includes('cyber') ? 'CS' :
-                       selectedPath.toLowerCase().includes('ui') || selectedPath.toLowerCase().includes('ux') || selectedPath.toLowerCase().includes('design') ? 'UI' :
-                       selectedPath.toLowerCase().includes('ai') || selectedPath.toLowerCase().includes('intelligence') ? 'AI' : 'WD';
-    const mapped = mataKuliahList.filter(c => c.level && c.kode?.toUpperCase().startsWith(pathPrefix));
-    const list = mapped.length > 0 ? mapped : getMockNodes(selectedPath);
-    let total = 0;
-    selectedBundledCourses.forEach(id => {
-      const course = list.find(c => c.id === id);
-      if (course && course.warna) {
-        const cleanStr = course.warna.replace(/[^0-9]/g, '');
-        const num = parseInt(cleanStr, 10);
-        if (!isNaN(num)) {
-          total += num;
-        }
-      }
-    });
-    setHargaAsliPaket(total);
-  }, [selectedBundledCourses, mataKuliahList, selectedPath]);
 
   const handleCourseSelect = (id: string) => {
     setSelectedCourseId(id);
     const course = mataKuliahList.find(mk => mk.id === id);
     if (course) {
-      setSelectedLevel(course.level || 'Beginner');
+      setSelectedLevel(course.level || selectedLevel || 'Beginner');
       setHarga(course.warna || '0');
       setPublished(course.published);
       setJumlahPertemuan(course.jumlahPertemuan || 14);
       setSelectedPrerequisites(course.prerequisites?.map(p => typeof p === 'object' ? p.id : p) || []);
       setActiveSidebarForm('node'); // Open sidebar node form
     } else {
-      setSelectedLevel('Beginner');
       setHarga('0');
       setPublished(false);
       setJumlahPertemuan(14);
       setSelectedPrerequisites([]);
-      setActiveSidebarForm('stats');
     }
   };
 
   const handleSaveNode = async () => {
     if (!selectedCourseId) {
-      alert('Pilih kursus yang ingin dikonfigurasi terlebih dahulu.');
+      // Trying to create a brand new course!
+      if (!newCourseName.trim() || !newCourseCode.trim()) {
+        alert('Untuk membuat kursus baru, silakan isi Nama Kursus Baru dan Kode Kursus Baru.');
+        return;
+      }
+
+      try {
+        const normPath = selectedPath.toLowerCase();
+        let kategori = 'Programming';
+        if (normPath.includes('science')) kategori = 'Data Science';
+        else if (normPath.includes('security') || normPath.includes('cyber')) kategori = 'Cyber Security';
+        else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) kategori = 'Design';
+        else if (normPath.includes('ai') || normPath.includes('intelligence')) kategori = 'AI';
+
+        await addMataKuliah({
+          nama: newCourseName.trim(),
+          kode: newCourseCode.trim(),
+          level: selectedLevel,
+          warna: harga, // Storing price in warna field
+          published,
+          jumlahPertemuan,
+          kategori,
+          statusPendaftaran: 'Aktif',
+          tipeKursus: 'ONLINE'
+        });
+
+        alert('Kursus baru berhasil dibuat dan ditambahkan ke map!');
+
+        // Reset states
+        setSelectedCourseId('');
+        setNewCourseName('');
+        setNewCourseCode('');
+        setSelectedLevel('Beginner');
+        setHarga('0');
+        setPublished(false);
+        setJumlahPertemuan(14);
+        setSelectedPrerequisites([]);
+        setActiveSidebarForm('stats');
+        await fetchMataKuliah();
+      } catch (error: unknown) {
+        console.error('Error creating new course node:', error);
+        let errorMsg = 'Gagal membuat kursus baru.';
+        if (error instanceof Error) {
+          errorMsg = error.message;
+        }
+        const responseData = (error as { response?: { data?: { message?: string } } })?.response?.data;
+        if (responseData?.message) {
+          errorMsg = responseData.message;
+        }
+        alert(`Gagal membuat kursus baru: ${errorMsg}`);
+      }
       return;
     }
 
     try {
+      const normPath = selectedPath.toLowerCase();
+      let kategori = 'Programming';
+      if (normPath.includes('science')) kategori = 'Data Science';
+      else if (normPath.includes('security') || normPath.includes('cyber')) kategori = 'Cyber Security';
+      else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) kategori = 'Design';
+      else if (normPath.includes('ai') || normPath.includes('intelligence')) kategori = 'AI';
+
       await updateMataKuliah(selectedCourseId, {
         level: selectedLevel,
         warna: harga, // Storing price in warna field
         published,
         jumlahPertemuan,
-        prerequisites: selectedPrerequisites
+        prerequisites: selectedPrerequisites,
+        kategori
       });
 
       alert('Node peta kursus berhasil disimpan!');
       // Reset form states
       setSelectedCourseId('');
+      setNewCourseName('');
+      setNewCourseCode('');
       setSelectedLevel('Beginner');
       setHarga('0');
       setPublished(false);
@@ -234,9 +226,17 @@ const CourseMap: React.FC = () => {
       setSelectedPrerequisites([]);
       setActiveSidebarForm('stats'); // Close to stats
       await fetchMataKuliah();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving course node:', error);
-      alert('Gagal menyimpan konfigurasi node.');
+      let errorMsg = 'Gagal menyimpan konfigurasi node.';
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      }
+      const responseData = (error as { response?: { data?: { message?: string } } })?.response?.data;
+      if (responseData?.message) {
+        errorMsg = responseData.message;
+      }
+      alert(`Gagal menyimpan konfigurasi node: ${errorMsg}`);
     }
   };
 
@@ -245,10 +245,10 @@ const CourseMap: React.FC = () => {
       alert('Pilih node kursus yang ingin dihapus terlebih dahulu.');
       return;
     }
-    
+
     const course = mataKuliahList.find(mk => mk.id === selectedCourseId);
     if (!course) return;
-    
+
     if (confirm(`Apakah Anda yakin ingin menghapus "${course.nama}" dari Course Map? (Data kursus tidak akan dihapus, hanya konfigurasinya di map yang direset)`)) {
       try {
         await updateMataKuliah(selectedCourseId, {
@@ -258,6 +258,8 @@ const CourseMap: React.FC = () => {
         });
         alert('Node berhasil dihapus dari map!');
         setSelectedCourseId('');
+        setNewCourseName('');
+        setNewCourseCode('');
         setSelectedLevel('Beginner');
         setHarga('0');
         setPublished(false);
@@ -265,15 +267,25 @@ const CourseMap: React.FC = () => {
         setSelectedPrerequisites([]);
         setActiveSidebarForm('stats'); // Close to stats
         await fetchMataKuliah();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error removing node:', error);
-        alert('Gagal menghapus node.');
+        let errorMsg = 'Gagal menghapus node.';
+        if (error instanceof Error) {
+          errorMsg = error.message;
+        }
+        const responseData = (error as { response?: { data?: { message?: string } } })?.response?.data;
+        if (responseData?.message) {
+          errorMsg = responseData.message;
+        }
+        alert(`Gagal menghapus node: ${errorMsg}`);
       }
     }
   };
 
   const handleCancel = () => {
     setSelectedCourseId('');
+    setNewCourseName('');
+    setNewCourseCode('');
     setSelectedLevel('Beginner');
     setHarga('0');
     setPublished(false);
@@ -285,6 +297,8 @@ const CourseMap: React.FC = () => {
   const handleAddNodeClick = (level: string) => {
     setSelectedLevel(level);
     setSelectedCourseId('');
+    setNewCourseName('');
+    setNewCourseCode('');
     setHarga('0');
     setPublished(false);
     setJumlahPertemuan(14);
@@ -315,7 +329,7 @@ const CourseMap: React.FC = () => {
       });
 
       alert('Paket Bundling berhasil disimpan!');
-      
+
       // Reset states
       setNamaPaket('');
       setDeskripsiPaket('');
@@ -349,30 +363,57 @@ const CourseMap: React.FC = () => {
     return 'WD';
   };
 
-  const pathPrefix = getPathPrefix(selectedPath);
-  const mappedCourses = mataKuliahList.filter(c => {
-    if (!c.level) return false;
-    if (c.kode?.toUpperCase().startsWith(pathPrefix)) return true;
-    if (c.kode?.toUpperCase().startsWith('MK')) {
+  const displayCourses = useMemo((): MapCourse[] => {
+    const pathPrefix = getPathPrefix(selectedPath);
+    const dbCourses = mataKuliahList.filter(c => {
+      if (!c.level) return false;
+
       const norm = selectedPath.toLowerCase();
+      const codeUpper = c.kode?.toUpperCase() || '';
+      const catLower = c.kategori?.toLowerCase() || '';
+      const nameLower = c.nama?.toLowerCase() || '';
+
       if (norm.includes('science')) {
-        return c.kategori?.toLowerCase().includes('science') || c.nama?.toLowerCase().includes('data science') || c.nama?.toLowerCase().includes('statistik');
+        return codeUpper.startsWith('DS') || catLower.includes('science') || nameLower.includes('data science') || nameLower.includes('statistik');
       }
       if (norm.includes('security') || norm.includes('cyber')) {
-        return c.kategori?.toLowerCase().includes('security') || c.kategori?.toLowerCase().includes('cyber') || c.nama?.toLowerCase().includes('keamanan') || c.nama?.toLowerCase().includes('cyber');
+        return codeUpper.startsWith('CS') || catLower.includes('security') || catLower.includes('cyber') || nameLower.includes('keamanan') || nameLower.includes('cyber');
       }
       if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
-        return c.kategori?.toLowerCase().includes('design') || c.kategori?.toLowerCase().includes('ui') || c.nama?.toLowerCase().includes('ui/ux') || c.nama?.toLowerCase().includes('desain');
+        return codeUpper.startsWith('UI') || catLower.includes('design') || catLower.includes('ui') || nameLower.includes('ui/ux') || nameLower.includes('desain');
       }
       if (norm.includes('ai') || norm.includes('intelligence')) {
-        return c.kategori?.toLowerCase().includes('ai') || c.kategori?.toLowerCase().includes('intelligence') || c.nama?.toLowerCase().includes('kecerdasan') || c.nama?.toLowerCase().includes('artificial');
+        return codeUpper.startsWith('AI') || catLower.includes('ai') || catLower.includes('intelligence') || nameLower.includes('kecerdasan') || nameLower.includes('artificial');
       }
-      return c.kategori?.toLowerCase().includes('programming') || c.kategori?.toLowerCase().includes('web') || c.nama?.toLowerCase().includes('web') || c.nama?.toLowerCase().includes('pemrograman');
+      // Default: Web Development (also acts as fallback for any general courses that do not match other paths)
+      const isSpecialized = (
+        codeUpper.startsWith('DS') || catLower.includes('science') || nameLower.includes('data science') || nameLower.includes('statistik') ||
+        codeUpper.startsWith('CS') || catLower.includes('security') || catLower.includes('cyber') || nameLower.includes('keamanan') || nameLower.includes('cyber') ||
+        codeUpper.startsWith('UI') || catLower.includes('design') || catLower.includes('ui') || nameLower.includes('ui/ux') || nameLower.includes('desain') ||
+        codeUpper.startsWith('AI') || catLower.includes('ai') || catLower.includes('intelligence') || nameLower.includes('kecerdasan') || nameLower.includes('artificial')
+      );
+      return codeUpper.startsWith('WD') || codeUpper.startsWith('MK') || catLower.includes('programming') || catLower.includes('web') || nameLower.includes('web') || nameLower.includes('pemrograman') || !isSpecialized;
+    });
+
+    return dbCourses.map(c => ({
+      ...c,
+      exists: true,
+      level: c.level!
+    }));
+  }, [mataKuliahList, selectedPath]);
+
+  // Calculate Harga Asli of bundled courses directly during render
+  let hargaAsliPaket = 0;
+  selectedBundledCourses.forEach(id => {
+    const course = displayCourses.find(c => c.id === id);
+    if (course && course.warna) {
+      const cleanStr = course.warna.replace(/[^0-9]/g, '');
+      const num = parseInt(cleanStr, 10);
+      if (!isNaN(num)) {
+        hargaAsliPaket += num;
+      }
     }
-    return false;
   });
-  const displayCourses = mappedCourses.length > 0 ? mappedCourses : getMockNodes(selectedPath);
-  const isMockData = mappedCourses.length === 0;
 
   // Filter groups
   const beginnerCourses = displayCourses.filter(c => c.level?.toLowerCase() === 'beginner');
@@ -381,40 +422,51 @@ const CourseMap: React.FC = () => {
 
   // Stats
   const totalCourses = displayCourses.length;
-  const activeCount = displayCourses.filter(c => c.published).length;
-  const draftCount = displayCourses.filter(c => !c.published && (c.level?.toLowerCase() !== 'advanced' || c.published)).length;
-  const lockedCount = displayCourses.filter(c => c.level?.toLowerCase() === 'advanced' && !c.published).length;
+  const activeCount = displayCourses.filter(c => c.exists && c.published).length;
+  const draftCount = displayCourses.filter(c => c.exists && !c.published).length;
+  const lockedCount = displayCourses.filter(c => !c.exists).length;
 
-  const renderCourseCard = (course: any, index: number) => {
-    const isSelected = selectedCourseId === course.id;
+  const renderCourseCard = (course: MapCourse, index: number) => {
+    const isSelected = course.exists && selectedCourseId === course.id;
     const theme = getCourseCardStyles(course.level || 'Beginner', index);
-    const isPublished = course.published;
-    const isLocked = (course.level || '').toLowerCase() === 'advanced' && !isPublished;
-    
+    const isPublished = course.exists && course.published;
+
     const formattedPrice = formatHarga(course.warna);
     const meetingsText = `${course.jumlahPertemuan || 14} Pertemuan`;
 
     return (
-      <div 
+      <div
         key={course.id}
         onClick={() => {
-          if (isMockData) {
-            alert(`Kursus "${course.nama}" (${course.kode}) belum dibuat di database. Silakan tambahkan terlebih dahulu di Menu Kursus.`);
+          if (!course.exists) {
+            if (confirm(`Kursus "${course.nama}" (${course.kode}) belum dibuat di database. Apakah Anda ingin membuatnya sekarang?`)) {
+              setSelectedLevel(course.level || 'Beginner');
+              setSelectedCourseId('');
+              setNewCourseName(course.nama);
+              setNewCourseCode(course.kode);
+              setHarga(course.warna || '0');
+              setPublished(false);
+              setJumlahPertemuan(course.jumlahPertemuan || 14);
+              setSelectedPrerequisites([]);
+              setActiveSidebarForm('node');
+              if (selectRef.current) {
+                selectRef.current.focus();
+              }
+            }
           } else {
             handleCourseSelect(course.id);
           }
         }}
-        className={`cursor-pointer rounded-[1.5rem] border-2 p-5 relative transition-all duration-200 hover:scale-[1.02] w-[280px] text-left flex flex-col justify-between min-h-[120px] ${theme.bg} ${theme.border} ${
-          isSelected ? 'ring-4 ring-indigo-500/25 scale-[1.02]' : ''
-        }`}
+        className={`cursor-pointer rounded-[1.5rem] border-2 p-5 relative transition-all duration-200 hover:scale-[1.02] w-[280px] text-left flex flex-col justify-between min-h-[120px] ${theme.bg} ${theme.border} ${isSelected ? 'ring-4 ring-indigo-500/25 scale-[1.02]' : ''
+          } ${!course.exists ? 'opacity-70 hover:opacity-100 border-dashed' : ''}`}
       >
-        {isPublished && !isLocked && (
+        {isPublished && course.exists && (
           <div className="absolute -top-2 -right-2 w-5 h-5 bg-[#0fc26a] text-white rounded-full flex items-center justify-center text-xs shadow-sm font-bold">✓</div>
         )}
-        {!isPublished && !isLocked && (
+        {!isPublished && course.exists && (
           <div className="absolute -top-2 -right-2 w-5 h-5 bg-[#eab308] text-white rounded-full flex items-center justify-center text-xs shadow-sm font-bold">⏳</div>
         )}
-        {isLocked && (
+        {!course.exists && (
           <div className="absolute -top-2 -right-2 w-5 h-5 bg-gray-500 text-white rounded-full flex items-center justify-center text-[10px] shadow-sm font-bold">🔒</div>
         )}
 
@@ -425,9 +477,9 @@ const CourseMap: React.FC = () => {
 
         <div className="flex flex-wrap gap-1.5 mt-auto">
           {/* Status Badge */}
-          {isLocked ? (
+          {!course.exists ? (
             <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-[9px] font-bold">
-              Terkunci
+              Belum Dibuat
             </span>
           ) : isPublished ? (
             <span className={`${theme.badgeBg} ${theme.badgeText} px-2 py-0.5 rounded-full text-[9px] font-bold`}>
@@ -477,12 +529,12 @@ const CourseMap: React.FC = () => {
         </div>
         <div className="flex items-center gap-2.5">
           <div className="bg-[#e0e7ff] text-[#4338ca] px-4 py-1.5 rounded-full text-xs font-extrabold shadow-sm">
-            {mappedCourses.length > 0 ? mappedCourses.length : getMockNodes().length} Individu
+            {displayCourses.length} Individu
           </div>
           <div className="bg-[#dcfce7] text-[#15803d] px-4 py-1.5 rounded-full text-xs font-extrabold shadow-sm">
             {paketList.length} Paket
           </div>
-          <button 
+          <button
             onClick={() => {
               setActiveSidebarForm('bundling');
               // Clear bundling form inputs on open
@@ -495,7 +547,7 @@ const CourseMap: React.FC = () => {
           >
             + Buat Paket
           </button>
-          <button 
+          <button
             onClick={() => handleAddNodeClick('Beginner')}
             className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-extrabold rounded-full text-xs px-4 py-2.5 transition-all shadow-sm border-none cursor-pointer"
           >
@@ -529,7 +581,7 @@ const CourseMap: React.FC = () => {
 
                 <div className="flex flex-wrap items-center justify-center gap-6">
                   {beginnerCourses.map((course, idx) => renderCourseCard(course, idx))}
-                  
+
                   {/* Tambah Node Card */}
                   <div
                     onClick={() => handleAddNodeClick('Beginner')}
@@ -569,7 +621,7 @@ const CourseMap: React.FC = () => {
 
                 <div className="flex flex-wrap items-center justify-center gap-6">
                   {intermediateCourses.map((course, idx) => renderCourseCard(course, idx))}
-                  
+
                   {/* Tambah Node Card */}
                   <div
                     onClick={() => handleAddNodeClick('Intermediate')}
@@ -620,7 +672,7 @@ const CourseMap: React.FC = () => {
                       </span>
                     </div>
                   ))}
-                  
+
                   {/* Tambah Node Card */}
                   <div
                     onClick={() => handleAddNodeClick('Advanced')}
@@ -640,10 +692,10 @@ const CourseMap: React.FC = () => {
                 <div>
                   <h3 className="text-xs font-black text-[#5850ec]">
                     {selectedPath.toLowerCase().includes('science') ? 'DS-07 - Sertifikat Data Science Professional' :
-                     selectedPath.toLowerCase().includes('security') || selectedPath.toLowerCase().includes('cyber') ? 'CS-07 - Sertifikat Cyber Security Analyst' :
-                     selectedPath.toLowerCase().includes('ui') || selectedPath.toLowerCase().includes('ux') || selectedPath.toLowerCase().includes('design') ? 'UI-07 - Sertifikat UI/UX Designer Professional' :
-                     selectedPath.toLowerCase().includes('ai') || selectedPath.toLowerCase().includes('intelligence') ? 'AI-07 - Sertifikat AI Developer Associate' :
-                     'WD-07 - Sertifikat full stack web developer'}
+                      selectedPath.toLowerCase().includes('security') || selectedPath.toLowerCase().includes('cyber') ? 'CS-07 - Sertifikat Cyber Security Analyst' :
+                        selectedPath.toLowerCase().includes('ui') || selectedPath.toLowerCase().includes('ux') || selectedPath.toLowerCase().includes('design') ? 'UI-07 - Sertifikat UI/UX Designer Professional' :
+                          selectedPath.toLowerCase().includes('ai') || selectedPath.toLowerCase().includes('intelligence') ? 'AI-07 - Sertifikat AI Developer Associate' :
+                            'WD-07 - Sertifikat full stack web developer'}
                   </h3>
                   <p className="text-[10px] text-indigo-500 font-bold mt-0.5">Milestone · diraih setelah semua level selesai</p>
                 </div>
@@ -658,11 +710,11 @@ const CourseMap: React.FC = () => {
             /* Input Form Card */
             <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200">
               <h2 className="text-sm font-black text-gray-900 mb-5">Input Node Kursus</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Nama Kursus</label>
-                  <select 
+                  <select
                     ref={selectRef}
                     value={selectedCourseId}
                     onChange={(e) => handleCourseSelect(e.target.value)}
@@ -675,6 +727,31 @@ const CourseMap: React.FC = () => {
                   </select>
                 </div>
 
+                {selectedCourseId === "" && (
+                  <div className="space-y-4 pt-2 border-t border-gray-100 mt-2 animate-in fade-in duration-300">
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Nama Kursus Baru</label>
+                      <input
+                        type="text"
+                        value={newCourseName}
+                        onChange={(e) => setNewCourseName(e.target.value)}
+                        placeholder="Contoh: CSS Grid & Flexbox"
+                        className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Kode Kursus Baru</label>
+                      <input
+                        type="text"
+                        value={newCourseCode}
+                        onChange={(e) => setNewCourseCode(e.target.value)}
+                        placeholder="Contoh: WD-07"
+                        className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-2">Level</label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -682,9 +759,9 @@ const CourseMap: React.FC = () => {
                       const isChecked = selectedLevel === lvl;
                       return (
                         <label key={lvl} className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors">
-                          <input 
-                            type="radio" 
-                            name="level" 
+                          <input
+                            type="radio"
+                            name="level"
                             value={lvl}
                             checked={isChecked}
                             onChange={() => setSelectedLevel(lvl)}
@@ -699,7 +776,7 @@ const CourseMap: React.FC = () => {
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Status</label>
-                  <select 
+                  <select
                     value={published ? 'true' : 'false'}
                     onChange={(e) => setPublished(e.target.value === 'true')}
                     className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
@@ -711,8 +788,8 @@ const CourseMap: React.FC = () => {
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Jumlah Pertemuan</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={jumlahPertemuan}
                     onChange={(e) => setJumlahPertemuan(parseInt(e.target.value) || 0)}
                     className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
@@ -722,8 +799,8 @@ const CourseMap: React.FC = () => {
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Harga(0=Gratis)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={harga}
                     onChange={(e) => setHarga(e.target.value)}
                     placeholder="Contoh: 499000 atau 0"
@@ -740,7 +817,7 @@ const CourseMap: React.FC = () => {
                         const isChecked = selectedPrerequisites.includes(mk.id);
                         return (
                           <label key={mk.id} className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-600 hover:text-indigo-600 transition-colors">
-                            <input 
+                            <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => {
@@ -766,21 +843,21 @@ const CourseMap: React.FC = () => {
 
                 {/* Action Buttons Row */}
                 <div className="flex gap-2 pt-2">
-                  <button 
+                  <button
                     onClick={handleSaveNode}
                     className="flex-1 h-10 bg-[#5850ec] hover:bg-[#4f46e5] text-white font-black rounded-xl text-[10px] shadow-sm transition-all border-none animate-pulse-subtle"
                   >
                     Simpan Node
                   </button>
                   {selectedCourseId && (
-                    <button 
+                    <button
                       onClick={handleRemoveNode}
                       className="h-10 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-[10px] px-3.5 shadow-sm transition-all border-none"
                     >
                       Hapus Node
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={handleCancel}
                     className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-[10px] px-3.5 shadow-sm transition-all border-none"
                   >
@@ -795,12 +872,12 @@ const CourseMap: React.FC = () => {
             /* Buat Paket Bundling Card */
             <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200">
               <h2 className="text-sm font-black text-gray-900 mb-5">Buat Paket Bundling</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Nama Paket</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={namaPaket}
                     onChange={(e) => setNamaPaket(e.target.value)}
                     placeholder="Nama Paket Bundling..."
@@ -810,7 +887,7 @@ const CourseMap: React.FC = () => {
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Deskripsi Paket</label>
-                  <textarea 
+                  <textarea
                     value={deskripsiPaket}
                     onChange={(e) => setDeskripsiPaket(e.target.value)}
                     placeholder="Deskripsi singkat mengenai paket..."
@@ -822,33 +899,39 @@ const CourseMap: React.FC = () => {
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Pilih Kursus</label>
                   <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50 shadow-inner">
-                    {(mappedCourses.length > 0 ? mappedCourses : getMockNodes()).map(mk => {
-                      const isChecked = selectedBundledCourses.includes(mk.id);
-                      return (
-                        <label key={mk.id} className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-600 hover:text-indigo-600 transition-colors">
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSelectedBundledCourses(selectedBundledCourses.filter(id => id !== mk.id));
-                              } else {
-                                setSelectedBundledCourses([...selectedBundledCourses, mk.id]);
-                              }
-                            }}
-                            className="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                          />
-                          <span>{mk.kode} - {mk.nama}</span>
-                        </label>
-                      );
-                    })}
+                    {displayCourses.filter(mk => mk.exists).length === 0 ? (
+                      <span className="text-xs text-gray-400 italic font-semibold block py-1">
+                        Belum ada kursus di database untuk path ini
+                      </span>
+                    ) : (
+                      displayCourses.filter(mk => mk.exists).map(mk => {
+                        const isChecked = selectedBundledCourses.includes(mk.id);
+                        return (
+                          <label key={mk.id} className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-600 hover:text-indigo-600 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedBundledCourses(selectedBundledCourses.filter(id => id !== mk.id));
+                                } else {
+                                  setSelectedBundledCourses([...selectedBundledCourses, mk.id]);
+                                }
+                              }}
+                              className="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                            />
+                            <span>{mk.kode} - {mk.nama}</span>
+                          </label>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Harga Paket</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={hargaPaket}
                     onChange={(e) => setHargaPaket(e.target.value)}
                     placeholder="Contoh: 199000"
@@ -858,8 +941,8 @@ const CourseMap: React.FC = () => {
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Harga Asli (Kalkulasi Otomatis)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formatHarga(hargaAsliPaket.toString())}
                     disabled
                     className="w-full px-3 h-10 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 shadow-sm cursor-not-allowed"
@@ -867,13 +950,13 @@ const CourseMap: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <button 
+                  <button
                     onClick={handleSavePaket}
                     className="flex-1 h-10 bg-[#0fc26a] hover:bg-[#0db05f] text-white font-black rounded-xl text-[10px] shadow-sm border-none cursor-pointer transition-all"
                   >
                     Simpan Paket
                   </button>
-                  <button 
+                  <button
                     onClick={handleCancelPaket}
                     className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-[10px] px-4 shadow-sm border-none cursor-pointer transition-all"
                   >
@@ -889,7 +972,7 @@ const CourseMap: React.FC = () => {
               {/* Stats Card */}
               <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200">
                 <h2 className="text-sm font-black text-gray-900 mb-5">Statistik Course Map</h2>
-                
+
                 <div className="space-y-3">
                   {[
                     { label: 'Total Kursus di Map', value: totalCourses, color: 'text-gray-900' },
@@ -911,11 +994,11 @@ const CourseMap: React.FC = () => {
                   <h2 className="text-sm font-black text-gray-900">Daftar Paket Bundling</h2>
                   <span className="bg-[#dcfce7] text-[#15803d] px-2.5 py-0.5 rounded-full text-[9px] font-black">{paketList.length} Paket</span>
                 </div>
-                
+
                 <div className="space-y-3.5 max-h-80 overflow-y-auto">
                   {paketList.map((paket) => (
                     <div key={paket.id} className="p-3 border border-gray-150 rounded-xl bg-gray-50 relative group">
-                      <button 
+                      <button
                         onClick={() => {
                           if (confirm(`Hapus paket bundling "${paket.nama}"?`)) {
                             removePaket(paket.id).catch(err => {
@@ -931,7 +1014,7 @@ const CourseMap: React.FC = () => {
                       </button>
                       <h4 className="text-[11px] font-black text-gray-800 leading-snug">{paket.nama}</h4>
                       <p className="text-[9px] text-gray-400 font-bold mt-0.5 leading-snug">{paket.deskripsi}</p>
-                      
+
                       <div className="mt-2.5 flex items-center justify-between">
                         <span className="text-[10px] font-extrabold text-[#15803d] bg-[#dcfce7] px-2 py-0.5 rounded-md">
                           {formatHarga(paket.hargaPaket)}
@@ -949,9 +1032,9 @@ const CourseMap: React.FC = () => {
               </div>
             </>
           )}
+        </div>
       </div>
     </div>
-  </div>
   );
 };
 

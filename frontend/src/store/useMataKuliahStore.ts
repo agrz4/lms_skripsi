@@ -52,8 +52,7 @@ export const useMataKuliahStore = create<MataKuliahState>()(
         set({ isLoading: true });
         try {
           const response = await api.get('/matakuliah');
-          // Only overwrite if API returns data, to prevent losing local data on DB reset
-          if (response.data && response.data.length > 0) {
+          if (response.data) {
             set({ mataKuliahList: response.data });
           }
         } catch (error) {
@@ -79,6 +78,7 @@ export const useMataKuliahStore = create<MataKuliahState>()(
           set((state) => ({ mataKuliahList: [...state.mataKuliahList, response.data] }));
         } catch (error) {
           console.error('Failed to add mata kuliah', error);
+          throw error;
         }
       },
       removeMataKuliah: async (id) => {
@@ -89,6 +89,7 @@ export const useMataKuliahStore = create<MataKuliahState>()(
           }));
         } catch (error) {
           console.error('Failed to delete mata kuliah', error);
+          throw error;
         }
       },
       updateMataKuliah: async (id, updatedData) => {
@@ -99,6 +100,7 @@ export const useMataKuliahStore = create<MataKuliahState>()(
           }));
         } catch (error) {
           console.error('Failed to update mata kuliah', error);
+          throw error;
         }
       },
     }),

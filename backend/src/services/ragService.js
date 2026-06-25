@@ -2,7 +2,24 @@ const prisma = require('../config/db');
 const { generateEmbedding } = require('./embeddingService');
 
 /**
- * Menyimpan soal beserta embedding-nya ke vector database
+ * Calculates cosine similarity between two numeric arrays
+ */
+const cosineSimilarity = (vecA, vecB) => {
+  if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+  let dotProduct = 0.0;
+  let normA = 0.0;
+  let normB = 0.0;
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+};
+
+/**
+ * Menyimpan soal beserta embedding-nya ke vector database (JSON stringified)
  * @param {string} soalId - ID soal dari database utama
  * @param {string} content - Teks soal
  * @param {string} mataKuliahId - ID mata kuliah
@@ -15,20 +32,22 @@ const indexSoal = async (soalId, content, mataKuliahId, metadata = {}) => {
     // Debug: Cek jumlah dimensi
     console.log(`Debug Vector: Menghasilkan ${embedding.length} dimensi`);
     
-    // Konversi array embedding ke format string vector untuk PostgreSQL
-    const vectorString = `[${embedding.join(',')}]`;
-
-    const result = await prisma.$executeRawUnsafe(
-      `INSERT INTO "SoalVector" (id, "soalId", "mataKuliahId", content, embedding, metadata)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4::vector, $5)
-       ON CONFLICT ("soalId") 
-       DO UPDATE SET content = $3, embedding = $4::vector, metadata = $5`,
-      soalId,
-      mataKuliahId,
-      content,
-      vectorString,
-      metadata
-    );
+    // Storing as JSON stringified array of numbers
+    const result = await prisma.soalVector.upsert({
+      where: { soalId },
+      update: {
+        content,
+        embedding: JSON.stringify(embedding),
+        metadata
+      },
+      create: {
+        soalId,
+        mataKuliahId,
+        content,
+        embedding: JSON.stringify(embedding),
+        metadata
+      }
+    });
 
     return result;
   } catch (error) {
@@ -38,7 +57,7 @@ const indexSoal = async (soalId, content, mataKuliahId, metadata = {}) => {
 };
 
 /**
- * Mencari soal yang mirip menggunakan similarity search
+ * Mencari soal yang mirip menggunakan similarity search di JavaScript
  * @param {string} queryText - Teks soal yang ingin dicari kemiripannya
  * @param {number} threshold - Batas minimum similarity (0-1)
  * @param {number} limit - Jumlah maksimum hasil
@@ -47,31 +66,34 @@ const indexSoal = async (soalId, content, mataKuliahId, metadata = {}) => {
 const cariSoalSerupa = async (queryText, threshold = 0.75, limit = 5, mataKuliahId = null) => {
   try {
     const queryEmbedding = await generateEmbedding(queryText);
-    const vectorString = `[${queryEmbedding.join(',')}]`;
 
-    // Menggunakan cosine similarity (1 - distance)
-    // '<=>' adalah operator cosine distance di pgvector
-    const query = `
-      SELECT 
-        id, 
-        content, 
-        "mataKuliahId",
-        1 - (embedding <=> $1::vector) as similarity
-      FROM "SoalVector"
-      WHERE 1 - (embedding <=> $1::vector) > $2
-      ${mataKuliahId ? 'AND "mataKuliahId" = $3' : ''}
-      ORDER BY similarity DESC
-      LIMIT $${mataKuliahId ? '4' : '3'}
-    `;
+    // Fetch all vectors for the specified mataKuliah
+    const allVectors = await prisma.soalVector.findMany({
+      where: mataKuliahId ? { mataKuliahId } : {}
+    });
 
-    const params = [vectorString, threshold];
-    if (mataKuliahId) {
-      params.push(mataKuliahId);
-    }
-    params.push(limit);
+    // Calculate similarity in memory
+    const data = allVectors
+      .map(v => {
+        let vec;
+        try {
+          vec = JSON.parse(v.embedding);
+        } catch (e) {
+          vec = [];
+        }
+        const similarity = cosineSimilarity(queryEmbedding, vec);
+        return {
+          id: v.id,
+          content: v.content,
+          mataKuliahId: v.mataKuliahId,
+          similarity
+        };
+      })
+      .filter(r => r.similarity > threshold)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit);
 
-    const data = await prisma.$queryRawUnsafe(query, ...params);
-    return data || [];
+    return data;
   } catch (error) {
     console.error('Error mencari soal serupa:', error);
     throw new Error('Gagal melakukan pencarian soal serupa: ' + error.message);

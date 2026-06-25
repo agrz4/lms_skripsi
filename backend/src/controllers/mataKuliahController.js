@@ -36,7 +36,7 @@ const getAllMataKuliah = async (req, res) => {
 };
 
 const createMataKuliah = async (req, res) => {
-  const { nama, kode, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, jumlahPertemuan } = req.body;
+  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, jumlahPertemuan } = req.body;
   try {
     const numMeetings = jumlahPertemuan ? parseInt(jumlahPertemuan) : 14;
     // 1. Create Mata Kuliah
@@ -44,6 +44,7 @@ const createMataKuliah = async (req, res) => {
       data: {
         nama,
         kode,
+        published: published === true || published === 'true',
         deskripsi: deskripsi || undefined,
         kapasitas: kapasitas ? parseInt(kapasitas) : undefined,
         kategori: kategori || undefined,
@@ -67,7 +68,36 @@ const createMataKuliah = async (req, res) => {
       data: meetingsData
     });
 
-    res.status(201).json(mataKuliah);
+    // 3. Fetch the fully created Mata Kuliah with all relations to match list format
+    const fullMataKuliah = await prisma.mataKuliah.findUnique({
+      where: { id: mataKuliah.id },
+      include: {
+        _count: {
+          select: {
+            pendaftaran: true,
+            pertemuan: true
+          }
+        },
+        pertemuan: {
+          orderBy: { urutan: 'asc' },
+          include: {
+            materi: true,
+            soal: true
+          }
+        },
+        prerequisites: true,
+        prerequisiteFor: true,
+        pengajar: {
+          select: {
+            id: true,
+            nama: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json(fullMataKuliah);
   } catch (error) {
     console.error("Error in createMataKuliah:", error);
     res.status(400).json({ message: error.message });
