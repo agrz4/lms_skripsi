@@ -330,17 +330,17 @@ const MateriSesi: React.FC = () => {
       setTimeout(() => {
         setIsUploadingScreenshot(false);
         setScreenshotUrl(response.data.data.fileUrl);
-        showBanner('success', `Screenshot "${file.name}" berhasil diupload!`);
+        showBanner('success', `Screenshot/PDF "${file.name}" berhasil diupload!`);
         setIsEditingUpload(false);
       }, 500);
     } catch (err) {
       clearInterval(interval);
       setIsUploadingScreenshot(false);
-      showBanner('error', 'Gagal mengupload screenshot');
+      showBanner('error', 'Gagal mengupload screenshot atau PDF');
     }
   };
 
-  // Handler for uploading ZIP Program File
+  // Handler for uploading ZIP Program / PDF File
   const handleProgramUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -376,13 +376,13 @@ const MateriSesi: React.FC = () => {
       setTimeout(() => {
         setIsUploadingProgram(false);
         setProgramUrl(response.data.data.fileUrl);
-        showBanner('success', `File program "${file.name}" berhasil diupload!`);
+        showBanner('success', `File "${file.name}" berhasil diupload!`);
         setIsEditingUpload(false);
       }, 500);
     } catch (err) {
       clearInterval(interval);
       setIsUploadingProgram(false);
-      showBanner('error', 'Gagal mengupload file program');
+      showBanner('error', 'Gagal mengupload file program atau PDF');
     }
   };
 
@@ -477,7 +477,7 @@ const MateriSesi: React.FC = () => {
 
   // Extract filenames from URLs
   const screenshotFileName = screenshotUrl ? screenshotUrl.substring(screenshotUrl.lastIndexOf('/') + 1) : `screenshot_${pertemuanDetail?.urutan || session?.urutan || '1'}.png`;
-  const programFileName = programUrl ? programUrl.substring(programUrl.lastIndexOf('/') + 1) : `program_html.zip`;
+  const programFileName = programUrl ? programUrl.substring(programUrl.lastIndexOf('/') + 1) : `tugas_praktik.zip`;
 
   // Display status strings
   const hasUploadedFiles = screenshotUrl || programUrl;
@@ -977,7 +977,7 @@ const MateriSesi: React.FC = () => {
                    <div className="flex justify-between items-center mb-8">
                       <div>
                          <h2 className="text-xl font-black text-gray-900 text-left">Upload Latihan P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
-                         <p className="text-xs font-bold text-gray-400 mt-1 text-left">Silakan unggah screenshot hasil pengerjaan coding dan folder zip project Anda.</p>
+                         <p className="text-xs font-bold text-gray-400 mt-1 text-left">Silakan unggah screenshot/PDF hasil pengerjaan coding dan folder zip project atau file PDF tugas Anda.</p>
                       </div>
                       <Button 
                         variant="outline"
@@ -992,14 +992,14 @@ const MateriSesi: React.FC = () => {
                       <input 
                         type="file" 
                         id="screenshot-tab-input" 
-                        accept="image/*" 
+                        accept="image/*,.pdf,application/pdf" 
                         className="hidden" 
                         onChange={handleScreenshotUpload} 
                       />
                       <input 
                         type="file" 
                         id="program-tab-input" 
-                        accept=".zip,.rar,.tar.gz" 
+                        accept=".zip,.rar,.tar.gz,.pdf,application/pdf" 
                         className="hidden" 
                         onChange={handleProgramUpload} 
                       />
@@ -1015,7 +1015,7 @@ const MateriSesi: React.FC = () => {
                          {isUploadingScreenshot ? (
                            <div className="w-full space-y-2 text-center">
                              <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                               <span>Mengupload screenshot...</span>
+                               <span>Mengupload screenshot atau PDF...</span>
                                <span>{screenshotProgress}%</span>
                              </div>
                              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -1027,7 +1027,7 @@ const MateriSesi: React.FC = () => {
                              <div className="flex items-center gap-3">
                                <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">✓</div>
                                <div className="text-left">
-                                 <p className="text-xs font-black text-emerald-950">Screenshot Terupload</p>
+                                 <p className="text-xs font-black text-emerald-950">Screenshot / PDF Terupload</p>
                                  <p className="text-[9px] text-gray-400 font-bold truncate max-w-md">{screenshotFileName}</p>
                                </div>
                              </div>
@@ -1036,7 +1036,7 @@ const MateriSesi: React.FC = () => {
                          ) : (
                            <div className="flex items-center gap-3">
                               <div className="w-10 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-500 text-lg shadow-sm">📸</div>
-                              <span className="text-xs font-black text-gray-500">Upload Screenshot (.png/.jpg)</span>
+                              <span className="text-xs font-black text-gray-500">Upload Screenshot / PDF (.png/.jpg/.pdf)</span>
                            </div>
                          )}
                       </div>
@@ -1052,7 +1052,7 @@ const MateriSesi: React.FC = () => {
                          {isUploadingProgram ? (
                            <div className="w-full space-y-2 text-center">
                              <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                               <span>Mengupload file program...</span>
+                               <span>Mengupload file program atau PDF...</span>
                                <span>{programProgress}%</span>
                              </div>
                              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -1064,7 +1064,7 @@ const MateriSesi: React.FC = () => {
                              <div className="flex items-center gap-3">
                                <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">✓</div>
                                <div className="text-left">
-                                 <p className="text-xs font-black text-emerald-950">File Program Terupload</p>
+                                 <p className="text-xs font-black text-emerald-950">File Program / PDF Terupload</p>
                                  <p className="text-[9px] text-gray-400 font-bold truncate max-w-md">{programFileName}</p>
                                </div>
                              </div>
@@ -1073,7 +1073,7 @@ const MateriSesi: React.FC = () => {
                          ) : (
                            <div className="flex items-center gap-3">
                               <div className="w-10 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500 text-lg shadow-sm">🗜️</div>
-                              <span className="text-xs font-black text-gray-500">Upload File Program (.zip)</span>
+                              <span className="text-xs font-black text-gray-500">Upload File Program / PDF (.zip, .pdf)</span>
                            </div>
                          )}
                       </div>
@@ -1084,7 +1084,7 @@ const MateriSesi: React.FC = () => {
                 <Card className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white p-8">
                   <div className="mb-6">
                     <h2 className="text-xl font-black text-gray-950 text-left">Latihan P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
-                    <p className="text-xs text-gray-400 font-bold mt-1 text-left">Buat layout CSS sederhana dan upload screenshot hasilnya + file zip project</p>
+                    <p className="text-xs text-gray-400 font-bold mt-1 text-left">Buat layout CSS sederhana dan upload screenshot hasilnya + file zip project / PDF</p>
                   </div>
 
                   <h3 className="text-lg font-bold text-gray-900 mb-4 text-left border-b border-gray-100 pb-2">Submission status</h3>
@@ -1278,7 +1278,7 @@ const MateriSesi: React.FC = () => {
                <div className="flex justify-between items-center mb-8">
                   <div>
                      <h2 className="text-xl font-black text-gray-900 text-left">Latihan Praktik</h2>
-                     <p className="text-xs font-bold text-gray-400 mt-1 text-left">Upload screenshot hasil kerja serta zip file project untuk verifikasi asisten</p>
+                     <p className="text-xs font-bold text-gray-400 mt-1 text-left">Upload screenshot/PDF hasil kerja serta file zip project atau PDF tugas untuk verifikasi asisten</p>
                   </div>
                   <Badge className="bg-blue-100 text-blue-600 border-none font-black text-[9px] px-4 py-1.5 uppercase tracking-widest rounded-full">
                      Praktik Modul
@@ -1289,14 +1289,14 @@ const MateriSesi: React.FC = () => {
                   <input 
                     type="file" 
                     id="screenshot-input-main" 
-                    accept="image/*" 
+                    accept="image/*,.pdf,application/pdf" 
                     className="hidden" 
                     onChange={handleScreenshotUpload} 
                   />
                   <input 
                     type="file" 
                     id="program-input-main" 
-                    accept=".zip,.rar,.tar.gz" 
+                    accept=".zip,.rar,.tar.gz,.pdf,application/pdf" 
                     className="hidden" 
                     onChange={handleProgramUpload} 
                   />
@@ -1312,7 +1312,7 @@ const MateriSesi: React.FC = () => {
                      {isUploadingScreenshot ? (
                        <div className="w-full space-y-2 text-center">
                          <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                           <span>Mengupload screenshot...</span>
+                           <span>Mengupload screenshot atau PDF...</span>
                            <span>{screenshotProgress}%</span>
                          </div>
                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -1324,7 +1324,7 @@ const MateriSesi: React.FC = () => {
                          <div className="flex items-center gap-3">
                            <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">✓</div>
                            <div className="text-left">
-                             <p className="text-xs font-black text-emerald-950">Screenshot Terupload</p>
+                             <p className="text-xs font-black text-emerald-950">Screenshot / PDF Terupload</p>
                              <p className="text-[9px] text-gray-400 font-bold truncate max-w-xs">{screenshotFileName}</p>
                            </div>
                          </div>
@@ -1333,7 +1333,7 @@ const MateriSesi: React.FC = () => {
                      ) : (
                        <div className="flex items-center gap-3">
                           <div className="w-10 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-500 text-lg shadow-sm">📸</div>
-                          <span className="text-xs font-black text-gray-500">Upload Screenshot (.png/.jpg)</span>
+                          <span className="text-xs font-black text-gray-500">Upload Screenshot / PDF (.png/.jpg/.pdf)</span>
                        </div>
                      )}
                   </div>
@@ -1349,7 +1349,7 @@ const MateriSesi: React.FC = () => {
                      {isUploadingProgram ? (
                        <div className="w-full space-y-2 text-center">
                          <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                           <span>Mengupload file program...</span>
+                           <span>Mengupload file program atau PDF...</span>
                            <span>{programProgress}%</span>
                          </div>
                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -1361,7 +1361,7 @@ const MateriSesi: React.FC = () => {
                          <div className="flex items-center gap-3">
                            <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">✓</div>
                            <div className="text-left">
-                             <p className="text-xs font-black text-emerald-950">File Program Terupload</p>
+                             <p className="text-xs font-black text-emerald-950">File Program / PDF Terupload</p>
                              <p className="text-[9px] text-gray-400 font-bold truncate max-w-xs">{programFileName}</p>
                            </div>
                          </div>
@@ -1370,7 +1370,7 @@ const MateriSesi: React.FC = () => {
                      ) : (
                        <div className="flex items-center gap-3">
                           <div className="w-10 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500 text-lg shadow-sm">🗜️</div>
-                          <span className="text-xs font-black text-gray-500">Upload File Program (.zip)</span>
+                          <span className="text-xs font-black text-gray-500">Upload File Program / PDF (.zip, .pdf)</span>
                        </div>
                      )}
                   </div>
