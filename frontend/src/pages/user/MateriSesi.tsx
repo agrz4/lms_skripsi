@@ -202,7 +202,24 @@ const MateriSesi: React.FC = () => {
 
   // Find session info
   const session = jadwalList.find(s => s.id === pertemuanId);
-  const videos = materiList.filter(m => m.videoUrl && !m.videoUrl.toLowerCase().includes('tiktok'));
+  
+  // Filter Zoom-related items out of the main videos
+  const zoomLinkMateri = materiList.find(
+    m => m.videoUrl && 
+    (m.videoUrl.toLowerCase().includes('zoom.us') || m.videoUrl.toLowerCase().includes('zoomlink'))
+  );
+  const zoomRecordings = materiList.filter(
+    m => m.videoUrl && 
+    m.nama && 
+    (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video'))
+  );
+  
+  const videos = materiList.filter(
+    m => m.videoUrl && 
+    !m.videoUrl.toLowerCase().includes('tiktok') && 
+    !(m.videoUrl.toLowerCase().includes('zoom.us') || m.videoUrl.toLowerCase().includes('zoomlink')) && 
+    !(m.nama && (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video')))
+  );
   const tiktokVideos = materiList.filter(m => m.videoUrl && m.videoUrl.toLowerCase().includes('tiktok'));
   const pdfs = materiList.filter(m => m.fileUrl);
 
@@ -640,65 +657,79 @@ const MateriSesi: React.FC = () => {
           {activeTab === 'zoom' && (
             <div className="space-y-8">
               {/* Online Meeting Card */}
-              <Card className="rounded-[2rem] border border-gray-200 shadow-sm bg-white p-8">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet)</h3>
-                <div className="bg-[#EBF5FF] border border-[#D0E7FF] p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <div className="w-14 h-14 bg-[#2D8CFF] rounded-xl flex items-center justify-center shadow-md shrink-0">
-                      <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24">
-                        <path d="M17.472 10.373a1.599 1.599 0 0 0-1.6 1.6v.053a10.978 10.978 0 0 1-5.748 5.748h-.053a1.599 1.599 0 0 0-1.6-1.6H5.2c-.88 0-1.6.72-1.6 1.6V19.4c0 .88.72 1.6 1.6 1.6H8.4a1.6 1.6 0 0 0 1.6-1.6v-.053a10.978 10.978 0 0 1 5.748-5.748h.053a1.599 1.599 0 0 0 1.6 1.6H18.8c.88 0 1.6-.72 1.6-1.6V11.973a1.599 1.599 0 0 0-1.6-1.6h-1.328zM5.2 2.6H8.4a1.6 1.6 0 0 1 1.6 1.6v3.2c0 .88-.72 1.6-1.6 1.6H5.2c-.88 0-1.6-.72-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6zm13.6 0H18.8a1.6 1.6 0 0 1 1.6 1.6v3.2a1.6 1.6 0 0 1-1.6 1.6H18.8a1.6 1.6 0 0 1-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6z"/>
-                      </svg>
+              {zoomLinkMateri ? (
+                <Card className="rounded-[2rem] border border-gray-200 shadow-sm bg-white p-8">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet)</h3>
+                  <div className="bg-[#EBF5FF] border border-[#D0E7FF] p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="w-14 h-14 bg-[#2D8CFF] rounded-xl flex items-center justify-center shadow-md shrink-0">
+                        <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24">
+                          <path d="M17.472 10.373a1.599 1.599 0 0 0-1.6 1.6v.053a10.978 10.978 0 0 1-5.748 5.748h-.053a1.599 1.599 0 0 0-1.6-1.6H5.2c-.88 0-1.6.72-1.6 1.6V19.4c0 .88.72 1.6 1.6 1.6H8.4a1.6 1.6 0 0 0 1.6-1.6v-.053a10.978 10.978 0 0 1 5.748-5.748h.053a1.599 1.599 0 0 0 1.6 1.6H18.8c.88 0 1.6-.72 1.6-1.6V11.973a1.599 1.599 0 0 0-1.6-1.6h-1.328zM5.2 2.6H8.4a1.6 1.6 0 0 1 1.6 1.6v3.2c0 .88-.72 1.6-1.6 1.6H5.2c-.88 0-1.6-.72-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6zm13.6 0H18.8a1.6 1.6 0 0 1 1.6 1.6v3.2a1.6 1.6 0 0 1-1.6 1.6H18.8a1.6 1.6 0 0 1-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6z"/>
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <h4 className="text-base font-black text-blue-950">Kelas Online via Zoom</h4>
+                        <p className="text-xs font-bold text-blue-700/60 mt-1 truncate max-w-xs md:max-w-md">
+                          Link: {zoomLinkMateri.videoUrl}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-base font-black text-blue-950">Kelas sudah selesai</h4>
-                      <p className="text-xs font-bold text-blue-700/60 mt-1">
-                        Rabu, 5 Feb 2025 · 09:00~11:00 WIB
-                      </p>
+                    <Button 
+                      onClick={() => window.open(zoomLinkMateri.videoUrl, '_blank')}
+                      className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-3.5 px-6 rounded-xl flex items-center gap-1.5 justify-center shadow-lg shadow-blue-100"
+                    >
+                      Gabung Zoom
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                <Card className="rounded-[2rem] border border-gray-200 shadow-sm bg-white p-8">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet)</h3>
+                  <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="w-14 h-14 bg-gray-300 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                        <svg className="w-8 h-8 text-gray-450 fill-current" viewBox="0 0 24 24">
+                          <path d="M17.472 10.373a1.599 1.599 0 0 0-1.6 1.6v.053a10.978 10.978 0 0 1-5.748 5.748h-.053a1.599 1.599 0 0 0-1.6-1.6H5.2c-.88 0-1.6.72-1.6 1.6V19.4c0 .88.72 1.6 1.6 1.6H8.4a1.6 1.6 0 0 0 1.6-1.6v-.053a10.978 10.978 0 0 1 5.748-5.748h.053a1.599 1.599 0 0 0 1.6 1.6H18.8c.88 0 1.6-.72 1.6-1.6V11.973a1.599 1.599 0 0 0-1.6-1.6h-1.328zM5.2 2.6H8.4a1.6 1.6 0 0 1 1.6 1.6v3.2c0 .88-.72 1.6-1.6 1.6H5.2c-.88 0-1.6-.72-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6zm13.6 0H18.8a1.6 1.6 0 0 1 1.6 1.6v3.2a1.6 1.6 0 0 1-1.6 1.6H18.8a1.6 1.6 0 0 1-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6z"/>
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <h4 className="text-base font-black text-gray-500">Belum ada kelas Zoom terjadwal</h4>
+                        <p className="text-xs font-bold text-gray-400 mt-1">
+                          Asisten Dosen atau Pengajar belum memperbarui link Zoom untuk sesi ini.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <Button className="w-full sm:w-auto bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs py-3 px-6 rounded-xl flex items-center gap-1.5 justify-center cursor-default">
-                    <HiOutlineCheck className="text-base" /> Selesai
-                  </Button>
-                </div>
-              </Card>
+                </Card>
+              )}
 
-              {/* Video Recording 1 */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                   <HiOutlineVideoCamera className="text-base" /> Rekaman Zoom (Video 1)
-                </h3>
-                <div className="aspect-video w-full bg-[#182C44] rounded-[2rem] flex flex-col items-center justify-center border border-gray-50 relative group overflow-hidden shadow-sm">
-                  <div className="w-20 h-20 bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-all cursor-pointer shadow-2xl border border-white/10">
-                    <HiOutlinePlayCircle className="text-5xl" />
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white/90">
-                    <span className="text-xs font-bold tracking-wide font-mono">rekaman_p1_intro_uiux.mp4</span>
-                    <span className="text-xs font-bold font-mono">0:00 / 1:45:30</span>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-600/40">
-                    <div className="h-full bg-blue-500 w-0 group-hover:w-[20%] transition-all duration-500"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Video Recording 2 */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                   <HiOutlineVideoCamera className="text-base" /> Rekaman Zoom (Video 2 — Q&A Session)
-                </h3>
-                <div className="aspect-video w-full bg-[#182C44] rounded-[2rem] flex flex-col items-center justify-center border border-gray-50 relative group overflow-hidden shadow-sm">
-                  <div className="w-20 h-20 bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-all cursor-pointer shadow-2xl border border-white/10">
-                    <HiOutlinePlayCircle className="text-5xl" />
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white/90">
-                    <span className="text-xs font-bold tracking-wide font-mono">rekaman_p1_intro_uiux.mp4</span>
-                    <span className="text-xs font-bold font-mono">0:00 / 1:45:30</span>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-600/40">
-                    <div className="h-full bg-blue-500 w-0 group-hover:w-[15%] transition-all duration-500"></div>
+              {/* Video recordings list */}
+              {zoomRecordings.map((rec, index) => (
+                <div key={rec.id} className="space-y-3">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                     <HiOutlineVideoCamera className="text-base" /> {rec.nama || `Rekaman Zoom (Video ${index + 1})`}
+                  </h3>
+                  <div 
+                    onClick={() => window.open(rec.videoUrl, '_blank')}
+                    className="aspect-video w-full bg-[#182C44] rounded-[2rem] flex flex-col items-center justify-center border border-gray-50 relative group overflow-hidden shadow-sm cursor-pointer"
+                  >
+                    <div className="w-20 h-20 bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-all shadow-2xl border border-white/10">
+                      <HiOutlinePlayCircle className="text-5xl" />
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white/90">
+                      <span className="text-xs font-bold tracking-wide font-mono truncate max-w-[80%]">
+                        {rec.videoUrl.substring(rec.videoUrl.lastIndexOf('/') + 1)}
+                      </span>
+                      <span className="text-xs font-bold font-mono">Klik untuk putar</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
+              {zoomRecordings.length === 0 && (
+                <div className="text-center py-12 bg-white rounded-[2rem] border border-gray-200 border-dashed text-xs font-bold text-gray-450 italic">
+                   Belum ada rekaman Zoom yang diunggah untuk sesi ini.
+                </div>
+              )}
             </div>
           )}
 
@@ -711,8 +742,11 @@ const MateriSesi: React.FC = () => {
                 {videos.map((v, i) => (
                   <div key={v.id} className="space-y-6">
                     <h3 className="text-sm font-black text-gray-700 text-left">Video {i + 1} — {v.nama}</h3>
-                    <div className="aspect-video w-full bg-gray-100 rounded-[2rem] flex items-center justify-center border border-gray-50 overflow-hidden relative group shadow-inner">
-                      <HiOutlinePlayCircle className="text-8xl text-gray-300 group-hover:text-blue-500 transition-all cursor-pointer animate-pulse" />
+                    <div 
+                      onClick={() => window.open(v.videoUrl, '_blank')}
+                      className="aspect-video w-full bg-gray-100 rounded-[2rem] flex items-center justify-center border border-gray-50 overflow-hidden relative group shadow-inner cursor-pointer"
+                    >
+                      <HiOutlinePlayCircle className="text-8xl text-gray-300 group-hover:text-blue-500 transition-all animate-pulse" />
                       <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
                         <div className="h-full bg-blue-500 w-[40%]"></div>
                       </div>
