@@ -19,6 +19,7 @@ interface VideoItem {
   nama: string;
   source: 'tiktok' | 'upload' | 'zoom';
   url: string;
+  rekamanUrl?: string;
   uploading?: boolean;
 }
 
@@ -87,25 +88,58 @@ const AddMateri: React.FC = () => {
         const loadedSubMateri: SubMateriItem[] = [];
         let loadedRefleksi = '';
 
+        // Separate Zoom-related items
+        const zoomVideosFromBackend = existingMateri.filter((m: any) => m.videoUrl && (m.videoUrl.toLowerCase().includes('zoom.us') || m.videoUrl.toLowerCase().includes('zoomlink')));
+        const zoomRecordingVideos = existingMateri.filter((m: any) => m.videoUrl && m.nama && (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video')));
+        const otherVideos = existingMateri.filter((m: any) => m.videoUrl && 
+          !(m.videoUrl.toLowerCase().includes('zoom.us') || m.videoUrl.toLowerCase().includes('zoomlink')) &&
+          !(m.nama && (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video')))
+        );
+
+        // Group Zoom link and its recordings
+        if (zoomVideosFromBackend.length > 0 || zoomRecordingVideos.length > 0) {
+          const mainZoomLink = zoomVideosFromBackend[0]?.videoUrl || '';
+          const mainZoomId = zoomVideosFromBackend[0]?.id;
+          const firstRecording = zoomRecordingVideos[0]?.videoUrl || '';
+          
+          loadedVideos.push({
+            id: mainZoomId,
+            nama: zoomVideosFromBackend[0]?.nama || 'Zoom Meeting',
+            source: 'zoom',
+            url: mainZoomLink,
+            rekamanUrl: firstRecording
+          });
+
+          // If there are more zoom recordings, load them as upload source
+          for (let i = 1; i < zoomRecordingVideos.length; i++) {
+            loadedVideos.push({
+              id: zoomRecordingVideos[i].id,
+              nama: zoomRecordingVideos[i].nama,
+              source: 'upload',
+              url: zoomRecordingVideos[i].videoUrl
+            });
+          }
+        }
+
+        // Load other videos
+        otherVideos.forEach((m: any) => {
+          let src: 'tiktok' | 'upload' | 'zoom' = 'upload';
+          if (m.videoUrl.includes('tiktok') || m.videoUrl.includes('youtube') || m.videoUrl.includes('instagram') || m.videoUrl.startsWith('http')) {
+            src = 'tiktok';
+          }
+          loadedVideos.push({
+            id: m.id,
+            nama: m.nama || `Video ${loadedVideos.length + 1}`,
+            source: src,
+            url: m.videoUrl
+          });
+        });
+
         existingMateri.forEach((m: any) => {
           if (m.refleksi && !loadedRefleksi) {
             loadedRefleksi = m.refleksi;
           }
-
-          if (m.videoUrl) {
-            let src: 'tiktok' | 'upload' | 'zoom' = 'upload';
-            if (m.videoUrl.includes('zoom.us') || m.videoUrl.includes('zoomLink')) {
-              src = 'zoom';
-            } else if (m.videoUrl.includes('tiktok') || m.videoUrl.includes('youtube') || m.videoUrl.includes('instagram') || m.videoUrl.startsWith('http')) {
-              src = 'tiktok';
-            }
-            loadedVideos.push({
-              id: m.id,
-              nama: m.nama || `Video ${loadedVideos.length + 1}`,
-              source: src,
-              url: m.videoUrl
-            });
-          } else if (m.fileUrl) {
+          if (m.fileUrl) {
             loadedSubMateri.push({
               id: m.id,
               nama: m.nama || `Sub Materi ${loadedSubMateri.length + 1}`,
@@ -195,7 +229,7 @@ const AddMateri: React.FC = () => {
     });
   };
 
-  const handleVideoUpload = async (index: number, file: File) => {
+  const handleVideoUpload = async (index: number, file: File, isZoomRekaman?: boolean) => {
     handleUpdateVideo(index, 'uploading', true);
     const formData = new FormData();
     formData.append('video', file);
@@ -207,11 +241,18 @@ const AddMateri: React.FC = () => {
         setVideos((prev) => {
           const updated = [...prev];
           if (updated[index]) {
-            updated[index] = { 
-              ...updated[index], 
-              url: res.data.fileUrl,
-              nama: updated[index].nama && !updated[index].nama.startsWith('Video') ? updated[index].nama : file.name
-            };
+            if (isZoomRekaman) {
+              updated[index] = { 
+                ...updated[index], 
+                rekamanUrl: res.data.fileUrl
+              };
+            } else {
+              updated[index] = { 
+                ...updated[index], 
+                url: res.data.fileUrl,
+                nama: updated[index].nama && !updated[index].nama.startsWith('Video') ? updated[index].nama : file.name
+              };
+            }
           }
           return updated;
         });
@@ -272,12 +313,29 @@ const AddMateri: React.FC = () => {
 
       // Add videos
       videos.forEach((v, idx) => {
-        if (v.url.trim() || v.nama.trim()) {
-          payloads.push({
-            nama: v.nama || `Video ${idx + 1}`,
-            videoUrl: v.url || null,
-            fileUrl: null
-          });
+        if (v.url.trim() || v.nama.trim() || (v.source === 'zoom' && (v.url.trim() || v.rekamanUrl?.trim()))) {
+          if (v.source === 'zoom') {
+            if (v.url.trim()) {
+              payloads.push({
+                nama: v.nama || `Zoom Meeting`,
+                videoUrl: v.url,
+                fileUrl: null
+              });
+            }
+            if (v.rekamanUrl && v.rekamanUrl.trim()) {
+              payloads.push({
+                nama: `${v.nama || 'Pertemuan'} (Rekaman Zoom)`,
+                videoUrl: v.rekamanUrl,
+                fileUrl: null
+              });
+            }
+          } else {
+            payloads.push({
+              nama: v.nama || `Video ${idx + 1}`,
+              videoUrl: v.url || null,
+              fileUrl: null
+            });
+          }
         }
       });
 
@@ -490,7 +548,7 @@ const AddMateri: React.FC = () => {
                     </div>
 
                     {/* Upload or View Block */}
-                    {v.source === 'tiktok' ? (
+                    {v.source === 'tiktok' && (
                       <div className="bg-[#efeefd] text-[#5850ec] rounded-lg p-4 border border-[#c5c0f9] space-y-2">
                         <label className="text-[10px] font-black uppercase text-gray-700">Link TikTok / Reels:</label>
                         <Input
@@ -500,13 +558,62 @@ const AddMateri: React.FC = () => {
                           placeholder="https://tiktok.com/@..."
                         />
                       </div>
-                    ) : (
+                    )}
+
+                    {v.source === 'zoom' && (
+                      <div className="bg-[#efeefd] text-[#5850ec] rounded-lg p-4 border border-[#c5c0f9] space-y-4 text-left">
+                        <div>
+                          <label className="text-[10px] font-black uppercase text-gray-700 block mb-1">Link Zoom Meeting:</label>
+                          <Input
+                            value={v.url}
+                            onChange={(e) => handleUpdateVideo(idx, 'url', e.target.value)}
+                            className="bg-white border-none rounded-md py-3 px-3 text-xs font-semibold text-gray-800 placeholder:text-gray-400 w-full"
+                            placeholder="https://zoom.us/j/..."
+                          />
+                        </div>
+                        <div className="border-t border-purple-200/50 pt-3">
+                          <label className="text-[10px] font-black uppercase text-gray-700 block mb-2">Upload File Rekaman Zoom (.mp4) — Opsional:</label>
+                          {v.rekamanUrl ? (
+                            <div className="bg-[#d2e3fc] text-[#1967d2] font-semibold text-xs py-3 px-4 rounded-lg flex items-center justify-between shadow-sm">
+                              <span className="truncate max-w-[80%]">{v.rekamanUrl.substring(v.rekamanUrl.lastIndexOf('/') + 1)}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => handleUpdateVideo(idx, 'rekamanUrl', '')}
+                                className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px] shrink-0"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="h-12 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/30 transition-colors cursor-pointer relative">
+                              <input 
+                                type="file" 
+                                accept="video/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleVideoUpload(idx, file, true);
+                                }}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                              <div className="flex items-center gap-2">
+                                <HiOutlineFolder className="text-gray-300 text-lg" />
+                                <span className="text-xs font-semibold text-gray-450">
+                                  {v.uploading ? 'Mengunggah...' : 'Upload Video Rekaman (.mp4)'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {v.source === 'upload' && (
                       <div className="space-y-2">
                         {v.url ? (
                           <div className="bg-[#d2e3fc] text-[#1967d2] font-semibold text-xs py-4 px-6 rounded-lg flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-2.5 truncate">
                               <span className="shrink-0">▶</span>
-                              <span className="truncate">{v.url.substring(v.url.lastIndexOf('/') + 1)} · 12:34</span>
+                              <span className="truncate">{v.url.substring(v.url.lastIndexOf('/') + 1)}</span>
                             </div>
                             <button 
                               type="button" 
