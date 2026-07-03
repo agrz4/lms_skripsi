@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   HiOutlineClock, 
   HiOutlineBookOpen, 
@@ -7,11 +7,19 @@ import {
   HiOutlineArrowRight, 
   HiOutlineCheckCircle, 
   HiOutlineSparkles,
-  HiOutlineTrophy
+  HiOutlineTrophy,
+  HiOutlineInformationCircle,
+  HiOutlineCheck,
+  HiOutlineTag,
+  HiOutlineTrash,
+  HiOutlineClipboard,
+  HiOutlineCreditCard,
+  HiOutlineDocumentText
 } from 'react-icons/hi2';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { usePendaftaranStore } from '../../store/usePendaftaranStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { usePaketStore } from '../../store/usePaketStore';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -129,13 +137,31 @@ const getMockNodes = (path: string = 'Web Development') => {
 
 const KursusTersedia: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { publishedMataKuliahList, fetchPublishedMataKuliah, mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
-  const { pendaftaranList, fetchMyPendaftaran, enrollKursus } = usePendaftaranStore();
+  const { pendaftaranList, fetchMyPendaftaran, enrollKursus, referralList, fetchMyReferrals } = usePendaftaranStore();
+  const { paketList: dbPaketList, fetchPaket } = usePaketStore();
   const { user } = useAuthStore();
   const activePath = user?.pelatihan || 'Web Development';
 
-  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Free' | 'Berbayar' | 'Course map'>('Semua');
+  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Free' | 'Berbayar' | 'Course map' | 'Referall'>('Semua');
+  const [courseMapMode, setCourseMapMode] = useState<'individual' | 'paket'>('individual');
   const [progressData, setProgressData] = useState<any[]>([]);
+
+  // Referral State Variables
+  const [referralActiveTab, setReferralActiveTab] = useState<'referral' | 'pembayaran'>('referral');
+  const [copied, setCopied] = useState(false);
+  const [deletedReferralIds, setDeletedReferralIds] = useState<string[]>([]);
+  const [deletedPaymentIds, setDeletedPaymentIds] = useState<string[]>([]);
+
+  // Tab Param Parser
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'referral') {
+      setActiveFilter('Referall');
+    }
+  }, [location]);
 
   const fetchProgress = async () => {
     try {
@@ -151,18 +177,104 @@ const KursusTersedia: React.FC = () => {
     fetchMataKuliah();
     fetchMyPendaftaran();
     fetchProgress();
-  }, [fetchPublishedMataKuliah, fetchMataKuliah, fetchMyPendaftaran]);
+    fetchPaket();
+  }, [fetchPublishedMataKuliah, fetchMataKuliah, fetchMyPendaftaran, fetchPaket]);
+
+  useEffect(() => {
+    if (activeFilter === 'Referall') {
+      fetchMyReferrals();
+      fetchMyPendaftaran();
+    }
+  }, [activeFilter, fetchMyReferrals, fetchMyPendaftaran]);
 
   const handleEnroll = async (id: string) => {
+    const course = publishedMataKuliahList.find(c => c.id === id);
+    const priceDisplay = course ? getPriceDisplay(course.warna).current : 'Gratis';
+    let cleanPrice = priceDisplay === 'Gratis' ? '0' : priceDisplay.replace(/[^0-9]/g, '');
+
+    let referralCode: string | undefined = undefined;
+    if (cleanPrice !== '0') {
+      const inputRefCode = window.prompt('Masukkan kode referral jika ada (untuk mendapatkan diskon 10%):');
+      if (inputRefCode) {
+        referralCode = inputRefCode.trim() || undefined;
+        if (referralCode) {
+          // Apply 10% discount
+          const discountAmount = Math.round(parseInt(cleanPrice, 10) * 0.1);
+          cleanPrice = (parseInt(cleanPrice, 10) - discountAmount).toString();
+        }
+      }
+    }
+
     try {
-      await enrollKursus(id);
-      alert('Berhasil mendaftar kelas!');
+      await enrollKursus(id, {
+        referralCode,
+        harga: cleanPrice,
+        invoiceNo: `INV/MK/${Date.now()}`,
+        method: 'Mandiri Virtual Account',
+        status: 'Lunas'
+      });
+      alert(referralCode 
+        ? `Berhasil mendaftar kelas dengan diskon referral! Harga akhir: Rp ${parseInt(cleanPrice, 10).toLocaleString('id-ID')}`
+        : 'Berhasil mendaftar kelas!'
+      );
       await fetchMyPendaftaran();
       await fetchProgress();
       navigate(`/user/detail-kursus?id=${id}`);
     } catch (err) {
       console.error('Failed to enroll:', err);
       alert('Gagal mendaftar kelas.');
+    }
+  };
+
+  const handleBeliPaket = async (paketNama: string, targetCodes: string[]) => {
+    if (!window.confirm(`Apakah Anda yakin ingin membeli paket "${paketNama}"? Anda akan otomatis terdaftar ke semua kelas dalam paket ini.`)) {
+      return;
+    }
+
+    const coursesToEnroll = publishedMataKuliahList.filter(c => 
+      targetCodes.some(code => c.kode?.toLowerCase().includes(code.toLowerCase()))
+    );
+
+    if (coursesToEnroll.length === 0) {
+      alert('Maaf, kelas-kelas di dalam paket ini belum dipublikasikan oleh admin.');
+      return;
+    }
+
+    let enrolledCount = 0;
+    let alreadyEnrolledCount = 0;
+
+    let splitPrice = '0';
+    if (paketNama === 'Web Dev Full Path') splitPrice = '199800';
+    else if (paketNama === 'Front-End Specialist') splitPrice = '174750';
+    else if (paketNama === 'Back-End Engineer') splitPrice = '199666';
+
+    try {
+      for (const course of coursesToEnroll) {
+        const isAlreadyEnrolled = pendaftaranList.some(p => p.mataKuliahId === course.id);
+        if (isAlreadyEnrolled) {
+          alreadyEnrolledCount++;
+        } else {
+          await enrollKursus(course.id, {
+            harga: splitPrice,
+            invoiceNo: `INV/PK/${Date.now()}`,
+            method: 'Mandiri Virtual Account',
+            status: 'Lunas'
+          });
+          enrolledCount++;
+        }
+      }
+      
+      await fetchMyPendaftaran();
+      await fetchProgress();
+
+      if (enrolledCount > 0) {
+        alert(`Selamat! Anda berhasil membeli paket "${paketNama}" dan didaftarkan ke ${enrolledCount} kelas baru!`);
+      } else if (alreadyEnrolledCount > 0) {
+        alert(`Anda sudah terdaftar di semua kelas yang ada di dalam paket "${paketNama}".`);
+      }
+    } catch (err) {
+      console.error('Failed to purchase package courses:', err);
+      alert('Gagal memproses pendaftaran beberapa kelas pada paket.');
     }
   };
 
@@ -551,16 +663,7 @@ const KursusTersedia: React.FC = () => {
                   return;
                 }
                 if (!isLocked) {
-                  try {
-                    await enrollKursus(course.id);
-                    alert('Berhasil mendaftar kelas!');
-                    await fetchMyPendaftaran();
-                    await fetchProgress();
-                    navigate(`/user/detail-kursus?id=${course.id}`);
-                  } catch (err) {
-                    console.error('Failed to enroll:', err);
-                    alert('Gagal mendaftar kelas.');
-                  }
+                  await handleEnroll(course.id);
                 }
               }}
               className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
@@ -697,6 +800,424 @@ const KursusTersedia: React.FC = () => {
     );
   };
 
+  const renderPaketSection = () => {
+    return (
+      <div className="mt-2 text-left">
+        {/* Info Alert Box */}
+        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] px-4 py-3.5 rounded-xl flex items-center gap-2 mb-8 shadow-sm text-sm">
+          <HiOutlineInformationCircle className="w-5 h-5 shrink-0 text-[#16a34a]" />
+          <span>Beli paket lebih hemat dibanding beli kursus satuan. Paket sudah termasuk semua kursus dalam bundle.</span>
+        </div>
+
+        {/* Packages Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {(dbPaketList || []).map((paket) => {
+            const isAllEnrolled = (paket.courses || []).every((c: any) =>
+              pendaftaranList.some(p => p.mataKuliahId === c.id)
+            );
+
+            const tags = (paket.courses || []).map((c: any) => {
+              const nameParts = c.nama.split(' ');
+              return nameParts[0] + (nameParts[1] ? ' ' + nameParts[1].substring(0, 1) : '');
+            }).slice(0, 5);
+
+            const isPopular = paket.nama.toLowerCase().includes('full path');
+
+            return (
+              <div 
+                key={paket.id}
+                className={`relative bg-[#133c66] text-white p-8 rounded-[2rem] border-2 shadow-xl flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300 min-h-[520px] ${
+                  isPopular ? 'border-blue-500' : 'border-slate-700 bg-[#0e2c4c]'
+                }`}
+              >
+                {isPopular && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#38bdf8] text-[#0f2a47] font-black text-[9px] px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                    Paling Populer
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="text-xl font-black mb-1">{paket.nama}</h3>
+                  <p className="text-xs font-bold text-sky-200/70 mb-5">{paket.courses?.length || 0} kursus lengkap</p>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag, idx) => (
+                      <span key={idx} className="bg-white/10 text-white text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Features List */}
+                  <ul className="space-y-3.5 my-8">
+                    {[
+                      paket.deskripsi || 'Akses selamanya ke semua kursus',
+                      'Sertifikat resmi per kursus',
+                      'Komunitas eksklusif',
+                      '1-on-1 mentoring session'
+                    ].slice(0, 4).map((feat, idx) => (
+                      <li key={idx} className="flex items-center gap-2.5 text-xs text-sky-100/90 font-semibold">
+                        <span className="w-4 h-4 rounded-full bg-sky-500/20 text-[#38bdf8] flex items-center justify-center text-[10px] shrink-0">✓</span>
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Price & Buy Button */}
+                <div className="mt-auto border-t border-white/10 pt-6">
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span className="text-2xl font-black">
+                      Rp {parseInt(paket.hargaPaket || '0', 10).toLocaleString('id-ID')}
+                    </span>
+                    {paket.hargaAsli && paket.hargaAsli !== '0' && (
+                      <span className="text-xs text-sky-200/50 line-through font-bold">
+                        Rp {parseInt(paket.hargaAsli || '0', 10).toLocaleString('id-ID')}
+                      </span>
+                    )}
+                  </div>
+                  <Button 
+                    disabled={isAllEnrolled}
+                    onClick={() => handleBeliPaket(paket.nama, (paket.courses || []).map((c: any) => c.kode))}
+                    className={`font-black text-xs uppercase tracking-widest py-6 rounded-2xl w-full transition-all border-none cursor-pointer ${
+                      isAllEnrolled
+                        ? 'bg-emerald-600 hover:bg-emerald-600 text-white cursor-not-allowed opacity-80'
+                        : isPopular
+                        ? 'bg-[#3b82f6] hover:bg-blue-600 text-white shadow-md'
+                        : 'bg-[#475569] hover:bg-[#334155] text-white'
+                    }`}
+                  >
+                    {isAllEnrolled ? 'Sudah Dimiliki' : 'Beli Paket'}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {(!dbPaketList || dbPaketList.length === 0) && (
+          <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-200 max-w-xl mx-auto shadow-sm mt-8">
+            <HiOutlineCreditCard className="text-5xl text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Tidak Ada Paket Tersedia</h3>
+            <p className="text-gray-500 text-sm max-w-xs mx-auto">
+              Admin belum mempublikasikan paket bundling untuk kurikulum ini.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderReferralSection = () => {
+    const studentName = user?.nama || localStorage.getItem('userName') || 'Mahasiswa';
+    const cleanName = studentName.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8);
+    const referralCode = `LMS-${cleanName || 'USER'}-2026`;
+
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(referralCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    const referralsToDisplay = (referralList || []).map(item => ({
+      id: item.id,
+      courseName: item.mataKuliah?.nama || 'Kursus',
+      codeUsed: item.referralCode || 'Tanpa kode referral',
+      dateTime: new Date(item.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      price: item.harga ? (item.harga.startsWith('Rp') ? item.harga : `Rp ${parseInt(item.harga, 10).toLocaleString('id-ID')}`) : 'Rp 0'
+    })).filter(item => !deletedReferralIds.includes(item.id));
+
+    const paymentsToDisplay = (pendaftaranList || []).map(item => ({
+      id: item.id,
+      invoiceNo: item.invoiceNo || `INV/${new Date(item.createdAt).toISOString().replace(/[-:T.Z]/g, '').substring(0, 14)}`,
+      courseName: item.mataKuliah?.nama || 'Kursus',
+      dateTime: new Date(item.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      price: item.harga ? (item.harga.startsWith('Rp') ? item.harga : `Rp ${parseInt(item.harga, 10).toLocaleString('id-ID')}`) : 'Rp 0',
+      method: item.method || 'Virtual Account Mandiri',
+      status: item.status || 'Lunas'
+    })).filter(item => !deletedPaymentIds.includes(item.id));
+
+    const handleClearAllReferrals = () => {
+      if (window.confirm('Apakah Anda yakin ingin menghapus semua riwayat referral?')) {
+        setDeletedReferralIds(prev => [...prev, ...referralsToDisplay.map(r => r.id)]);
+      }
+    };
+
+    const handleClearAllPayments = () => {
+      if (window.confirm('Apakah Anda yakin ingin menghapus semua riwayat pembayaran?')) {
+        setDeletedPaymentIds(prev => [...prev, ...paymentsToDisplay.map(p => p.id)]);
+      }
+    };
+
+    const handleDeleteReferral = (id: string) => {
+      setDeletedReferralIds(prev => [...prev, id]);
+    };
+
+    const handleDeletePayment = (id: string) => {
+      setDeletedPaymentIds(prev => [...prev, id]);
+    };
+
+    const totalKomisi = referralsToDisplay.reduce((sum, item) => {
+      const numeric = parseInt(item.price.replace(/[^0-9]/g, ''), 10);
+      return sum + (isNaN(numeric) ? 0 : numeric);
+    }, 0);
+
+    return (
+      <div className="mt-2 text-left space-y-8">
+        {/* Referral & Payment Switch Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-xs font-black uppercase text-gray-700 tracking-wider">
+            Sistem Rujukan &amp; Transaksi
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setReferralActiveTab('referral')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${
+                referralActiveTab === 'referral'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Riwayat Referral
+            </button>
+            <button
+              onClick={() => setReferralActiveTab('pembayaran')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${
+                referralActiveTab === 'pembayaran'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Riwayat Pembayaran
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="rounded-[1.8rem] border-none shadow-sm bg-white p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+            <div>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Kode Referral Anda</div>
+              <div className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-xl text-xs border border-blue-100 font-mono tracking-wider">
+                  {referralCode}
+                </span>
+                <Button 
+                  onClick={copyToClipboard} 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-lg hover:bg-gray-100 shrink-0 text-blue-600"
+                  title="Salin Kode"
+                >
+                  {copied ? <HiOutlineCheck className="w-4 h-4 text-emerald-600" /> : <HiOutlineClipboard className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            <p className="text-[9px] text-gray-450 font-bold uppercase tracking-wide mt-4">Bagikan ke teman untuk diskon paket/kursus 10%</p>
+          </Card>
+
+          <Card className="rounded-[1.8rem] border-none shadow-sm bg-white p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+            <div>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Komisi Terkumpul</div>
+              <div className="text-xl font-black text-blue-600">
+                Rp {totalKomisi.toLocaleString('id-ID')}
+              </div>
+            </div>
+            <p className="text-[9px] text-gray-450 font-bold uppercase tracking-wide mt-4">Diperoleh dari {referralsToDisplay.length} referral sukses</p>
+          </Card>
+
+          <Card className="rounded-[1.8rem] border-none shadow-sm bg-white p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+            <div>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pencairan Dana</div>
+              <div className="text-xs font-black text-gray-800 flex items-center gap-1.5 mt-1.5">
+                <HiOutlineCreditCard className="w-4 h-4 text-blue-600" /> Bank Transfer (Aktif)
+              </div>
+            </div>
+            <p className="text-[9px] text-gray-450 font-bold uppercase tracking-wide mt-4">Pencairan diproses setiap tanggal 25</p>
+          </Card>
+        </div>
+
+        {/* Tab Content */}
+        {referralActiveTab === 'referral' ? (
+          <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center px-1">
+              <h4 className="text-xs font-black uppercase text-gray-700 tracking-wider flex items-center gap-2">
+                Riwayat Referral 
+                <span className="text-[10px] text-gray-400 font-normal uppercase normal-case tracking-normal font-sans ml-1">
+                  {referralsToDisplay.length} entri
+                </span>
+              </h4>
+              {referralsToDisplay.length > 0 && (
+                <button 
+                  onClick={handleClearAllReferrals}
+                  className="text-[10px] font-black uppercase text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1.5"
+                >
+                  <HiOutlineTrash className="w-3.5 h-3.5" /> Hapus semua
+                </button>
+              )}
+            </div>
+
+            {referralsToDisplay.length === 0 ? (
+              <Card className="rounded-[2rem] border-none shadow-sm bg-white p-12 text-center max-w-xl mx-auto space-y-6">
+                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600">
+                  <HiOutlineTag className="text-3xl" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-base font-black text-gray-900">Belum Ada Rujukan</h3>
+                  <p className="text-xs text-gray-500 font-medium max-w-xs mx-auto">
+                    Teman Anda belum mendaftar menggunakan kode Anda. Bagikan kode Anda untuk memperoleh bonus komisi.
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {referralsToDisplay.map((item) => (
+                  <div 
+                    key={item.id}
+                    className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-350 flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                        <HiOutlineTag className="text-lg text-[#357ABD]" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-gray-900 leading-snug">
+                          {item.courseName}
+                        </h3>
+                        <p className="text-[9px] font-bold text-gray-450 mt-0.5 leading-none">
+                          {item.codeUsed}
+                        </p>
+                        <div className="flex items-center gap-1 text-[9px] text-gray-450 mt-2 font-bold uppercase tracking-wider">
+                          <HiOutlineClock className="w-3.5 h-3.5 shrink-0" />
+                          <span>{item.dateTime}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs font-black text-blue-600 whitespace-nowrap">
+                        {item.price}
+                      </span>
+                      <Button
+                        onClick={() => handleDeleteReferral(item.id)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        title="Hapus"
+                      >
+                        <HiOutlineTrash className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center px-1">
+              <h4 className="text-xs font-black uppercase text-gray-700 tracking-wider flex items-center gap-2">
+                Riwayat Pembayaran 
+                <span className="text-[10px] text-gray-400 font-normal uppercase normal-case tracking-normal font-sans ml-1">
+                  {paymentsToDisplay.length} transaksi
+                </span>
+              </h4>
+              {paymentsToDisplay.length > 0 && (
+                <button 
+                  onClick={handleClearAllPayments}
+                  className="text-[10px] font-black uppercase text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1.5"
+                >
+                  <HiOutlineTrash className="w-3.5 h-3.5" /> Hapus semua
+                </button>
+              )}
+            </div>
+
+            {paymentsToDisplay.length === 0 ? (
+              <Card className="rounded-[2rem] border-none shadow-sm bg-white p-12 text-center max-w-xl mx-auto space-y-6">
+                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600">
+                  <HiOutlineCreditCard className="text-3xl" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-base font-black text-gray-900">Belum Ada Transaksi</h3>
+                  <p className="text-xs text-gray-500 font-medium max-w-xs mx-auto">
+                    Riwayat pembayaran Anda kosong. Beli kelas berbayar untuk melihat riwayat transaksi.
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {paymentsToDisplay.map((item) => (
+                  <div 
+                    key={item.id}
+                    className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-350 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                        <HiOutlineDocumentText className="text-lg text-[#357ABD]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[9px] font-bold text-gray-450">
+                            {item.invoiceNo}
+                          </span>
+                          <Badge className={`px-2 py-0.5 rounded-full font-black text-[7px] uppercase tracking-wider border-none ${
+                            item.status === 'Lunas' 
+                              ? 'bg-emerald-50 text-emerald-600' 
+                              : item.status === 'Pending'
+                              ? 'bg-amber-50 text-amber-600'
+                              : 'bg-red-50 text-red-600'
+                          }`}>
+                            {item.status}
+                          </Badge>
+                        </div>
+                        <h3 className="text-xs font-black text-gray-900 leading-snug mt-1">
+                          {item.courseName}
+                        </h3>
+                        <p className="text-[9px] font-bold text-gray-450 mt-1">
+                          Metode: {item.method}
+                        </p>
+                        <div className="flex items-center gap-1 text-[9px] text-gray-450 mt-2 font-bold uppercase tracking-wider">
+                          <HiOutlineClock className="w-3.5 h-3.5 shrink-0" />
+                          <span>{item.dateTime}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0">
+                      <span className="text-xs font-black text-gray-900 whitespace-nowrap">
+                        {item.price}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => window.print()}
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl border-gray-200 text-[10px] font-black uppercase h-7 px-3"
+                        >
+                          Kuitansi
+                        </Button>
+                        <Button
+                          onClick={() => handleDeletePayment(item.id)}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          title="Hapus"
+                        >
+                          <HiOutlineTrash className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="p-8 bg-[#E5E7EB] min-h-screen pb-20">
       {/* Title Header */}
@@ -758,14 +1279,41 @@ const KursusTersedia: React.FC = () => {
             {filterName}
           </button>
         ))}
-        <button className="bg-white text-gray-400 border border-gray-200 hover:bg-gray-50 px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all border shadow-sm">
+        <button 
+          onClick={() => setActiveFilter('Referall')}
+          className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all border shadow-sm ${
+            activeFilter === 'Referall'
+              ? 'bg-black text-white border-black'
+              : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+          }`}
+        >
           Referall
         </button>
+
+        {activeFilter === 'Course map' && (
+          <div className="relative inline-block">
+            <select 
+              value={courseMapMode}
+              onChange={(e) => setCourseMapMode(e.target.value as 'individual' | 'paket')}
+              className="appearance-none bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 pl-4 pr-8 py-1.5 rounded-md text-[10px] font-black uppercase transition-all border shadow-sm outline-none cursor-pointer"
+            >
+              <option value="individual">Individual learn</option>
+              <option value="paket">Paket</option>
+            </select>
+            <span className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-gray-400">
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Grouped Course Lists or Course Map Roadmap */}
+      {/* Grouped Course Lists or Course Map Roadmap or Paket Bundling or Referral Section */}
       {activeFilter === 'Course map' ? (
-        renderRoadmapTimeline()
+        courseMapMode === 'individual' ? renderRoadmapTimeline() : renderPaketSection()
+      ) : activeFilter === 'Referall' ? (
+        renderReferralSection()
       ) : (
         <div className="flex flex-col gap-2">
           {renderLevelSection('LEVEL 1 — BEGINNER', beginnerCourses, 'text-emerald-600')}
@@ -774,7 +1322,7 @@ const KursusTersedia: React.FC = () => {
         </div>
       )}
       
-      {activeFilter !== 'Course map' && filteredCourses.length === 0 && (
+      {activeFilter !== 'Course map' && activeFilter !== 'Referall' && filteredCourses.length === 0 && (
         <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-200 max-w-xl mx-auto shadow-sm">
           <HiOutlineBookOpen className="text-5xl text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-2">Tidak Ada Kursus</h3>

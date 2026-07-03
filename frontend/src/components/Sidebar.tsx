@@ -15,7 +15,8 @@ import {
   HiOutlinePlus,
   HiOutlineHome,
   HiOutlineQueueList,
-  HiOutlineUser
+  HiOutlineUser,
+  HiOutlineTag
 } from 'react-icons/hi2';
 import { useAuthStore } from '../store/useAuthStore';
 
