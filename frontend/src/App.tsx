@@ -27,6 +27,7 @@ import MateriSesi from './pages/user/MateriSesi';
 import ViewPDF from './pages/user/ViewPDF';
 import KelasOnline from './pages/user/KelasOnline';
 import AdminLayout from './layouts/AdminLayout';
+import LandingPage from './pages/LandingPage';
 
 
 
@@ -84,7 +85,7 @@ const App = () => {
         <Route path="/user/profile" element={<ProtectedRoute allowedRole="user"><UserProfile /></ProtectedRoute>} />
 
         {/* Fallback */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

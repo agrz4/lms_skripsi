@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { HiOutlineUserCircle, HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBookOpen } from 'react-icons/hi2';
+import logoImg from '../assets/logo.png';
 
 
 import api from '../lib/api';
@@ -123,52 +124,8 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#081e36] flex items-center justify-center p-6">
       <div className="w-full max-w-2xl bg-[#081e36] border border-[#0d2a4a] rounded-[2.5rem] shadow-2xl p-8 md:p-12 flex flex-col items-center">
-        {/* Circular crest logo */}
-        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center border-4 border-[#0c2b4e] relative mb-4 shadow-lg">
-          <svg viewBox="0 0 100 100" className="w-20 h-20 text-[#081e36]">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1.2" />
-            <circle cx="50" cy="50" r="41" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 1" />
-            
-            <path id="loginCurveTop" d="M 17 50 A 33 33 0 0 1 83 50" fill="none" />
-            <text fontSize="7.5" fontWeight="900" fill="currentColor" letterSpacing="0.8">
-              <textPath href="#loginCurveTop" startOffset="50%" textAnchor="middle">
-                LMS HYBRID
-              </textPath>
-            </text>
-            
-            <path id="loginCurveBottom" d="M 83 50 A 33 33 0 0 1 17 50" fill="none" />
-            <text fontSize="6" fontWeight="900" fill="currentColor" letterSpacing="0.8">
-              <textPath href="#loginCurveBottom" startOffset="50%" textAnchor="middle">
-                HYBRID LEARNING
-              </textPath>
-            </text>
-
-            <g transform="translate(32, 32) scale(0.72)">
-              <path d="M 12 5 L 17 9 L 25 3 L 33 9 L 38 5 L 35 12 L 15 12 Z" fill="currentColor" />
-              <path d="M 10 13 L 40 13 L 40 28 C 40 38 25 45 25 45 C 25 45 10 38 10 28 Z" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
-              <line x1="25" y1="13" x2="25" y2="44" stroke="currentColor" strokeWidth="1.5" />
-              <line x1="10" y1="28" x2="40" y2="28" stroke="currentColor" strokeWidth="1.5" />
-              
-              <g transform="translate(14, 16) scale(0.35)" fill="currentColor">
-                <path d="M 12 2 L 2 7 L 12 12 L 22 7 Z" />
-                <path d="M 5 9.5 L 5 17 C 5 20 19 20 19 17 L 19 9.5" fill="none" stroke="currentColor" strokeWidth="2" />
-                <path d="M 20 8.5 L 20 15 L 21 15 L 21 8.5 Z" />
-              </g>
-              <g transform="translate(29, 16) scale(0.3)" fill="currentColor">
-                <path d="M20,10c0-1.1-0.9-2-2-2h-2V6c0-1.1-0.9-2-2-2h-4C8.9,4,8,4.9,8,6v2H6C4.9,8,4,8.9,4,10v4c0,1.1,0.9,2,2,2h2v2c0,1.1,0.9,2,2,2h4c1.1,0,2-0.9,2-2v-2h2c1.1,0,2-0.9,2-2V10z M14,14h-4v-4h4V14z" />
-              </g>
-              <g transform="translate(13, 31) scale(0.35)" fill="currentColor">
-                <path d="M 2 5 L 10 5 C 13 5 15 7 15 10 L 15 22 C 15 19 13 17 10 17 L 2 17 Z" />
-                <path d="M 28 5 L 20 5 C 17 5 15 7 15 10 L 15 22 C 15 19 17 17 20 17 L 28 17 Z" />
-              </g>
-              <g transform="translate(29, 31) scale(0.35)" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="9" />
-                <ellipse cx="12" cy="12" rx="4" ry="9" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-              </g>
-            </g>
-          </svg>
-        </div>
+        {/* Logo */}
+        <img src={logoImg} alt="HybridLMS Logo" className="w-24 h-24 object-contain mb-4" />
 
         {/* Title */}
         <h1 className="text-4xl font-extrabold mb-8 tracking-tight text-white text-center">HybridLMS</h1>
