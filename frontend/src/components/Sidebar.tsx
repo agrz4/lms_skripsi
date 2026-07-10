@@ -8,20 +8,15 @@ import {
   HiOutlineChartBar,
   HiOutlineCpuChip,
   HiOutlineSparkles,
-  HiOutlineArchiveBoxXMark,
   HiOutlineSquares2X2,
   HiOutlinePencilSquare,
   HiOutlineArrowLeftOnRectangle,
   HiOutlinePlus,
-  HiOutlineHome,
   HiOutlineQueueList,
   HiOutlineUser,
-  HiOutlineTag
 } from 'react-icons/hi2';
 import { useAuthStore } from '../store/useAuthStore';
-
-
-
+import logoImg from '../assets/logo.png';
 
 const Sidebar: React.FC = () => {
   const { user } = useAuthStore();
@@ -105,30 +100,45 @@ const Sidebar: React.FC = () => {
 
   const isStudent = role === 'user' || role === 'mahasiswa';
   const isAsisten = role === 'asisten';
-  const isBlueTheme = true; // Always blue theme to match other roles and the image design
+  const isBlueTheme = false;
+
+  const getLinkClass = (isActive: boolean) => {
+    const base = "flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200";
+    if (isBlueTheme) {
+      return `${base} ${
+        isActive
+          ? 'bg-white text-[#357ABD] shadow-md scale-[1.01]'
+          : 'text-blue-100 hover:bg-white/10 hover:text-white'
+      }`;
+    } else {
+      return `${base} ${
+        isActive
+          ? 'bg-[#E3EDF7] text-[#357ABD]'
+          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+      }`;
+    }
+  };
 
   return (
-    <div className={`w-80 flex flex-col h-screen sticky top-0 z-30 transition-all overflow-hidden ${
-      isBlueTheme ? 'bg-[#357ABD] text-white shadow-2xl' : 'bg-white border-r border-gray-200 text-gray-800'
+    <div className={`w-72 flex flex-col h-[calc(100vh-5rem)] sticky top-20 z-20 transition-all overflow-hidden ${
+      isBlueTheme ? 'bg-[#357ABD] text-white shadow-2xl' : 'bg-white border-r border-gray-150 text-gray-800'
     }`}>
-      {/* Brand Section */}
-      <div className={`p-10 flex items-center gap-4 shrink-0 ${isBlueTheme ? '' : 'border-b border-gray-100'}`}>
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black shadow-2xl shrink-0 ${
-          isBlueTheme ? 'bg-white text-[#357ABD]' : 'bg-emerald-500 text-white'
-        }`}>
-          L
+      {/* Brand Section - Matches Navbar Height (h-20) */}
+      <div className={`h-20 px-6 flex items-center gap-3 shrink-0 ${isBlueTheme ? '' : 'border-b border-gray-100'}`}>
+        <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm shrink-0 bg-white p-0.5 border border-slate-100">
+          <img src={logoImg} alt="Logo" className="w-full h-full object-contain" />
         </div>
-        <span className={`font-black tracking-tighter text-xl whitespace-nowrap ${isBlueTheme ? 'text-white' : 'text-gray-900'}`}>
-          HYBRID LMS
+        <span className={`font-black tracking-tight text-lg whitespace-nowrap ${isBlueTheme ? 'text-white' : 'text-slate-800'}`}>
+          HybridLMS
         </span>
       </div>
 
       {/* User Info Card */}
-      <div className="px-8 mb-6 shrink-0">
-        <div className={`flex items-center gap-4 p-5 rounded-[2.5rem] shadow-inner transition-all hover:scale-[1.02] ${
-          isBlueTheme ? 'bg-white/10 backdrop-blur-xl border border-white/10' : 'bg-gray-50 border border-gray-100'
+      <div className="px-4 py-4 shrink-0">
+        <div className={`flex items-center gap-3.5 p-4 rounded-2xl border transition-all hover:scale-[1.01] ${
+          isBlueTheme ? 'bg-white/10 border-white/10 text-white' : 'bg-[#E3EDF7]/70 border border-blue-100/40 text-slate-800'
         }`}>
-          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/50 shadow-2xl shrink-0">
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/50 shadow-sm shrink-0 bg-white">
             <img 
               src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.nama || 'Mahasiswa')}`} 
               alt="avatar" 
@@ -136,24 +146,22 @@ const Sidebar: React.FC = () => {
             />
           </div>
           <div className="overflow-hidden">
-            <div className={`font-black text-xs truncate uppercase tracking-tight ${isBlueTheme ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`font-bold text-xs truncate uppercase tracking-wider ${isBlueTheme ? 'text-white' : 'text-slate-800'}`}>
                {(() => {
-                 const rawName = user?.nama || localStorage.getItem('userName') || 'User';
-                 const isSuperAdmin = rawName.toLowerCase().replace(/\s+/g, '') === 'superadmin';
-                 return isSuperAdmin ? 'Admin Kursus' : rawName;
+                  const rawName = user?.nama || localStorage.getItem('userName') || 'User';
+                  const isSuperAdmin = rawName.toLowerCase().replace(/\s+/g, '') === 'superadmin';
+                  return isSuperAdmin ? 'Admin Kursus' : rawName;
                })()}
             </div>
-            {!isAdmin && (
-              <div className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isBlueTheme ? 'text-blue-100/70' : 'text-emerald-600'}`}>
-                 {user?.gelar || (role === 'pengajar' ? 'Dosen' : (isAsisten ? 'Asisten Dosen' : 'Peserta'))}
-              </div>
-            )}
+            <div className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isBlueTheme ? 'text-blue-100/70' : 'text-[#357ABD]'}`}>
+               {isAdmin ? 'Administrator' : (user?.gelar || (role === 'pengajar' ? 'Dosen' : (isAsisten ? 'Asisten Dosen' : 'Peserta')))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Area with Custom Scrollbar */}
-      <div className="flex-1 px-4 overflow-y-auto scrollbar-hide hover:scrollbar-default transition-all pb-10">
+      <div className="flex-1 px-3 overflow-y-auto scrollbar-hide hover:scrollbar-default transition-all pb-10">
         <style dangerouslySetInnerHTML={{ __html: `
           .scrollbar-hide::-webkit-scrollbar { display: none; }
           .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -161,22 +169,16 @@ const Sidebar: React.FC = () => {
         
         {role === 'admin' ? (
           adminSections.map((section) => (
-            <div key={section.title} className="mb-10">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">{section.title}</p>
-              <nav className="space-y-2">
+            <div key={section.title} className="mb-8">
+              <p className={`text-[11px] font-bold uppercase tracking-wider mb-2.5 px-4 ${isBlueTheme ? 'text-white/40' : 'text-slate-400'}`}>{section.title}</p>
+              <nav className="space-y-1.5">
                 {section.items.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        isActive
-                          ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
-                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                      }`
-                    }
+                    className={({ isActive }) => getLinkClass(isActive)}
                   >
-                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-xl text-slate-400 group-hover:text-slate-600">{item.icon}</span>
                     {item.name}
                   </NavLink>
                 ))}
@@ -185,22 +187,16 @@ const Sidebar: React.FC = () => {
           ))
         ) : isAsisten ? (
           asistenSections.map((section) => (
-            <div key={section.title} className="mb-10">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">{section.title}</p>
-              <nav className="space-y-2">
+            <div key={section.title} className="mb-8">
+              <p className={`text-[11px] font-bold uppercase tracking-wider mb-2.5 px-4 ${isBlueTheme ? 'text-white/40' : 'text-slate-400'}`}>{section.title}</p>
+              <nav className="space-y-1.5">
                 {section.items.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        isActive
-                          ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
-                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                      }`
-                    }
+                    className={({ isActive }) => getLinkClass(isActive)}
                   >
-                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-xl text-slate-400 group-hover:text-slate-600">{item.icon}</span>
                     {item.name}
                   </NavLink>
                 ))}
@@ -208,22 +204,16 @@ const Sidebar: React.FC = () => {
             </div>
           ))
         ) : role === 'pengajar' ? (
-          <div className="mb-10">
-            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">MENU UTAMA</p>
-            <nav className="space-y-2">
+          <div className="mb-8">
+            <p className={`text-[11px] font-bold uppercase tracking-wider mb-2.5 px-4 ${isBlueTheme ? 'text-white/40' : 'text-slate-400'}`}>MENU UTAMA</p>
+            <nav className="space-y-1.5">
               {pengajarMenuItems.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                      isActive
-                        ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
-                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                    }`
-                  }
+                  className={({ isActive }) => getLinkClass(isActive)}
                 >
-                  <span className="text-xl">{item.icon}</span>
+                  <span className="text-xl text-slate-400 group-hover:text-slate-600">{item.icon}</span>
                   {item.name}
                 </NavLink>
               ))}
@@ -231,22 +221,16 @@ const Sidebar: React.FC = () => {
           </div>
         ) : isStudent ? (
           userSections.map((section) => (
-            <div key={section.title} className="mb-10">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-6 px-6">{section.title}</p>
-              <nav className="space-y-2">
+            <div key={section.title} className="mb-8">
+              <p className={`text-[11px] font-bold uppercase tracking-wider mb-2.5 px-4 ${isBlueTheme ? 'text-white/40' : 'text-slate-400'}`}>{section.title}</p>
+              <nav className="space-y-1.5">
                 {section.items.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-4 px-6 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        isActive
-                          ? 'bg-white text-[#357ABD] shadow-2xl shadow-blue-900/30 scale-[1.03]'
-                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                      }`
-                    }
+                    className={({ isActive }) => getLinkClass(isActive)}
                   >
-                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-xl text-slate-400 group-hover:text-slate-600">{item.icon}</span>
                     {item.name}
                   </NavLink>
                 ))}
@@ -257,14 +241,14 @@ const Sidebar: React.FC = () => {
       </div>
 
       {/* Logout Section */}
-      <div className={`p-8 ${isBlueTheme ? 'bg-black/5' : 'border-t border-gray-50'}`}>
+      <div className={`p-4 ${isBlueTheme ? 'bg-black/5' : 'border-t border-gray-100'}`}>
         <button 
           onClick={handleLogout}
-          className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-            isBlueTheme ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+            isBlueTheme ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-slate-500 hover:bg-red-50 hover:text-red-600'
           }`}
         >
-          <HiOutlineArrowLeftOnRectangle className="text-xl" />
+          <HiOutlineArrowLeftOnRectangle className="text-lg" />
           Logout
         </button>
       </div>

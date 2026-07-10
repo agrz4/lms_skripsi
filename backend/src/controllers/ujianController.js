@@ -103,14 +103,46 @@ Format output wajib berupa JSON array of objects murni (tanpa tag markdown \`\`\
       const shuffled = questionsFromDb.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, 15);
 
-      // Gunakan Gemini untuk membuat 4 pilihan ganda (A, B, C, D) untuk soal-soal ini
-      try {
-        const questionsPayload = selected.map((q, i) => ({
-          id: q.id,
-          pertanyaan: q.pertanyaan
-        }));
+      const questionsToReturnList = [];
+      const questionsToProcessWithGemini = [];
 
-        const prompt = `Berikut adalah daftar pertanyaan. Untuk setiap pertanyaan, buatlah 4 pilihan jawaban (A, B, C, D) yang masuk akal dan relevan.
+      for (const q of selected) {
+        let isJson = false;
+        try {
+          if (q.pertanyaan && (q.pertanyaan.trim().startsWith('{') || q.pertanyaan.trim().startsWith('['))) {
+            const parsed = JSON.parse(q.pertanyaan);
+            if (parsed && parsed.pertanyaan) {
+              questionsToReturnList.push({
+                id: q.id,
+                pertanyaan: parsed.pertanyaan,
+                options: parsed.options || {
+                  A: 'Opsi A untuk soal ini',
+                  B: 'Opsi B untuk soal ini',
+                  C: 'Opsi C untuk soal ini',
+                  D: 'Opsi D untuk soal ini'
+                }
+              });
+              isJson = true;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse question JSON in getUjianSoal:', e);
+        }
+
+        if (!isJson) {
+          questionsToProcessWithGemini.push(q);
+        }
+      }
+
+      if (questionsToProcessWithGemini.length > 0) {
+        // Gunakan Gemini untuk membuat 4 pilihan ganda (A, B, C, D) untuk soal-soal ini
+        try {
+          const questionsPayload = questionsToProcessWithGemini.map((q) => ({
+            id: q.id,
+            pertanyaan: q.pertanyaan
+          }));
+
+          const prompt = `Berikut adalah daftar pertanyaan. Untuk setiap pertanyaan, buatlah 4 pilihan jawaban (A, B, C, D) yang masuk akal dan relevan.
 Pertanyaan:
 ${JSON.stringify(questionsPayload, null, 2)}
 
@@ -128,27 +160,32 @@ Format output wajib berupa JSON array murni (tanpa tag markdown \`\`\`json) deng
   }
 ]`;
 
-        const response = await ai.models.generateContent({
-          model: 'models/gemini-flash-latest',
-          contents: [{ parts: [{ text: prompt }] }],
-        });
+          const response = await ai.models.generateContent({
+            model: 'models/gemini-flash-latest',
+            contents: [{ parts: [{ text: prompt }] }],
+          });
 
-        const cleanJson = response.text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
-        questionsToReturn = JSON.parse(cleanJson);
-      } catch (aiErr) {
-        console.error('Failed to generate options via Gemini:', aiErr);
-        // Fallback: buat opsi dummy sederhana
-        questionsToReturn = selected.map((q) => ({
-          id: q.id,
-          pertanyaan: q.pertanyaan,
-          options: {
-            A: 'Opsi A untuk soal ini',
-            B: 'Opsi B untuk soal ini',
-            C: 'Opsi C untuk soal ini',
-            D: 'Opsi D untuk soal ini'
-          }
-        }));
+          const cleanJson = response.text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+          const geminiQuestions = JSON.parse(cleanJson);
+          questionsToReturnList.push(...geminiQuestions);
+        } catch (aiErr) {
+          console.error('Failed to generate options via Gemini:', aiErr);
+          // Fallback: buat opsi dummy sederhana
+          const fallbackQuestions = questionsToProcessWithGemini.map((q) => ({
+            id: q.id,
+            pertanyaan: q.pertanyaan,
+            options: {
+              A: 'Opsi A untuk soal ini',
+              B: 'Opsi B untuk soal ini',
+              C: 'Opsi C untuk soal ini',
+              D: 'Opsi D untuk soal ini'
+            }
+          }));
+          questionsToReturnList.push(...fallbackQuestions);
+        }
       }
+
+      questionsToReturn = questionsToReturnList;
     }
 
     return res.status(200).json({
@@ -186,19 +223,58 @@ const submitUjian = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ujian tidak ditemukan' });
     }
 
+    // Ambil kunci jawaban asli dari database untuk akurasi penilaian AI
+    const soalIds = answers.map((ans) => ans.id);
+    const questionsFromDb = await prisma.soal.findMany({
+      where: { id: { in: soalIds } }
+    });
+
+    const correctAnswerMap = {};
+    const questionTextMap = {};
+    const optionsMap = {};
+
+    questionsFromDb.forEach((q) => {
+      let parsedQuestion = q.pertanyaan;
+      let parsedOptions = null;
+      let parsedCorrectAnswer = 'A'; // fallback default
+
+      try {
+        if (q.pertanyaan && (q.pertanyaan.trim().startsWith('{') || q.pertanyaan.trim().startsWith('['))) {
+          const parsed = JSON.parse(q.pertanyaan);
+          parsedQuestion = parsed.pertanyaan || q.pertanyaan;
+          parsedOptions = parsed.options || null;
+          parsedCorrectAnswer = parsed.correctAnswer || 'A';
+        }
+      } catch (e) {
+        console.error('Failed to parse db question JSON in submitUjian:', e);
+      }
+
+      correctAnswerMap[q.id] = parsedCorrectAnswer;
+      questionTextMap[q.id] = parsedQuestion;
+      optionsMap[q.id] = parsedOptions;
+    });
+
     // Gunakan Gemini untuk mengoreksi jawaban mahasiswa
     let score = 0;
     let feedbackDetails = {};
     let promptFeedback = '';
 
     try {
+      const answersForPrompt = answers.map((ans) => ({
+        id: ans.id,
+        pertanyaan: questionTextMap[ans.id] || ans.pertanyaan,
+        options: optionsMap[ans.id] || ans.options,
+        selectedAnswer: ans.selectedAnswer,
+        correctAnswer: correctAnswerMap[ans.id]
+      }));
+
       const gradingPrompt = `Kamu adalah Asisten Dosen AI untuk ujian mata kuliah "${ujian.mataKuliah.nama}".
-Tugasmu adalah menilai lembar jawaban pilihan ganda mahasiswa.
+Tugasmu adalah menilai lembar jawaban pilihan ganda mahasiswa berdasarkan kunci jawaban (correctAnswer) yang diberikan untuk setiap soal.
 
-Lembar Jawaban Mahasiswa:
-${JSON.stringify(answers, null, 2)}
+Lembar Jawaban dan Kunci Jawaban Mahasiswa:
+${JSON.stringify(answersForPrompt, null, 2)}
 
-Evaluasi setiap pertanyaan: tentukan jawaban yang benar dari opsi A, B, C, D, periksa pilihan mahasiswa, dan hitung persentase total jawaban yang benar (0-100).
+Evaluasi setiap pertanyaan: periksa apakah selectedAnswer cocok dengan correctAnswer. Hitung persentase total jawaban yang benar (0-100) dan berikan penjelasan singkat mengapa correctAnswer tersebut benar.
 Format output wajib berupa JSON murni (tanpa tag markdown \`\`\`json) dengan struktur:
 {
   "score": 85,
@@ -230,16 +306,25 @@ Format output wajib berupa JSON murni (tanpa tag markdown \`\`\`json) dengan str
       promptFeedback = `Evaluasi AI selesai dengan nilai ${score}.`;
     } catch (aiErr) {
       console.error('Failed to grade exam via Gemini:', aiErr);
-      // Fallback: hitung score acak/statis (80)
-      score = 80;
-      promptFeedback = 'Penilaian menggunakan fallback grader karena API AI mengalami gangguan.';
+      // Fallback: hitung score secara deterministik sesuai database
+      let correctCount = 0;
+      const totalQuestions = answers.length;
+
       answers.forEach((ans) => {
+        const correctOpt = correctAnswerMap[ans.id] || 'A';
+        const isCorrect = ans.selectedAnswer === correctOpt;
+        if (isCorrect) {
+          correctCount++;
+        }
         feedbackDetails[ans.id] = {
-          isCorrect: Math.random() > 0.3,
-          correctOption: 'C',
-          explanation: 'Penjelasan penilaian otomatis fallback.'
+          isCorrect,
+          correctOption: correctOpt,
+          explanation: 'Penjelasan penilaian otomatis fallback karena API AI mengalami gangguan.'
         };
       });
+
+      score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+      promptFeedback = 'Penilaian menggunakan fallback grader karena API AI mengalami gangguan.';
     }
 
     // Jika ada refleksi, kita bisa gabungkan ke feedback

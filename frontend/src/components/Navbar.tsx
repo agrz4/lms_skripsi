@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
   const avatarUrl = user?.avatar || defaultAvatar;
 
   return (
-    <div className={`h-20 flex items-center justify-between px-10 sticky top-0 z-20 transition-all bg-[#357ABD] text-white shadow-sm`}>
+    <div className={`h-20 flex items-center justify-between px-10 sticky top-0 z-30 transition-all bg-[#357ABD] text-white shadow-sm`}>
       <div className="flex items-center gap-10 flex-1">
         <button className="text-white hover:text-blue-100 text-2xl transition-all">
           <HiOutlineBars3BottomLeft />

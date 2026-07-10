@@ -95,7 +95,28 @@ const UjianPage: React.FC = () => {
       // Di sini kita coba panggil biasa. Jika 403, kita tangkap dan set Locked.
       const response = await api.get(`/ujian/soal?mataKuliahId=${courseId}&bypass=true`);
       setUjianId(response.data.ujianId);
-      setSoalList(response.data.soal || []);
+      const rawSoal = response.data.soal || [];
+      const parsedSoal = rawSoal.map((s: any) => {
+        try {
+          if (s.pertanyaan && (s.pertanyaan.trim().startsWith('{') || s.pertanyaan.trim().startsWith('['))) {
+            const parsed = JSON.parse(s.pertanyaan);
+            return {
+              ...s,
+              pertanyaan: parsed.pertanyaan || s.pertanyaan,
+              options: parsed.options || s.options || {
+                A: 'Opsi A untuk soal ini',
+                B: 'Opsi B untuk soal ini',
+                C: 'Opsi C untuk soal ini',
+                D: 'Opsi D untuk soal ini'
+              }
+            };
+          }
+        } catch (e) {
+          console.error('Failed to parse exam question JSON:', e);
+        }
+        return s;
+      });
+      setSoalList(parsedSoal);
       if (response.data.durasi) {
         setTimeLeft(response.data.durasi * 60);
       }
