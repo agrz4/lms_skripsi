@@ -23,6 +23,7 @@ import { usePaketStore } from '../../store/usePaketStore';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import api from '../../lib/api';
 
 // Helper to format course release dates
@@ -51,6 +52,18 @@ const getPriceDisplay = (warnaVal: string | undefined | null) => {
     current: `Rp ${num.toLocaleString('id-ID')}`,
     old: `Rp ${oldPrice.toLocaleString('id-ID')}`
   };
+};
+
+const getFormattedCurrentTime = () => {
+  const now = new Date();
+  const day = now.getDate();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return `${day} ${month} ${year}, ${hours}.${minutes}.${seconds}`;
 };
 
 // Helper for dynamic developer card images matching topics
@@ -148,6 +161,12 @@ const KursusTersedia: React.FC = () => {
   const [courseMapMode, setCourseMapMode] = useState<'individual' | 'paket'>('individual');
   const [progressData, setProgressData] = useState<any[]>([]);
 
+  // Enrollment & Payment Simulation Modal States
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState<any | null>(null);
+  const [referralInput, setReferralInput] = useState("");
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
   // Referral State Variables
   const [referralActiveTab, setReferralActiveTab] = useState<'referral' | 'pembayaran'>('referral');
   const [copied, setCopied] = useState(false);
@@ -187,27 +206,21 @@ const KursusTersedia: React.FC = () => {
     }
   }, [activeFilter, fetchMyReferrals, fetchMyPendaftaran]);
 
-  const handleEnroll = async (id: string) => {
+  const handleEnroll = async (id: string, referralCode?: string, customPrice?: string) => {
     const course = publishedMataKuliahList.find(c => c.id === id);
     const priceDisplay = course ? getPriceDisplay(course.warna).current : 'Gratis';
-    let cleanPrice = priceDisplay === 'Gratis' ? '0' : priceDisplay.replace(/[^0-9]/g, '');
+    let cleanPrice = customPrice !== undefined ? customPrice : (priceDisplay === 'Gratis' ? '0' : priceDisplay.replace(/[^0-9]/g, ''));
 
-    let referralCode: string | undefined = undefined;
-    if (cleanPrice !== '0') {
-      const inputRefCode = window.prompt('Masukkan kode referral jika ada (untuk mendapatkan diskon 10%):');
-      if (inputRefCode) {
-        referralCode = inputRefCode.trim() || undefined;
-        if (referralCode) {
-          // Apply 10% discount
-          const discountAmount = Math.round(parseInt(cleanPrice, 10) * 0.1);
-          cleanPrice = (parseInt(cleanPrice, 10) - discountAmount).toString();
-        }
-      }
+    if (referralCode && cleanPrice !== '0' && customPrice === undefined) {
+      // Apply 10% discount
+      const discountAmount = Math.round(parseInt(cleanPrice, 10) * 0.1);
+      cleanPrice = (parseInt(cleanPrice, 10) - discountAmount).toString();
     }
 
     try {
+      setIsEnrolling(true);
       await enrollKursus(id, {
-        referralCode,
+        referralCode: referralCode || undefined,
         harga: cleanPrice,
         invoiceNo: `INV/MK/${Date.now()}`,
         method: 'Mandiri Virtual Account',
@@ -223,6 +236,8 @@ const KursusTersedia: React.FC = () => {
     } catch (err) {
       console.error('Failed to enroll:', err);
       alert('Gagal mendaftar kelas.');
+    } finally {
+      setIsEnrolling(false);
     }
   };
 
@@ -417,8 +432,19 @@ const KursusTersedia: React.FC = () => {
           isLocked ? 'opacity-90' : ''
         }`}
         onClick={() => {
-          if (!isLocked) {
+          if (isLocked) return;
+          if (isRegistered) {
             navigate(`/user/detail-kursus?id=${course.id}`);
+          } else {
+            const priceInfo = getPriceDisplay(course.warna);
+            const isPaid = priceInfo.current !== 'Gratis';
+            if (isPaid) {
+              setSelectedCourseToEnroll(course);
+              setReferralInput("");
+              setIsEnrollModalOpen(true);
+            } else {
+              handleEnroll(course.id);
+            }
           }
         }}
       >
@@ -547,7 +573,15 @@ const KursusTersedia: React.FC = () => {
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEnroll(course.id);
+                      const priceInfo = getPriceDisplay(course.warna);
+                      const isPaid = priceInfo.current !== 'Gratis';
+                      if (isPaid) {
+                        setSelectedCourseToEnroll(course);
+                        setReferralInput("");
+                        setIsEnrollModalOpen(true);
+                      } else {
+                        handleEnroll(course.id);
+                      }
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-[9px] h-8 px-4 shadow-sm uppercase tracking-wider flex items-center gap-1"
                   >
@@ -615,8 +649,19 @@ const KursusTersedia: React.FC = () => {
             alert(`Kursus mockup "${course.nama}" belum dibuat di database oleh Admin.`);
             return;
           }
-          if (!isLocked) {
+          if (isLocked) return;
+          if (isRegistered) {
             navigate(`/user/detail-kursus?id=${course.id}`);
+          } else {
+            const priceInfo = getPriceDisplay(course.warna);
+            const isPaid = priceInfo.current !== 'Gratis';
+            if (isPaid) {
+              setSelectedCourseToEnroll(course);
+              setReferralInput("");
+              setIsEnrollModalOpen(true);
+            } else {
+              handleEnroll(course.id);
+            }
           }
         }}
       >
@@ -663,7 +708,15 @@ const KursusTersedia: React.FC = () => {
                   return;
                 }
                 if (!isLocked) {
-                  await handleEnroll(course.id);
+                  const priceInfo = getPriceDisplay(course.warna);
+                  const isPaid = priceInfo.current !== 'Gratis';
+                  if (isPaid) {
+                    setSelectedCourseToEnroll(course);
+                    setReferralInput("");
+                    setIsEnrollModalOpen(true);
+                  } else {
+                    await handleEnroll(course.id);
+                  }
                 }
               }}
               className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
@@ -1331,6 +1384,108 @@ const KursusTersedia: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* Enroll & Payment Simulation Dialog Modal */}
+      <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
+        <DialogContent className="sm:max-w-md rounded-[1.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+          {/* Header Banner */}
+          <div className="bg-[#1d75d3] px-6 py-5 text-white">
+            <h2 className="text-lg font-black tracking-wide leading-none">Enroll Kursus</h2>
+            <p className="text-xs text-blue-100 font-bold mt-2 tracking-wide uppercase">
+              {selectedCourseToEnroll?.nama || 'Nama Kursus'}
+            </p>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-6 space-y-6">
+            {/* Price box */}
+            {(() => {
+              if (!selectedCourseToEnroll) return null;
+              const priceInfo = getPriceDisplay(selectedCourseToEnroll.warna);
+              const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+              
+              // Calculate discount if referral is entered
+              const hasReferral = referralInput.trim().length > 0;
+              const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+              const finalPrice = priceNum - discountAmount;
+
+              return (
+                <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60">
+                  <div className="flex justify-between items-center px-5 py-4">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Harga kursus</span>
+                    <span className="text-sm font-black text-gray-800">
+                      {priceInfo.current}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center px-5 py-4 bg-gray-50/50">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total bayar</span>
+                    <span className="text-base font-black text-red-500">
+                      Rp {finalPrice.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Referral Code input */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <HiOutlineTag className="text-sm text-gray-400 shrink-0" />
+                <span>Kode Referral</span>
+              </div>
+              <input 
+                type="text"
+                value={referralInput}
+                onChange={(e) => setReferralInput(e.target.value)}
+                placeholder="Masukkan kode referral jika ada"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-inner"
+              />
+              <p className="text-[10px] text-gray-400 font-bold">
+                * Gunakan kode referral untuk mendapatkan diskon 10%
+              </p>
+            </div>
+
+            {/* Info Waktu */}
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
+              <HiOutlineClock className="text-xs text-gray-400 shrink-0" />
+              <span>Waktu pendaftaran akan dicatat: {getFormattedCurrentTime()}</span>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-4 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEnrollModalOpen(false)}
+                className="flex-1 py-6 bg-gray-100 hover:bg-gray-250 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
+              >
+                Lewati
+              </Button>
+              <Button
+                type="button"
+                disabled={isEnrolling}
+                onClick={async () => {
+                  if (!selectedCourseToEnroll) return;
+                  const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                  const hasReferral = referralInput.trim().length > 0;
+                  const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                  const finalPrice = priceNum - discountAmount;
+                  
+                  await handleEnroll(
+                    selectedCourseToEnroll.id, 
+                    referralInput.trim() || undefined, 
+                    finalPrice.toString()
+                  );
+                  setIsEnrollModalOpen(false);
+                }}
+                className="flex-1 py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
+              >
+                {isEnrolling ? 'Memproses...' : 'Konfirmasi Enroll'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
