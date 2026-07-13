@@ -379,13 +379,13 @@ const CourseMap: React.FC = () => {
     }));
   }, [mataKuliahList, selectedPaket]);
 
-  // Dynamic step/depth calculation based on prerequisites within the package
-  const coursesWithSteps = useMemo(() => {
+  // Group displayCourses by kategori and compute depth within each category
+  const categoriesWithCourses = useMemo(() => {
     if (displayCourses.length === 0) return [];
-    
+
     const courseMap = new Map(displayCourses.map(c => [c.id, c]));
     const depthMemo = new Map<string, number>();
-    
+
     const getDepth = (courseId: string, visited: Set<string> = new Set()): number => {
       if (depthMemo.has(courseId)) return depthMemo.get(courseId)!;
       if (visited.has(courseId)) return 0; // Avoid circular dependencies
@@ -408,25 +408,50 @@ const CourseMap: React.FC = () => {
       depthMemo.set(courseId, depth);
       return depth;
     };
-    
+
+    // Annotate all courses with depth
     const coursesWithDepth = displayCourses.map(c => ({
       ...c,
       depth: getDepth(c.id)
     }));
-    
-    const stepsMap: { [key: number]: MapCourse[] } = {};
+
+    // Group by c.kategori
+    const groups: { [key: string]: typeof coursesWithDepth } = {};
     coursesWithDepth.forEach(c => {
-      if (!stepsMap[c.depth]) {
-        stepsMap[c.depth] = [];
+      const kat = c.kategori || 'Umum';
+      if (!groups[kat]) {
+        groups[kat] = [];
       }
-      stepsMap[c.depth].push(c);
+      groups[kat].push(c);
     });
-    
-    const sortedDepths = Object.keys(stepsMap).map(Number).sort((a, b) => a - b);
-    return sortedDepths.map(depth => ({
-      stepIndex: depth + 1,
-      courses: stepsMap[depth]
-    }));
+
+    // For each group, structure the courses by depth to draw horizontal flows
+    return Object.keys(groups).map(kategoriName => {
+      const categoryCourses = groups[kategoriName];
+      
+      // Group categoryCourses by depth
+      const depthGroups: { [key: number]: typeof coursesWithDepth } = {};
+      categoryCourses.forEach(c => {
+        const d = c.depth || 0;
+        if (!depthGroups[d]) {
+          depthGroups[d] = [];
+        }
+        depthGroups[d].push(c);
+      });
+
+      // Sort the depths inside this category
+      const sortedDepths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+      
+      const flowColumns = sortedDepths.map(depth => ({
+        depth,
+        courses: depthGroups[depth]
+      }));
+
+      return {
+        kategoriName,
+        flowColumns
+      };
+    });
   }, [displayCourses]);
 
   // Calculate Harga Asli of bundled courses directly during render
@@ -450,11 +475,19 @@ const CourseMap: React.FC = () => {
 
   const renderCourseCard = (course: MapCourse, index: number) => {
     const isSelected = course.exists && selectedCourseId === course.id;
-    const theme = getCourseCardStyles(course.level || 'Beginner', index);
     const isPublished = course.exists && course.published;
 
     const formattedPrice = formatHarga(course.warna);
-    const meetingsText = `${course.jumlahPertemuan || 3} Pertemuan`;
+    
+    // Bottom bar background color based on price/warna
+    let footerBg = 'bg-[#76b900] text-white'; // NVIDIA Green style
+    const cleanPrice = (course.warna || '').replace(/[^0-9]/g, '');
+    const numPrice = parseInt(cleanPrice, 10);
+    if (!isNaN(numPrice) && numPrice >= 500000 || (course.warna || '').toLowerCase().includes('500')) {
+      footerBg = 'bg-[#7630a3] text-white'; // Purple style for expensive/adv
+    }
+
+    const meetingsText = `${course.jumlahPertemuan || 3} Sesi`;
 
     return (
       <div
@@ -479,50 +512,31 @@ const CourseMap: React.FC = () => {
             handleCourseSelect(course.id);
           }
         }}
-        className={`cursor-pointer rounded-[1.5rem] border-2 p-5 relative transition-all duration-200 hover:scale-[1.02] w-[280px] text-left flex flex-col justify-between min-h-[120px] ${theme.bg} ${theme.border} ${isSelected ? 'ring-4 ring-indigo-500/25 scale-[1.02]' : ''
-          } ${!course.exists ? 'opacity-70 hover:opacity-100 border-dashed' : ''}`}
+        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[260px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
+          isSelected ? 'ring-4 ring-indigo-500/25 scale-[1.02] border-indigo-500' : ''
+        } ${!course.exists ? 'opacity-70 hover:opacity-100 border-dashed' : ''}`}
       >
         {isPublished && course.exists && (
-          <div className="absolute -top-2 -right-2 w-5 h-5 bg-[#0fc26a] text-white rounded-full flex items-center justify-center text-xs shadow-sm font-bold">✓</div>
+          <div className="absolute top-2 right-2 w-4 h-4 bg-[#0fc26a] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">✓</div>
         )}
         {!isPublished && course.exists && (
-          <div className="absolute -top-2 -right-2 w-5 h-5 bg-[#eab308] text-white rounded-full flex items-center justify-center text-xs shadow-sm font-bold">⏳</div>
+          <div className="absolute top-2 right-2 w-4 h-4 bg-[#eab308] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">⏳</div>
         )}
         {!course.exists && (
-          <div className="absolute -top-2 -right-2 w-5 h-5 bg-gray-500 text-white rounded-full flex items-center justify-center text-[10px] shadow-sm font-bold">🔒</div>
+          <div className="absolute top-2 right-2 w-4 h-4 bg-gray-500 text-white rounded-full flex items-center justify-center text-[8px] shadow-sm font-bold">🔒</div>
         )}
 
-        <div>
-          <p className="text-[10px] font-bold text-gray-500 mb-0.5 tracking-wider">{course.kode}</p>
-          <h3 className="text-xs font-black text-gray-900 mb-3.5 leading-snug">{course.nama}</h3>
+        {/* Card Body - Content */}
+        <div className="p-4 flex-1 flex flex-col justify-center min-h-[70px] bg-[#f3f4f6]">
+          <p className="text-[9px] font-bold text-gray-400 mb-1 text-center tracking-wider">{course.kode}</p>
+          <h3 className="text-[11px] font-black text-gray-800 leading-snug text-center line-clamp-2">
+            {course.nama}
+          </h3>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mt-auto">
-          {/* Status Badge */}
-          {!course.exists ? (
-            <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-[9px] font-bold">
-              Belum Dibuat
-            </span>
-          ) : isPublished ? (
-            <span className={`${theme.badgeBg} ${theme.badgeText} px-2 py-0.5 rounded-full text-[9px] font-bold`}>
-              Published
-            </span>
-          ) : (
-            <span className="bg-[#feefe3] text-[#b06000] px-2 py-0.5 rounded-full text-[9px] font-bold">
-              Draft
-            </span>
-          )}
-
-          {/* Meetings Badge */}
-          <span className={`${theme.badgeBg} ${theme.badgeText} px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1`}>
-            <HiOutlineClock className="w-3 h-3 shrink-0" />
-            {meetingsText}
-          </span>
-
-          {/* Price Badge */}
-          <span className={`${theme.badgeBg} ${theme.badgeText} px-2 py-0.5 rounded-full text-[9px] font-bold`}>
-            {formattedPrice}
-          </span>
+        {/* Card Footer - Solid Color Bar */}
+        <div className={`h-8 flex items-center justify-center font-extrabold text-[10px] tracking-wide ${footerBg}`}>
+          {meetingsText} | {formattedPrice}
         </div>
       </div>
     );
@@ -578,7 +592,7 @@ const CourseMap: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Main Content - Flow Map */}
-        <div className="xl:col-span-9 bg-white p-8 rounded-[2rem] shadow-sm border border-gray-200 flex flex-col gap-10">
+        <div className="xl:col-span-9 bg-white p-8 rounded-[2rem] shadow-sm border border-gray-200 flex flex-col gap-8">
           <div>
             <h2 className="text-sm font-black text-gray-900 mb-0.5">Alur Kurikulum — {selectedPaket?.nama || 'Roadmap'}</h2>
             <p className="text-[11px] text-gray-400 font-bold">Track berdasarkan prasyarat · jumlah pertemuan + harga · menuju sertifikat kelulusan</p>
@@ -590,41 +604,53 @@ const CourseMap: React.FC = () => {
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Memuat Peta Kurikulum...</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-10">
-              {coursesWithSteps.map((step, sIdx) => (
-                <div key={step.stepIndex} className="flex flex-col gap-5">
-                  <div className="text-center">
-                    <span className="text-[#5850ec] font-black tracking-widest text-xs uppercase">
-                      LANGKAH {step.stepIndex}
-                    </span>
-                  </div>
+            <div className="flex flex-col gap-12">
+              {categoriesWithCourses.map((cat) => (
+                <div key={cat.kategoriName} className="flex flex-col gap-4 border-b border-gray-100 pb-8 last:border-b-0 last:pb-0">
+                  {/* Category Heading */}
+                  <h3 className="text-sm font-black text-gray-800 tracking-wide uppercase">
+                    {cat.kategoriName}
+                  </h3>
 
-                  <div className="flex flex-wrap items-center justify-center gap-6">
-                    {step.courses.map((course, idx) => renderCourseCard(course, idx))}
+                  {/* Vertical Flow Container */}
+                  <div className="flex flex-col items-center py-4 gap-4">
+                    {cat.flowColumns.map((column, colIdx) => (
+                      <React.Fragment key={column.depth}>
+                        {/* Row/stack containing courses at this depth */}
+                        <div className="flex flex-wrap gap-4 justify-center py-2">
+                          {column.courses.map((course, idx) => renderCourseCard(course, idx))}
+                        </div>
 
-                    {/* Tambah Node Card */}
+                        {/* Connection Arrow between columns (now vertical) */}
+                        {colIdx < cat.flowColumns.length - 1 && (
+                          <div className="flex items-center justify-center text-gray-400 font-black py-1 select-none">
+                            <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                            </svg>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+
+                    {/* Add Node inline connector for this category (now vertical) */}
+                    <div className="flex items-center justify-center text-gray-300 font-black py-1 select-none">
+                      <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                      </svg>
+                    </div>
+
                     <div
                       onClick={() => handleAddNodeClick('Beginner')}
-                      className="w-[280px] min-h-[120px] rounded-[1.5rem] border-2 border-dashed border-gray-300 hover:border-[#5850ec] hover:bg-indigo-50/20 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition-all group"
+                      className="w-[260px] h-[80px] rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-[#5850ec]/5 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group"
                     >
-                      <span className="text-2xl text-gray-400 group-hover:text-[#5850ec] font-semibold">+</span>
-                      <span className="text-[11px] font-black text-gray-400 group-hover:text-[#5850ec]">Tambah Node</span>
+                      <span className="text-lg text-gray-400 group-hover:text-indigo-600 font-black">+</span>
+                      <span className="text-[9px] font-black text-gray-400 group-hover:text-indigo-600 uppercase tracking-wider">Tambah Node</span>
                     </div>
                   </div>
-
-                  {/* Visual roadmap connector */}
-                  {sIdx < coursesWithSteps.length - 1 && (
-                    <div className="flex justify-center my-1">
-                      <div className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-extrabold border border-indigo-200/50 shadow-sm flex items-center gap-1">
-                        <span>Lanjut ke Langkah Berikutnya</span>
-                        <span className="text-xs">↓</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
 
-              {coursesWithSteps.length === 0 && (
+              {categoriesWithCourses.length === 0 && (
                 <div className="text-center py-16">
                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
                   <p className="text-xs text-gray-400 font-semibold mt-1">Silakan buat paket baru atau tambahkan kursus di database.</p>
@@ -632,8 +658,8 @@ const CourseMap: React.FC = () => {
               )}
 
               {/* Bottom Milestone Badge Card */}
-              {selectedPaket && coursesWithSteps.length > 0 && (
-                <div className="w-full max-w-[700px] mx-auto bg-[#c7d2fe]/30 text-[#4f46e5] border-2 border-[#5850ec]/30 p-4 rounded-[1.5rem] flex items-center gap-4 shadow-sm hover:scale-[1.01] transition-transform mt-2">
+              {selectedPaket && categoriesWithCourses.length > 0 && (
+                <div className="w-full max-w-[700px] mx-auto bg-[#c7d2fe]/30 text-[#4f46e5] border border-[#5850ec]/30 p-4 rounded-[1.5rem] flex items-center gap-4 shadow-sm hover:scale-[1.01] transition-transform mt-2">
                   <div className="w-12 h-12 bg-[#5850ec] rounded-full flex items-center justify-center text-white shadow-md shrink-0">
                     <HiOutlineTrophy className="w-6 h-6" />
                   </div>
