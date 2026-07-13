@@ -631,7 +631,7 @@ const KursusTersedia: React.FC = () => {
 
   // Mock nodes removed (defined in outer scope)
 
-  const renderTimelineCard = (course: any) => {
+  const renderUserCourseCard = (course: any) => {
     const isRegistered = course.id.startsWith('mock-') 
       ? (course.id.endsWith('1') || course.id.endsWith('2') || course.id.endsWith('3'))
       : pendaftaranList.some(p => p.mataKuliahId === course.id);
@@ -646,19 +646,31 @@ const KursusTersedia: React.FC = () => {
       : (!isPrereqsMet || !course.published);
 
     const priceInfo = getPriceDisplay(course.warna);
-    const participantCount = course._count?.pendaftaran || 0;
+    const meetingsText = `${course.jumlahPertemuan || 3} Sesi`;
 
-    const getStepBadgeColor = (depth: number) => {
-      if (depth === 0) return 'bg-blue-50 text-blue-600 border border-blue-200';
-      if (depth === 1) return 'bg-amber-50 text-amber-600 border border-amber-200';
-      return 'bg-purple-50 text-purple-600 border border-purple-200';
-    };
+    // Footer bar styling based on status
+    let footerBg = 'bg-[#76b900] text-white'; // NVIDIA Green style by default
+    let footerText = `${meetingsText} | Enroll`;
+
+    if (isRegistered) {
+      footerBg = 'bg-[#10b981] text-white'; // Emerald Green for active
+      footerText = 'AKTIF / TERDAFTAR';
+    } else if (isLocked) {
+      footerBg = 'bg-gray-400 text-white'; // Grey for locked
+      footerText = 'TERKUNCI';
+    } else {
+      // Determine green or purple accent based on price/warna
+      const cleanPrice = (course.warna || '').replace(/[^0-9]/g, '');
+      const numPrice = parseInt(cleanPrice, 10);
+      if (!isNaN(numPrice) && numPrice >= 500000 || (course.warna || '').toLowerCase().includes('500')) {
+        footerBg = 'bg-[#7630a3] text-white'; // Purple style for expensive/adv
+      }
+      footerText = `Daftar | ${priceInfo.current}`;
+    }
 
     return (
-      <Card 
-        className={`bg-white p-5 rounded-2xl border border-gray-200 shadow-sm w-[290px] flex flex-col justify-between min-h-[140px] cursor-pointer hover:shadow-md transition-all duration-300 ${
-          isLocked ? 'opacity-90' : ''
-        }`}
+      <div
+        key={course.id}
         onClick={() => {
           if (course.id.startsWith('mock-')) {
             alert(`Kursus mockup "${course.nama}" belum dibuat di database oleh Admin.`);
@@ -668,7 +680,6 @@ const KursusTersedia: React.FC = () => {
           if (isRegistered) {
             navigate(`/user/detail-kursus?id=${course.id}`);
           } else {
-            const priceInfo = getPriceDisplay(course.warna);
             const isPaid = priceInfo.current !== 'Gratis';
             if (isPaid) {
               setSelectedCourseToEnroll(course);
@@ -679,79 +690,40 @@ const KursusTersedia: React.FC = () => {
             }
           }
         }}
+        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[260px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
+          isRegistered ? 'ring-4 ring-emerald-500/25 border-emerald-500' : ''
+        } ${isLocked ? 'opacity-85 cursor-not-allowed' : ''}`}
       >
-        {/* Top Header Row */}
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            {course.kode}
-          </span>
-          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${getStepBadgeColor(course.depth || 0)}`}>
-            Langkah {(course.depth || 0) + 1}
-          </span>
-        </div>
+        {isRegistered && (
+          <div className="absolute top-2 right-2 w-4 h-4 bg-[#0fc26a] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">✓</div>
+        )}
+        {isLocked && (
+          <div className="absolute top-2 right-2 w-4 h-4 bg-gray-500 text-white rounded-full flex items-center justify-center text-[8px] shadow-sm font-bold">🔒</div>
+        )}
+        {!isRegistered && !isLocked && (
+          <div className="absolute top-2 right-2 w-4 h-4 bg-[#5850ec] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">⏳</div>
+        )}
 
-        {/* Middle Title & Details */}
-        <div className="mb-4 text-left">
-          <h4 className="text-xs font-black text-gray-900 leading-snug mb-1">
+        {/* Card Body - Content */}
+        <div className="p-4 flex-1 flex flex-col justify-center min-h-[70px] bg-[#f3f4f6]">
+          <p className="text-[9px] font-bold text-gray-400 mb-1 text-center tracking-wider">{course.kode}</p>
+          <h3 className="text-[11px] font-black text-gray-800 leading-snug text-center line-clamp-2">
             {course.nama}
-          </h4>
-          <span className="text-[10px] font-bold text-gray-400">
-            {course.jumlahPertemuan || 3} modul · {participantCount} siswa
-          </span>
+          </h3>
         </div>
 
-        {/* Bottom Row */}
-        <div className="flex justify-between items-center pt-3 border-t border-gray-100 mt-auto">
-          {/* Price */}
-          <span className={`text-[10px] font-black ${
-            priceInfo.current === 'Gratis' ? 'text-[#10b981]' : 'text-blue-600'
-          }`}>
-            {priceInfo.current}
-          </span>
-
-          {/* Status Pill */}
-          {isRegistered ? (
-            <span className="bg-emerald-50 text-[#10b981] text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-emerald-200/50">
-              Active
-            </span>
-          ) : (
-            <span 
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (course.id.startsWith('mock-')) {
-                  alert(`Kursus mockup "${course.nama}" belum dibuat di database oleh Admin.`);
-                  return;
-                }
-                if (!isLocked) {
-                  const priceInfo = getPriceDisplay(course.warna);
-                  const isPaid = priceInfo.current !== 'Gratis';
-                  if (isPaid) {
-                    setSelectedCourseToEnroll(course);
-                    setReferralInput("");
-                    setIsEnrollModalOpen(true);
-                  } else {
-                    await handleEnroll(course.id);
-                  }
-                }
-              }}
-              className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                isLocked 
-                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                  : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer'
-              }`}
-            >
-              {isLocked ? 'Terkunci' : 'Enroll'}
-            </span>
-          )}
+        {/* Card Footer - Solid Color Bar */}
+        <div className={`h-8 flex items-center justify-center font-extrabold text-[10px] tracking-wide ${footerBg}`}>
+          {footerText}
         </div>
-      </Card>
+      </div>
     );
   };
 
   const renderRoadmapTimeline = () => {
     const selectedPaket = dbPaketList.find(p => p.id === selectedPaketId) || dbPaketList[0];
 
-    const displayList = (() => {
+    const displayCourses = (() => {
       if (!selectedPaket || !selectedPaket.courses) {
         return getMockNodes(activePath);
       }
@@ -759,14 +731,23 @@ const KursusTersedia: React.FC = () => {
       const courseIdsInPaket = new Set(selectedPaket.courses.map((c: any) => c.id));
       const dbCourses = mataKuliahList.filter(c => courseIdsInPaket.has(c.id));
       
-      const courseMap = new Map(dbCourses.map(c => [c.id, c]));
+      return dbCourses.map(c => ({
+        ...c,
+        level: c.level || 'Beginner'
+      }));
+    })();
+
+    const categoriesWithCourses = (() => {
+      if (displayCourses.length === 0) return [];
+
+      const courseMap = new Map(displayCourses.map(c => [c.id, c]));
       const depthMemo = new Map<string, number>();
-      
+
       const getDepth = (courseId: string, visited: Set<string> = new Set()): number => {
         if (depthMemo.has(courseId)) return depthMemo.get(courseId)!;
-        if (visited.has(courseId)) return 0;
+        if (visited.has(courseId)) return 0; // Avoid circular dependencies
         
-        const course = courseMap.get(courseId);
+        const course = courseMap.get(courseId) as any;
         if (!course) return 0;
         
         visited.add(courseId);
@@ -784,18 +765,55 @@ const KursusTersedia: React.FC = () => {
         depthMemo.set(courseId, depth);
         return depth;
       };
-      
-      const coursesWithDepth = dbCourses.map(c => ({
+
+      // Annotate all courses with depth
+      const coursesWithDepth = displayCourses.map(c => ({
         ...c,
         depth: getDepth(c.id)
       }));
-      
-      return coursesWithDepth.sort((a, b) => a.depth - b.depth);
+
+      // Group by c.kategori
+      const groups: { [key: string]: typeof coursesWithDepth } = {};
+      coursesWithDepth.forEach(c => {
+        const kat = c.kategori || selectedPaket?.nama || activePath || 'Umum';
+        if (!groups[kat]) {
+          groups[kat] = [];
+        }
+        groups[kat].push(c);
+      });
+
+      // For each group, structure the courses by depth to draw vertical flows
+      return Object.keys(groups).map(kategoriName => {
+        const categoryCourses = groups[kategoriName];
+        
+        // Group categoryCourses by depth
+        const depthGroups: { [key: number]: typeof coursesWithDepth } = {};
+        categoryCourses.forEach(c => {
+          const d = c.depth || 0;
+          if (!depthGroups[d]) {
+            depthGroups[d] = [];
+          }
+          depthGroups[d].push(c);
+        });
+
+        // Sort the depths inside this category
+        const sortedDepths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+        
+        const flowColumns = sortedDepths.map(depth => ({
+          depth,
+          courses: depthGroups[depth]
+        }));
+
+        return {
+          kategoriName,
+          flowColumns
+        };
+      });
     })();
 
     return (
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-200 mt-2">
-        <div className="mb-10 text-left flex flex-wrap items-center justify-between gap-4">
+        <div className="mb-8 text-left flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-black text-gray-900 mb-1">Learning Roadmap</h2>
             <p className="text-xs text-gray-500 font-bold">
@@ -818,62 +836,59 @@ const KursusTersedia: React.FC = () => {
           )}
         </div>
 
-        {/* Vertical Timeline container */}
-        <div className="relative flex flex-col items-center">
-          {/* Central vertical line */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-10 bottom-10 w-[2px] bg-gray-300"></div>
+        <div className="flex flex-col gap-12">
+          {categoriesWithCourses.map((cat) => (
+            <div key={cat.kategoriName} className="flex flex-col gap-4 border-b border-gray-100 pb-8 last:border-b-0 last:pb-0 text-left">
+              {/* Category Heading */}
+              <h3 className="text-sm font-black text-gray-800 tracking-wide uppercase border-b border-gray-100 pb-2">
+                {cat.kategoriName}
+              </h3>
 
-          <div className="space-y-16 w-full max-w-[700px] relative">
-            {displayList.map((course, idx) => {
-              // Custom alternation matching mockup:
-              const alignments = ['left', 'right', 'left', 'right', 'right', 'left'];
-              const align = alignments[idx % alignments.length];
-              const isLeft = align === 'left';
+              {/* Vertical Flow Container */}
+              <div className="flex flex-col items-center py-4 gap-4">
+                {cat.flowColumns.map((column, colIdx) => (
+                  <React.Fragment key={column.depth}>
+                    {/* Row/stack containing courses at this depth */}
+                    <div className="flex flex-wrap gap-4 justify-center py-2">
+                      {column.courses.map((course) => renderUserCourseCard(course))}
+                    </div>
 
-              const depth = course.depth || 0;
-              let dotColor = 'bg-sky-500 ring-sky-200';
-              if (depth === 1) {
-                dotColor = 'bg-amber-500 ring-amber-200';
-              } else if (depth >= 2) {
-                dotColor = 'bg-purple-500 ring-purple-200';
-              }
+                    {/* Connection Arrow between columns (vertical) */}
+                    {colIdx < cat.flowColumns.length - 1 && (
+                      <div className="flex items-center justify-center text-gray-400 font-black py-1 select-none">
+                        <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                        </svg>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          ))}
 
-              return (
-                <div key={course.id} className="relative flex items-center w-full justify-between">
-                  {/* Left Side Container */}
-                  <div className={`w-[45%] flex justify-end ${isLeft ? '' : 'invisible pointer-events-none'}`}>
-                    {renderTimelineCard(course)}
-                  </div>
+          {categoriesWithCourses.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
+              <p className="text-xs text-gray-400 font-semibold mt-1">Silakan pilih paket lain.</p>
+            </div>
+          )}
 
-                  {/* Central Node Dot */}
-                  <div className="absolute left-1/2 -translate-x-1/2 z-10">
-                    <div className={`w-3.5 h-3.5 rounded-full ${dotColor} ring-4`}></div>
-                  </div>
-
-                  {/* Right Side Container */}
-                  <div className={`w-[45%] flex justify-start ${!isLeft ? '' : 'invisible pointer-events-none'}`}>
-                    {renderTimelineCard(course)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="mt-16 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex flex-wrap items-center justify-center gap-6">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Keterangan:</span>
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-            <span>Langkah 1</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-            <span>Langkah 2</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-            <span>Langkah 3+</span>
+          {/* Legend */}
+          <div className="mt-6 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex flex-wrap items-center justify-center gap-6">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status Kelas:</span>
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+              <span>Aktif / Terdaftar</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#76b900]"></span>
+              <span>Dapat Didaftar</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
+              <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+              <span>Terkunci</span>
+            </div>
           </div>
         </div>
       </div>
