@@ -80,14 +80,40 @@ async function main() {
     },
   });
 
-  // 2. Upsert 6 Mata Kuliah (Web Development Path)
+  // 2. Upsert Mata Kuliah (Comprehensive Paths)
   const coursesData = [
-    { kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', warna: '0', published: true, jumlahPertemuan: 14 },
-    { kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', warna: '299000', published: true, jumlahPertemuan: 14 },
-    { kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', warna: '499000', published: true, jumlahPertemuan: 14 },
-    { kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', warna: '399000', published: true, jumlahPertemuan: 14 },
-    { kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', warna: '299000', published: true, jumlahPertemuan: 14 },
-    { kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', warna: '599000', published: true, jumlahPertemuan: 14 }
+    // Web Development Path
+    { kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', warna: '0', published: true, jumlahPertemuan: 3, kategori: 'Programming' },
+    { kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', warna: '299000', published: true, jumlahPertemuan: 3, kategori: 'Programming' },
+    { kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', warna: '499000', published: true, jumlahPertemuan: 3, kategori: 'Programming' },
+    { kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', warna: '399000', published: true, jumlahPertemuan: 3, kategori: 'Programming' },
+    { kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', warna: '299000', published: true, jumlahPertemuan: 3, kategori: 'Programming' },
+    { kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', warna: '599000', published: true, jumlahPertemuan: 3, kategori: 'Programming' },
+
+    // Data Science Path
+    { kode: 'DS-01', nama: 'Pengantar Data Science', level: 'Beginner', warna: '0', published: true, jumlahPertemuan: 3, kategori: 'Data Science' },
+    { kode: 'DS-02', nama: 'Statistik & Probabilitas', level: 'Beginner', warna: '199000', published: true, jumlahPertemuan: 3, kategori: 'Data Science' },
+    { kode: 'DS-03', nama: 'Pemrograman Python untuk Data Science', level: 'Intermediate', warna: '349000', published: true, jumlahPertemuan: 3, kategori: 'Data Science' },
+    { kode: 'DS-04', nama: 'Analisis Data & Visualisasi', level: 'Intermediate', warna: '299000', published: true, jumlahPertemuan: 3, kategori: 'Data Science' },
+    { kode: 'DS-05', nama: 'Machine Learning Dasar', level: 'Advanced', warna: '499000', published: true, jumlahPertemuan: 3, kategori: 'Data Science' },
+
+    // Cyber Security Path
+    { kode: 'CS-01', nama: 'Dasar Jaringan & Sistem Operasi', level: 'Beginner', warna: '0', published: true, jumlahPertemuan: 3, kategori: 'Cyber Security' },
+    { kode: 'CS-02', nama: 'Keamanan Informasi & Kriptografi', level: 'Beginner', warna: '249000', published: true, jumlahPertemuan: 3, kategori: 'Cyber Security' },
+    { kode: 'CS-03', nama: 'Ethical Hacking Dasar', level: 'Intermediate', warna: '399000', published: true, jumlahPertemuan: 3, kategori: 'Cyber Security' },
+    { kode: 'CS-04', nama: 'Analisis Malware & Forensik', level: 'Advanced', warna: '499000', published: true, jumlahPertemuan: 3, kategori: 'Cyber Security' },
+
+    // UI/UX Design Path
+    { kode: 'UI-01', nama: 'Dasar Desain Grafis', level: 'Beginner', warna: '0', published: true, jumlahPertemuan: 3, kategori: 'Design' },
+    { kode: 'UI-02', nama: 'User Research & Wireframing', level: 'Beginner', warna: '199000', published: true, jumlahPertemuan: 3, kategori: 'Design' },
+    { kode: 'UI-03', nama: 'Visual Design & Prototyping (Figma)', level: 'Intermediate', warna: '399000', published: true, jumlahPertemuan: 3, kategori: 'Design' },
+    { kode: 'UI-04', nama: 'Design System & Handover', level: 'Advanced', warna: '299000', published: true, jumlahPertemuan: 3, kategori: 'Design' },
+
+    // AI Fundamentals Path
+    { kode: 'AI-01', nama: 'Matematika untuk AI', level: 'Beginner', warna: '0', published: true, jumlahPertemuan: 3, kategori: 'AI' },
+    { kode: 'AI-02', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', warna: '249000', published: true, jumlahPertemuan: 3, kategori: 'AI' },
+    { kode: 'AI-03', nama: 'Deep Learning & Jaringan Saraf', level: 'Intermediate', warna: '449000', published: true, jumlahPertemuan: 3, kategori: 'AI' },
+    { kode: 'AI-04', nama: 'NLP & Computer Vision', level: 'Advanced', warna: '499000', published: true, jumlahPertemuan: 3, kategori: 'AI' }
   ];
 
   const dbCourses = [];
@@ -100,6 +126,7 @@ async function main() {
         warna: c.warna,
         published: c.published,
         jumlahPertemuan: c.jumlahPertemuan,
+        kategori: c.kategori,
       },
       create: {
         nama: c.nama,
@@ -109,7 +136,7 @@ async function main() {
         published: c.published,
         jumlahPertemuan: c.jumlahPertemuan,
         kapasitas: 50,
-        kategori: 'Programming',
+        kategori: c.kategori,
         statusPendaftaran: 'Aktif',
         tipeKursus: 'ONLINE',
         pengajarId: dosen.id
@@ -118,42 +145,183 @@ async function main() {
     dbCourses.push(mk);
   }
 
-  // 3. Seed 3 Packages (Paket)
+  const getCourseId = (kode) => {
+    const course = dbCourses.find(c => c.kode === kode);
+    return course ? course.id : null;
+  };
+
+  console.log('Menghubungkan prasyarat (prerequisites) mata kuliah...');
+  
+  // Web Dev Path
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('WD-02') },
+    data: { prerequisites: { set: [{ id: getCourseId('WD-01') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('WD-03') },
+    data: { prerequisites: { set: [{ id: getCourseId('WD-02') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('WD-04') },
+    data: { prerequisites: { set: [{ id: getCourseId('WD-02') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('WD-05') },
+    data: { prerequisites: { set: [{ id: getCourseId('WD-04') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('WD-06') },
+    data: { prerequisites: { set: [{ id: getCourseId('WD-03') }, { id: getCourseId('WD-05') }] } }
+  });
+
+  // Data Science Path
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('DS-02') },
+    data: { prerequisites: { set: [{ id: getCourseId('DS-01') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('DS-03') },
+    data: { prerequisites: { set: [{ id: getCourseId('DS-01') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('DS-04') },
+    data: { prerequisites: { set: [{ id: getCourseId('DS-02') }, { id: getCourseId('DS-03') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('DS-05') },
+    data: { prerequisites: { set: [{ id: getCourseId('DS-04') }] } }
+  });
+
+  // Cyber Security Path
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('CS-02') },
+    data: { prerequisites: { set: [{ id: getCourseId('CS-01') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('CS-03') },
+    data: { prerequisites: { set: [{ id: getCourseId('CS-02') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('CS-04') },
+    data: { prerequisites: { set: [{ id: getCourseId('CS-03') }] } }
+  });
+
+  // UI/UX Design Path
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('UI-02') },
+    data: { prerequisites: { set: [{ id: getCourseId('UI-01') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('UI-03') },
+    data: { prerequisites: { set: [{ id: getCourseId('UI-02') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('UI-04') },
+    data: { prerequisites: { set: [{ id: getCourseId('UI-03') }] } }
+  });
+
+  // AI Fundamentals Path
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('AI-02') },
+    data: { prerequisites: { set: [{ id: getCourseId('AI-01') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('AI-03') },
+    data: { prerequisites: { set: [{ id: getCourseId('AI-02') }] } }
+  });
+  await prisma.mataKuliah.update({
+    where: { id: getCourseId('AI-04') },
+    data: { prerequisites: { set: [{ id: getCourseId('AI-03') }] } }
+  });
+
+  // 3. Seed Packages (Paket)
   // Web Dev Full Path (WD-01, WD-02, WD-03, WD-04, WD-05)
-  const paket1 = await prisma.paket.create({
+  await prisma.paket.create({
     data: {
       nama: 'Web Dev Full Path',
       deskripsi: 'Paket bundling pemrograman web terlengkap dari nol hingga mahir.',
       hargaPaket: '999000',
       hargaAsli: '1746000',
       courses: {
-        connect: dbCourses.slice(0, 5).map(c => ({ id: c.id }))
+        connect: ['WD-01', 'WD-02', 'WD-03', 'WD-04', 'WD-05'].map(kode => ({ id: getCourseId(kode) }))
       }
     }
   });
 
   // Front-End Specialist (WD-01, WD-02, WD-03)
-  const paket2 = await prisma.paket.create({
+  await prisma.paket.create({
     data: {
       nama: 'Front-End Specialist',
       deskripsi: 'Fokus menguasai pengembangan antarmuka web modern dengan React JS.',
       hargaPaket: '699000',
       hargaAsli: '1148000',
       courses: {
-        connect: dbCourses.slice(0, 3).map(c => ({ id: c.id }))
+        connect: ['WD-01', 'WD-02', 'WD-03'].map(kode => ({ id: getCourseId(kode) }))
       }
     }
   });
 
   // Back-End Engineer (WD-04, WD-05)
-  const paket3 = await prisma.paket.create({
+  await prisma.paket.create({
     data: {
       nama: 'Back-End Engineer',
       deskripsi: 'Fokus membangun REST API, manajemen database SQL/NoSQL, dan server scaling.',
       hargaPaket: '599000',
       hargaAsli: '698000',
       courses: {
-        connect: dbCourses.slice(3, 5).map(c => ({ id: c.id }))
+        connect: ['WD-04', 'WD-05'].map(kode => ({ id: getCourseId(kode) }))
+      }
+    }
+  });
+
+  // Data Science Track
+  await prisma.paket.create({
+    data: {
+      nama: 'Data Science Track',
+      deskripsi: 'Kuasai analisis data, statistik, dan machine learning menggunakan Python.',
+      hargaPaket: '899000',
+      hargaAsli: '1346000',
+      courses: {
+        connect: ['DS-01', 'DS-02', 'DS-03', 'DS-04', 'DS-05'].map(kode => ({ id: getCourseId(kode) }))
+      }
+    }
+  });
+
+  // Cyber Security Path
+  await prisma.paket.create({
+    data: {
+      nama: 'Cyber Security Path',
+      deskripsi: 'Belajar ethical hacking, keamanan informasi, dan forensik digital.',
+      hargaPaket: '799000',
+      hargaAsli: '1147000',
+      courses: {
+        connect: ['CS-01', 'CS-02', 'CS-03', 'CS-04'].map(kode => ({ id: getCourseId(kode) }))
+      }
+    }
+  });
+
+  // UI/UX Design Track
+  await prisma.paket.create({
+    data: {
+      nama: 'UI/UX Design Track',
+      deskripsi: 'Pelajari riset pengguna, wireframing, dan visual design interaktif.',
+      hargaPaket: '699000',
+      hargaAsli: '888000',
+      courses: {
+        connect: ['UI-01', 'UI-02', 'UI-03', 'UI-04'].map(kode => ({ id: getCourseId(kode) }))
+      }
+    }
+  });
+
+  // AI Fundamentals Track
+  await prisma.paket.create({
+    data: {
+      nama: 'AI Fundamentals Track',
+      deskripsi: 'Pahami matematika AI, deep learning, NLP, dan computer vision.',
+      hargaPaket: '899000',
+      hargaAsli: '1147000',
+      courses: {
+        connect: ['AI-01', 'AI-02', 'AI-03', 'AI-04'].map(kode => ({ id: getCourseId(kode) }))
       }
     }
   });

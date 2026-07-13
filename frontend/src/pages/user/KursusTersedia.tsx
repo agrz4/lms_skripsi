@@ -98,55 +98,64 @@ const getMockNodes = (path: string = 'Web Development') => {
   if (normPath.includes('science')) {
     // Data Science
     return [
-      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-4', kode: 'DS-04', nama: 'Analisis Data & Visualisasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-5', kode: 'DS-05', nama: 'Pengantar Machine Learning', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-6', kode: 'DS-06', nama: 'Capstone Data Science', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } }
+      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-4', kode: 'DS-04', nama: 'Analisis Data & Visualisasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-5', kode: 'DS-05', nama: 'Pengantar Machine Learning', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-6', kode: 'DS-06', nama: 'Capstone Data Science', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } }
     ];
   } else if (normPath.includes('security') || normPath.includes('cyber')) {
     // Cyber Security
     return [
-      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-4', kode: 'CS-04', nama: 'Analisis Forensik Digital', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-5', kode: 'CS-05', nama: 'Audit Keamanan Informasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-6', kode: 'CS-06', nama: 'Cyber Defense Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } }
+      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-4', kode: 'CS-04', nama: 'Analisis Forensik Digital', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-5', kode: 'CS-05', nama: 'Audit Keamanan Informasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-6', kode: 'CS-06', nama: 'Cyber Defense Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } }
     ];
   } else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) {
     // UI/UX Design
     return [
-      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-4', kode: 'UI-04', nama: 'Wireframing & Prototyping', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-5', kode: 'UI-05', nama: 'Usability Testing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-6', kode: 'UI-06', nama: 'UI/UX Capstone Portfolio', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } }
+      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-4', kode: 'UI-04', nama: 'Wireframing & Prototyping', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-5', kode: 'UI-05', nama: 'Usability Testing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-6', kode: 'UI-06', nama: 'UI/UX Capstone Portfolio', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } }
     ];
   } else if (normPath.includes('ai') || normPath.includes('intelligence')) {
     // AI Fundamentals
     return [
-      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-4', kode: 'AI-04', nama: 'Deep Learning Basics', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-5', kode: 'AI-05', nama: 'Natural Language Processing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-6', kode: 'AI-06', nama: 'AI Capstone Project', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } }
+      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-4', kode: 'AI-04', nama: 'Deep Learning Basics', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-5', kode: 'AI-05', nama: 'Natural Language Processing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-6', kode: 'AI-06', nama: 'AI Capstone Project', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } }
     ];
   } else {
     // Default Web Development
     return [
-      { id: 'mock-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
-      { id: 'mock-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
-      { id: 'mock-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
-      { id: 'mock-4', kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
-      { id: 'mock-5', kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
-      { id: 'mock-6', kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } }
+      { id: 'mock-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
+      { id: 'mock-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
+      { id: 'mock-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
+      { id: 'mock-4', kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
+      { id: 'mock-5', kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
+      { id: 'mock-6', kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } }
     ];
   }
 };
+
+interface PathStep {
+  name: string;
+  exists: boolean;
+  enrolled: boolean;
+  active: boolean;
+  course?: any;
+  trophy?: boolean;
+}
 
 const KursusTersedia: React.FC = () => {
   const navigate = useNavigate();
@@ -160,6 +169,13 @@ const KursusTersedia: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'Semua' | 'Free' | 'Berbayar' | 'Course map' | 'Referall'>('Semua');
   const [courseMapMode, setCourseMapMode] = useState<'individual' | 'paket'>('individual');
   const [progressData, setProgressData] = useState<any[]>([]);
+  const [selectedPaketId, setSelectedPaketId] = useState<string>('');
+
+  useEffect(() => {
+    if (dbPaketList && dbPaketList.length > 0 && !selectedPaketId) {
+      setSelectedPaketId(dbPaketList[0].id);
+    }
+  }, [dbPaketList, selectedPaketId]);
 
   // Enrollment & Payment Simulation Modal States
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
@@ -350,7 +366,7 @@ const KursusTersedia: React.FC = () => {
     }
   };
 
-  const getDynamicPathSteps = (path: string) => {
+  const getDynamicPathSteps = (path: string): PathStep[] => {
     const norm = path.toLowerCase();
     if (norm.includes('science')) {
       return [
@@ -497,7 +513,7 @@ const KursusTersedia: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
                 <HiOutlineBookOpen className="text-sm shrink-0" />
-                <span>{course.jumlahPertemuan || course._count?.pertemuan || 14} Sesi</span>
+                <span>{course.jumlahPertemuan || course._count?.pertemuan || 3} Sesi</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
                 <HiOutlineUsers className="text-sm shrink-0" />
@@ -515,10 +531,10 @@ const KursusTersedia: React.FC = () => {
               <div className="pt-2 border-t border-gray-50">
                 <div className="flex justify-between items-center text-[9px] font-black text-gray-400 uppercase mb-1">
                   <span>Progres belajar</span>
-                  <span>{getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 14)}%</span>
+                  <span>{getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 3)}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#10b981] rounded-full transition-all duration-500" style={{ width: `${getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 14)}%` }}></div>
+                  <div className="h-full bg-[#10b981] rounded-full transition-all duration-500" style={{ width: `${getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 3)}%` }}></div>
                 </div>
               </div>
             )}
@@ -632,10 +648,9 @@ const KursusTersedia: React.FC = () => {
     const priceInfo = getPriceDisplay(course.warna);
     const participantCount = course._count?.pendaftaran || 0;
 
-    const getLevelBadgeColor = (level: string) => {
-      const lvl = (level || '').toLowerCase();
-      if (lvl === 'beginner') return 'bg-blue-50 text-blue-600 border border-blue-200';
-      if (lvl === 'intermediate') return 'bg-amber-50 text-amber-600 border border-amber-200';
+    const getStepBadgeColor = (depth: number) => {
+      if (depth === 0) return 'bg-blue-50 text-blue-600 border border-blue-200';
+      if (depth === 1) return 'bg-amber-50 text-amber-600 border border-amber-200';
       return 'bg-purple-50 text-purple-600 border border-purple-200';
     };
 
@@ -670,8 +685,8 @@ const KursusTersedia: React.FC = () => {
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
             {course.kode}
           </span>
-          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${getLevelBadgeColor(course.level || 'Beginner')}`}>
-            {course.level || 'Beginner'}
+          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${getStepBadgeColor(course.depth || 0)}`}>
+            Langkah {(course.depth || 0) + 1}
           </span>
         </div>
 
@@ -681,7 +696,7 @@ const KursusTersedia: React.FC = () => {
             {course.nama}
           </h4>
           <span className="text-[10px] font-bold text-gray-400">
-            {course.jumlahPertemuan || 14} modul · {participantCount} siswa
+            {course.jumlahPertemuan || 3} modul · {participantCount} siswa
           </span>
         </div>
 
@@ -734,60 +749,73 @@ const KursusTersedia: React.FC = () => {
   };
 
   const renderRoadmapTimeline = () => {
-    const pathPrefix = getPathPrefix(activePath);
-    const pathCourses = mataKuliahList.filter(c => {
-      if (c.kode?.toUpperCase().startsWith(pathPrefix)) return true;
-      if (c.kode?.toUpperCase().startsWith('MK')) {
-        const norm = activePath.toLowerCase();
-        if (norm.includes('science')) {
-          return c.kategori?.toLowerCase().includes('science') || c.nama?.toLowerCase().includes('data science') || c.nama?.toLowerCase().includes('statistik');
-        }
-        if (norm.includes('security') || norm.includes('cyber')) {
-          return c.kategori?.toLowerCase().includes('security') || c.kategori?.toLowerCase().includes('cyber') || c.nama?.toLowerCase().includes('keamanan') || c.nama?.toLowerCase().includes('cyber');
-        }
-        if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
-          return c.kategori?.toLowerCase().includes('design') || c.kategori?.toLowerCase().includes('ui') || c.nama?.toLowerCase().includes('ui/ux') || c.nama?.toLowerCase().includes('desain');
-        }
-        if (norm.includes('ai') || norm.includes('intelligence')) {
-          return c.kategori?.toLowerCase().includes('ai') || c.kategori?.toLowerCase().includes('intelligence') || c.nama?.toLowerCase().includes('kecerdasan') || c.nama?.toLowerCase().includes('artificial');
-        }
-        return c.kategori?.toLowerCase().includes('programming') || c.kategori?.toLowerCase().includes('web') || c.nama?.toLowerCase().includes('web') || c.nama?.toLowerCase().includes('pemrograman');
-      }
-      return false;
-    });
+    const selectedPaket = dbPaketList.find(p => p.id === selectedPaketId) || dbPaketList[0];
 
-    const beginner = pathCourses.filter(c => c.level?.toLowerCase() === 'beginner');
-    const intermediate = pathCourses.filter(c => c.level?.toLowerCase() === 'intermediate');
-    const advanced = pathCourses.filter(c => c.level?.toLowerCase() === 'advanced' || c.level?.toLowerCase() === 'advance');
-    
-    const displayList = (beginner.length > 0 || intermediate.length > 0 || advanced.length > 0)
-      ? [...beginner, ...intermediate, ...advanced]
-      : getMockNodes(activePath);
-
-    const getPathDescription = (pathName: string) => {
-      const norm = pathName.toLowerCase();
-      if (norm.includes('science')) {
-        return 'Jalur belajar terstruktur dari fundamental data hingga machine learning expert.';
+    const displayList = (() => {
+      if (!selectedPaket || !selectedPaket.courses) {
+        return getMockNodes(activePath);
       }
-      if (norm.includes('security') || norm.includes('cyber')) {
-        return 'Jalur belajar terstruktur untuk menjadi ahli keamanan siber dan informasi.';
-      }
-      if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
-        return 'Jalur belajar terstruktur untuk menguasai riset pengguna, wireframing, hingga desain UI/UX modern.';
-      }
-      if (norm.includes('ai') || norm.includes('intelligence')) {
-        return 'Jalur belajar terstruktur untuk menguasai dasar kecerdasan buatan dan generative AI.';
-      }
-      return 'Jalur belajar terstruktur dari fundamental hingga full-stack developer profesional.';
-    };
+      
+      const courseIdsInPaket = new Set(selectedPaket.courses.map((c: any) => c.id));
+      const dbCourses = mataKuliahList.filter(c => courseIdsInPaket.has(c.id));
+      
+      const courseMap = new Map(dbCourses.map(c => [c.id, c]));
+      const depthMemo = new Map<string, number>();
+      
+      const getDepth = (courseId: string, visited: Set<string> = new Set()): number => {
+        if (depthMemo.has(courseId)) return depthMemo.get(courseId)!;
+        if (visited.has(courseId)) return 0;
+        
+        const course = courseMap.get(courseId);
+        if (!course) return 0;
+        
+        visited.add(courseId);
+        
+        let maxPrereqDepth = -1;
+        const prereqs = course.prerequisites || [];
+        for (const p of prereqs) {
+          const prereqId = typeof p === 'object' ? p.id : p;
+          if (courseMap.has(prereqId)) {
+            maxPrereqDepth = Math.max(maxPrereqDepth, getDepth(prereqId, new Set(visited)));
+          }
+        }
+        
+        const depth = maxPrereqDepth + 1;
+        depthMemo.set(courseId, depth);
+        return depth;
+      };
+      
+      const coursesWithDepth = dbCourses.map(c => ({
+        ...c,
+        depth: getDepth(c.id)
+      }));
+      
+      return coursesWithDepth.sort((a, b) => a.depth - b.depth);
+    })();
 
     return (
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-200 mt-2">
-        <div className="mb-10 text-left">
-          <h2 className="text-xl font-black text-gray-900 mb-1">Learning Roadmap</h2>
-          <p className="text-xs text-gray-500 font-bold">
-            {getPathDescription(activePath)}
-          </p>
+        <div className="mb-10 text-left flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-black text-gray-900 mb-1">Learning Roadmap</h2>
+            <p className="text-xs text-gray-500 font-bold">
+              {selectedPaket?.deskripsi || 'Jalur belajar terstruktur untuk menguasai kompetensi secara terarah.'}
+            </p>
+          </div>
+          {dbPaketList && dbPaketList.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-500">Pilih Paket:</span>
+              <select
+                value={selectedPaketId}
+                onChange={(e) => setSelectedPaketId(e.target.value)}
+                className="bg-[#f3f4f6] border border-gray-200 text-gray-700 font-black text-[11px] uppercase rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
+              >
+                {dbPaketList.map(paket => (
+                  <option key={paket.id} value={paket.id}>{paket.nama}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Vertical Timeline container */}
@@ -797,18 +825,17 @@ const KursusTersedia: React.FC = () => {
 
           <div className="space-y-16 w-full max-w-[700px] relative">
             {displayList.map((course, idx) => {
-              // Custom alternation matching your mockup:
-              // Index: 0 -> Left, 1 -> Right, 2 -> Left, 3 -> Right, 4 -> Right, 5 -> Left
+              // Custom alternation matching mockup:
               const alignments = ['left', 'right', 'left', 'right', 'right', 'left'];
               const align = alignments[idx % alignments.length];
               const isLeft = align === 'left';
 
-              const lvl = (course.level || '').toLowerCase();
+              const depth = course.depth || 0;
               let dotColor = 'bg-sky-500 ring-sky-200';
-              if (lvl === 'intermediate') {
+              if (depth === 1) {
                 dotColor = 'bg-amber-500 ring-amber-200';
-              } else if (lvl === 'advanced' || lvl === 'advance') {
-                dotColor = 'bg-red-500 ring-red-200';
+              } else if (depth >= 2) {
+                dotColor = 'bg-purple-500 ring-purple-200';
               }
 
               return (
@@ -834,19 +861,19 @@ const KursusTersedia: React.FC = () => {
         </div>
 
         {/* Legend */}
-        <div className="mt-16 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex items-center justify-center gap-6">
+        <div className="mt-16 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex flex-wrap items-center justify-center gap-6">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Keterangan:</span>
           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-            <span>Kursus aktif</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+            <span>Langkah 1</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-gray-450"></span>
-            <span>Segera tersedia</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Langkah 2</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-            <span>Gratis</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+            <span>Langkah 3+</span>
           </div>
         </div>
       </div>

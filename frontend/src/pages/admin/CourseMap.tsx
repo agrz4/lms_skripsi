@@ -95,8 +95,8 @@ const CourseMap: React.FC = () => {
   const { paketList, fetchPaket, addPaket, removePaket } = usePaketStore();
   const selectRef = useRef<HTMLSelectElement>(null);
 
-  // Path selection state
-  const [selectedPath, setSelectedPath] = useState<string>('Web Development');
+  // Package selection state
+  const [selectedPaketId, setSelectedPaketId] = useState<string>('');
 
   // Form states
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
@@ -105,7 +105,7 @@ const CourseMap: React.FC = () => {
   const [selectedLevel, setSelectedLevel] = useState<string>('Beginner');
   const [harga, setHarga] = useState<string>('0');
   const [published, setPublished] = useState<boolean>(false);
-  const [jumlahPertemuan, setJumlahPertemuan] = useState<number>(14);
+  const [jumlahPertemuan, setJumlahPertemuan] = useState<number>(3);
   const [selectedPrerequisites, setSelectedPrerequisites] = useState<string[]>([]);
 
   // Sidebar dynamic control state
@@ -122,6 +122,13 @@ const CourseMap: React.FC = () => {
     fetchPaket();
   }, [fetchMataKuliah, fetchPaket]);
 
+  // Set default package when package list is loaded
+  useEffect(() => {
+    if (paketList.length > 0 && !selectedPaketId) {
+      setSelectedPaketId(paketList[0].id);
+    }
+  }, [paketList, selectedPaketId]);
+
 
   const handleCourseSelect = (id: string) => {
     setSelectedCourseId(id);
@@ -130,13 +137,13 @@ const CourseMap: React.FC = () => {
       setSelectedLevel(course.level || selectedLevel || 'Beginner');
       setHarga(course.warna || '0');
       setPublished(course.published);
-      setJumlahPertemuan(course.jumlahPertemuan || 14);
+      setJumlahPertemuan(course.jumlahPertemuan || 3);
       setSelectedPrerequisites(course.prerequisites?.map(p => typeof p === 'object' ? p.id : p) || []);
       setActiveSidebarForm('node'); // Open sidebar node form
     } else {
       setHarga('0');
       setPublished(false);
-      setJumlahPertemuan(14);
+      setJumlahPertemuan(3);
       setSelectedPrerequisites([]);
     }
   };
@@ -150,7 +157,8 @@ const CourseMap: React.FC = () => {
       }
 
       try {
-        const normPath = selectedPath.toLowerCase();
+        const selectedPaket = paketList.find(p => p.id === selectedPaketId);
+        const normPath = selectedPaket ? selectedPaket.nama.toLowerCase() : '';
         let kategori = 'Programming';
         if (normPath.includes('science')) kategori = 'Data Science';
         else if (normPath.includes('security') || normPath.includes('cyber')) kategori = 'Cyber Security';
@@ -178,7 +186,7 @@ const CourseMap: React.FC = () => {
         setSelectedLevel('Beginner');
         setHarga('0');
         setPublished(false);
-        setJumlahPertemuan(14);
+        setJumlahPertemuan(3);
         setSelectedPrerequisites([]);
         setActiveSidebarForm('stats');
         await fetchMataKuliah();
@@ -198,7 +206,8 @@ const CourseMap: React.FC = () => {
     }
 
     try {
-      const normPath = selectedPath.toLowerCase();
+      const selectedPaket = paketList.find(p => p.id === selectedPaketId);
+      const normPath = selectedPaket ? selectedPaket.nama.toLowerCase() : '';
       let kategori = 'Programming';
       if (normPath.includes('science')) kategori = 'Data Science';
       else if (normPath.includes('security') || normPath.includes('cyber')) kategori = 'Cyber Security';
@@ -222,7 +231,7 @@ const CourseMap: React.FC = () => {
       setSelectedLevel('Beginner');
       setHarga('0');
       setPublished(false);
-      setJumlahPertemuan(14);
+      setJumlahPertemuan(3);
       setSelectedPrerequisites([]);
       setActiveSidebarForm('stats'); // Close to stats
       await fetchMataKuliah();
@@ -263,7 +272,7 @@ const CourseMap: React.FC = () => {
         setSelectedLevel('Beginner');
         setHarga('0');
         setPublished(false);
-        setJumlahPertemuan(14);
+        setJumlahPertemuan(3);
         setSelectedPrerequisites([]);
         setActiveSidebarForm('stats'); // Close to stats
         await fetchMataKuliah();
@@ -289,7 +298,7 @@ const CourseMap: React.FC = () => {
     setSelectedLevel('Beginner');
     setHarga('0');
     setPublished(false);
-    setJumlahPertemuan(14);
+    setJumlahPertemuan(3);
     setSelectedPrerequisites([]);
     setActiveSidebarForm('stats'); // Close to stats
   };
@@ -301,7 +310,7 @@ const CourseMap: React.FC = () => {
     setNewCourseCode('');
     setHarga('0');
     setPublished(false);
-    setJumlahPertemuan(14);
+    setJumlahPertemuan(3);
     setSelectedPrerequisites([]);
     setActiveSidebarForm('node'); // Open node form
     if (selectRef.current) {
@@ -352,60 +361,78 @@ const CourseMap: React.FC = () => {
 
 
 
-  // Logic to dynamically render DB courses if any are configured with levels,
-  // or fall back to displaying the gorgeous mockup data if database is clean.
-  const getPathPrefix = (pathName: string) => {
-    const norm = pathName.toLowerCase();
-    if (norm.includes('science')) return 'DS';
-    if (norm.includes('security') || norm.includes('cyber')) return 'CS';
-    if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) return 'UI';
-    if (norm.includes('ai') || norm.includes('intelligence')) return 'AI';
-    return 'WD';
-  };
+  const selectedPaket = useMemo(() => {
+    return paketList.find(p => p.id === selectedPaketId) || paketList[0];
+  }, [paketList, selectedPaketId]);
 
   const displayCourses = useMemo((): MapCourse[] => {
-    const pathPrefix = getPathPrefix(selectedPath);
-    const dbCourses = mataKuliahList.filter(c => {
-      if (!c.level) return false;
-
-      const norm = selectedPath.toLowerCase();
-      const codeUpper = c.kode?.toUpperCase() || '';
-      const catLower = c.kategori?.toLowerCase() || '';
-      const nameLower = c.nama?.toLowerCase() || '';
-
-      if (norm.includes('science')) {
-        return codeUpper.startsWith('DS') || catLower.includes('science') || nameLower.includes('data science') || nameLower.includes('statistik');
-      }
-      if (norm.includes('security') || norm.includes('cyber')) {
-        return codeUpper.startsWith('CS') || catLower.includes('security') || catLower.includes('cyber') || nameLower.includes('keamanan') || nameLower.includes('cyber');
-      }
-      if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
-        return codeUpper.startsWith('UI') || catLower.includes('design') || catLower.includes('ui') || nameLower.includes('ui/ux') || nameLower.includes('desain');
-      }
-      if (norm.includes('ai') || norm.includes('intelligence')) {
-        return codeUpper.startsWith('AI') || catLower.includes('ai') || catLower.includes('intelligence') || nameLower.includes('kecerdasan') || nameLower.includes('artificial');
-      }
-      // Default: Web Development (also acts as fallback for any general courses that do not match other paths)
-      const isSpecialized = (
-        codeUpper.startsWith('DS') || catLower.includes('science') || nameLower.includes('data science') || nameLower.includes('statistik') ||
-        codeUpper.startsWith('CS') || catLower.includes('security') || catLower.includes('cyber') || nameLower.includes('keamanan') || nameLower.includes('cyber') ||
-        codeUpper.startsWith('UI') || catLower.includes('design') || catLower.includes('ui') || nameLower.includes('ui/ux') || nameLower.includes('desain') ||
-        codeUpper.startsWith('AI') || catLower.includes('ai') || catLower.includes('intelligence') || nameLower.includes('kecerdasan') || nameLower.includes('artificial')
-      );
-      return codeUpper.startsWith('WD') || codeUpper.startsWith('MK') || catLower.includes('programming') || catLower.includes('web') || nameLower.includes('web') || nameLower.includes('pemrograman') || !isSpecialized;
-    });
-
+    if (!selectedPaket || !selectedPaket.courses) return [];
+    const courseIdsInPaket = new Set(selectedPaket.courses.map((c: any) => c.id));
+    
+    // Filter mataKuliahList to only include courses in this package
+    const dbCourses = mataKuliahList.filter(c => courseIdsInPaket.has(c.id));
+    
     return dbCourses.map(c => ({
       ...c,
       exists: true,
-      level: c.level!
+      level: c.level || 'Beginner'
     }));
-  }, [mataKuliahList, selectedPath]);
+  }, [mataKuliahList, selectedPaket]);
+
+  // Dynamic step/depth calculation based on prerequisites within the package
+  const coursesWithSteps = useMemo(() => {
+    if (displayCourses.length === 0) return [];
+    
+    const courseMap = new Map(displayCourses.map(c => [c.id, c]));
+    const depthMemo = new Map<string, number>();
+    
+    const getDepth = (courseId: string, visited: Set<string> = new Set()): number => {
+      if (depthMemo.has(courseId)) return depthMemo.get(courseId)!;
+      if (visited.has(courseId)) return 0; // Avoid circular dependencies
+      
+      const course = courseMap.get(courseId);
+      if (!course) return 0;
+      
+      visited.add(courseId);
+      
+      let maxPrereqDepth = -1;
+      const prereqs = course.prerequisites || [];
+      for (const p of prereqs) {
+        const prereqId = typeof p === 'object' ? p.id : p;
+        if (courseMap.has(prereqId)) {
+          maxPrereqDepth = Math.max(maxPrereqDepth, getDepth(prereqId, new Set(visited)));
+        }
+      }
+      
+      const depth = maxPrereqDepth + 1;
+      depthMemo.set(courseId, depth);
+      return depth;
+    };
+    
+    const coursesWithDepth = displayCourses.map(c => ({
+      ...c,
+      depth: getDepth(c.id)
+    }));
+    
+    const stepsMap: { [key: number]: MapCourse[] } = {};
+    coursesWithDepth.forEach(c => {
+      if (!stepsMap[c.depth]) {
+        stepsMap[c.depth] = [];
+      }
+      stepsMap[c.depth].push(c);
+    });
+    
+    const sortedDepths = Object.keys(stepsMap).map(Number).sort((a, b) => a - b);
+    return sortedDepths.map(depth => ({
+      stepIndex: depth + 1,
+      courses: stepsMap[depth]
+    }));
+  }, [displayCourses]);
 
   // Calculate Harga Asli of bundled courses directly during render
   let hargaAsliPaket = 0;
   selectedBundledCourses.forEach(id => {
-    const course = displayCourses.find(c => c.id === id);
+    const course = mataKuliahList.find(c => c.id === id);
     if (course && course.warna) {
       const cleanStr = course.warna.replace(/[^0-9]/g, '');
       const num = parseInt(cleanStr, 10);
@@ -414,11 +441,6 @@ const CourseMap: React.FC = () => {
       }
     }
   });
-
-  // Filter groups
-  const beginnerCourses = displayCourses.filter(c => c.level?.toLowerCase() === 'beginner');
-  const intermediateCourses = displayCourses.filter(c => c.level?.toLowerCase() === 'intermediate');
-  const advancedCourses = displayCourses.filter(c => c.level?.toLowerCase() === 'advanced' || c.level?.toLowerCase() === 'advance');
 
   // Stats
   const totalCourses = displayCourses.length;
@@ -432,7 +454,7 @@ const CourseMap: React.FC = () => {
     const isPublished = course.exists && course.published;
 
     const formattedPrice = formatHarga(course.warna);
-    const meetingsText = `${course.jumlahPertemuan || 14} Pertemuan`;
+    const meetingsText = `${course.jumlahPertemuan || 3} Pertemuan`;
 
     return (
       <div
@@ -446,7 +468,7 @@ const CourseMap: React.FC = () => {
               setNewCourseCode(course.kode);
               setHarga(course.warna || '0');
               setPublished(false);
-              setJumlahPertemuan(course.jumlahPertemuan || 14);
+              setJumlahPertemuan(course.jumlahPertemuan || 3);
               setSelectedPrerequisites([]);
               setActiveSidebarForm('node');
               if (selectRef.current) {
@@ -512,24 +534,22 @@ const CourseMap: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-gray-900 mb-0.5">Course Map — {selectedPath} Path</h1>
+            <h1 className="text-2xl font-black text-gray-900 mb-0.5">Course Map — {selectedPaket?.nama || 'Roadmap'}</h1>
             <select
-              value={selectedPath}
-              onChange={(e) => setSelectedPath(e.target.value)}
+              value={selectedPaketId}
+              onChange={(e) => setSelectedPaketId(e.target.value)}
               className="bg-white border border-gray-300 text-gray-700 font-black text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
             >
-              <option value="Web Development">Web Development</option>
-              <option value="Data Science">Data Science</option>
-              <option value="Cyber Security">Cyber Security</option>
-              <option value="UI/UX Design">UI/UX Design</option>
-              <option value="AI Fundamentals">AI Fundamentals</option>
+              {paketList.map(paket => (
+                <option key={paket.id} value={paket.id}>{paket.nama}</option>
+              ))}
             </select>
           </div>
-          <p className="text-xs text-gray-500 font-semibold">Track berdasarkan level · Atur individu & paket · Sambung kursus antar level</p>
+          <p className="text-xs text-gray-500 font-semibold">Track berdasarkan paket · Atur prasyarat & buat roadmap course</p>
         </div>
         <div className="flex items-center gap-2.5">
           <div className="bg-[#e0e7ff] text-[#4338ca] px-4 py-1.5 rounded-full text-xs font-extrabold shadow-sm">
-            {displayCourses.length} Individu
+            {displayCourses.length} Kursus
           </div>
           <div className="bg-[#dcfce7] text-[#15803d] px-4 py-1.5 rounded-full text-xs font-extrabold shadow-sm">
             {paketList.length} Paket
@@ -551,7 +571,7 @@ const CourseMap: React.FC = () => {
             onClick={() => handleAddNodeClick('Beginner')}
             className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-extrabold rounded-full text-xs px-4 py-2.5 transition-all shadow-sm border-none cursor-pointer"
           >
-            + Tambah Node
+            + Tambah Kursus
           </button>
         </div>
       </div>
@@ -560,8 +580,8 @@ const CourseMap: React.FC = () => {
         {/* Main Content - Flow Map */}
         <div className="xl:col-span-9 bg-white p-8 rounded-[2rem] shadow-sm border border-gray-200 flex flex-col gap-10">
           <div>
-            <h2 className="text-sm font-black text-gray-900 mb-0.5">Alur Kurikulum — Web Development</h2>
-            <p className="text-[11px] text-gray-400 font-bold">Track berdasarkan level · jumlah pertemuan + harga · menuju sertifikat full stack</p>
+            <h2 className="text-sm font-black text-gray-900 mb-0.5">Alur Kurikulum — {selectedPaket?.nama || 'Roadmap'}</h2>
+            <p className="text-[11px] text-gray-400 font-bold">Track berdasarkan prasyarat · jumlah pertemuan + harga · menuju sertifikat kelulusan</p>
           </div>
 
           {isLoading ? (
@@ -571,135 +591,60 @@ const CourseMap: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col gap-10">
-              {/* Level 1 - Beginner */}
-              <div className="flex flex-col gap-5">
-                <div className="text-center">
-                  <span className="text-[#5850ec] font-black tracking-widest text-xs uppercase">
-                    LEVEL 1 — BEGINNER
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center gap-6">
-                  {beginnerCourses.map((course, idx) => renderCourseCard(course, idx))}
-
-                  {/* Tambah Node Card */}
-                  <div
-                    onClick={() => handleAddNodeClick('Beginner')}
-                    className="w-[280px] min-h-[120px] rounded-[1.5rem] border-2 border-dashed border-gray-300 hover:border-[#5850ec] hover:bg-indigo-50/20 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition-all group"
-                  >
-                    <span className="text-2xl text-gray-400 group-hover:text-[#5850ec] font-semibold">+</span>
-                    <span className="text-[11px] font-black text-gray-400 group-hover:text-[#5850ec]">Tambah Node</span>
-                  </div>
-                </div>
-
-                {/* Prerequisite Flow Banner Level 1 */}
-                <div className="bg-[#f3f4f6] border border-gray-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs w-full max-w-[700px] mx-auto shadow-sm mt-2">
-                  <span className="text-[10px] font-bold text-gray-500">Syarat naik ke Level 2 — Intermediate</span>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-[#e6f4ea] text-[#137333] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#c2e7cd]">
-                      {beginnerCourses[0]?.kode || 'WD-01'} Lulus
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="bg-[#e6f4ea] text-[#137333] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#c2e7cd]">
-                      {beginnerCourses[1]?.kode || 'WD-02'} Lulus
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="bg-[#fef7e0] text-[#b06000] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#fde293]">
-                      Level 2 Terbuka
+              {coursesWithSteps.map((step, sIdx) => (
+                <div key={step.stepIndex} className="flex flex-col gap-5">
+                  <div className="text-center">
+                    <span className="text-[#5850ec] font-black tracking-widest text-xs uppercase">
+                      LANGKAH {step.stepIndex}
                     </span>
                   </div>
-                </div>
-              </div>
 
-              {/* Level 2 - Intermediate */}
-              <div className="flex flex-col gap-5">
-                <div className="text-center">
-                  <span className="text-[#ca8a04] font-black tracking-widest text-xs uppercase">
-                    LEVEL 2 — INTERMEDIATE
-                  </span>
-                </div>
+                  <div className="flex flex-wrap items-center justify-center gap-6">
+                    {step.courses.map((course, idx) => renderCourseCard(course, idx))}
 
-                <div className="flex flex-wrap items-center justify-center gap-6">
-                  {intermediateCourses.map((course, idx) => renderCourseCard(course, idx))}
-
-                  {/* Tambah Node Card */}
-                  <div
-                    onClick={() => handleAddNodeClick('Intermediate')}
-                    className="w-[280px] min-h-[120px] rounded-[1.5rem] border-2 border-dashed border-gray-300 hover:border-[#ca8a04] hover:bg-yellow-50/20 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition-all group"
-                  >
-                    <span className="text-2xl text-gray-400 group-hover:text-[#ca8a04] font-semibold">+</span>
-                    <span className="text-[11px] font-black text-gray-400 group-hover:text-[#ca8a04]">Tambah Node</span>
-                  </div>
-                </div>
-
-                {/* Prerequisite Flow Banner Level 2 */}
-                <div className="bg-[#f3f4f6] border border-gray-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs w-full max-w-[700px] mx-auto shadow-sm mt-2">
-                  <span className="text-[10px] font-bold text-gray-500">Syarat naik ke Level 3 — Intermediate</span>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-[#e6f4ea] text-[#137333] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#c2e7cd]">
-                      {intermediateCourses[0]?.kode || 'WD-03'} Lulus
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="bg-[#e6f4ea] text-[#137333] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#c2e7cd]">
-                      {intermediateCourses[1]?.kode || 'WD-04'} Lulus
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="bg-[#e6f4ea] text-[#137333] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#c2e7cd]">
-                      {intermediateCourses[2]?.kode || 'WD-05'} Lulus
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="bg-[#fde8e8] text-[#c53030] px-2.5 py-0.5 rounded-full text-[9px] font-black border border-[#f8b4b4]">
-                      Level 3 Terbuka
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Level 3 - Advanced */}
-              <div className="flex flex-col gap-5">
-                <div className="text-center">
-                  <span className="text-gray-500 font-black tracking-widest text-xs uppercase">
-                    LEVEL 3 — ADVANCED
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center gap-6">
-                  {advancedCourses.map((course, idx) => (
-                    <div key={course.id} className="flex flex-col items-center gap-2.5">
-                      {renderCourseCard(course, idx)}
-                      <span className="text-[10px] font-bold text-gray-400">
-                        Syarat: Lulus semua
-                      </span>
+                    {/* Tambah Node Card */}
+                    <div
+                      onClick={() => handleAddNodeClick('Beginner')}
+                      className="w-[280px] min-h-[120px] rounded-[1.5rem] border-2 border-dashed border-gray-300 hover:border-[#5850ec] hover:bg-indigo-50/20 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition-all group"
+                    >
+                      <span className="text-2xl text-gray-400 group-hover:text-[#5850ec] font-semibold">+</span>
+                      <span className="text-[11px] font-black text-gray-400 group-hover:text-[#5850ec]">Tambah Node</span>
                     </div>
-                  ))}
-
-                  {/* Tambah Node Card */}
-                  <div
-                    onClick={() => handleAddNodeClick('Advanced')}
-                    className="w-[280px] min-h-[120px] rounded-[1.5rem] border-2 border-dashed border-gray-300 hover:border-gray-500 hover:bg-gray-50 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition-all group"
-                  >
-                    <span className="text-2xl text-gray-400 group-hover:text-gray-500 font-semibold">+</span>
-                    <span className="text-[11px] font-black text-gray-400 group-hover:text-gray-500">Tambah Node</span>
                   </div>
+
+                  {/* Visual roadmap connector */}
+                  {sIdx < coursesWithSteps.length - 1 && (
+                    <div className="flex justify-center my-1">
+                      <div className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-extrabold border border-indigo-200/50 shadow-sm flex items-center gap-1">
+                        <span>Lanjut ke Langkah Berikutnya</span>
+                        <span className="text-xs">↓</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              ))}
+
+              {coursesWithSteps.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
+                  <p className="text-xs text-gray-400 font-semibold mt-1">Silakan buat paket baru atau tambahkan kursus di database.</p>
+                </div>
+              )}
 
               {/* Bottom Milestone Badge Card */}
-              <div className="w-full max-w-[700px] mx-auto bg-[#c7d2fe]/30 text-[#4f46e5] border-2 border-[#5850ec]/30 p-4 rounded-[1.5rem] flex items-center gap-4 shadow-sm hover:scale-[1.01] transition-transform mt-2">
-                <div className="w-12 h-12 bg-[#5850ec] rounded-full flex items-center justify-center text-white shadow-md shrink-0">
-                  <HiOutlineTrophy className="w-6 h-6" />
+              {selectedPaket && coursesWithSteps.length > 0 && (
+                <div className="w-full max-w-[700px] mx-auto bg-[#c7d2fe]/30 text-[#4f46e5] border-2 border-[#5850ec]/30 p-4 rounded-[1.5rem] flex items-center gap-4 shadow-sm hover:scale-[1.01] transition-transform mt-2">
+                  <div className="w-12 h-12 bg-[#5850ec] rounded-full flex items-center justify-center text-white shadow-md shrink-0">
+                    <HiOutlineTrophy className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-[#5850ec]">
+                      Sertifikat Kelulusan: {selectedPaket.nama}
+                    </h3>
+                    <p className="text-[10px] text-indigo-500 font-bold mt-0.5">Milestone · diraih setelah semua kursus dalam paket diselesaikan</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xs font-black text-[#5850ec]">
-                    {selectedPath.toLowerCase().includes('science') ? 'DS-07 - Sertifikat Data Science Professional' :
-                      selectedPath.toLowerCase().includes('security') || selectedPath.toLowerCase().includes('cyber') ? 'CS-07 - Sertifikat Cyber Security Analyst' :
-                        selectedPath.toLowerCase().includes('ui') || selectedPath.toLowerCase().includes('ux') || selectedPath.toLowerCase().includes('design') ? 'UI-07 - Sertifikat UI/UX Designer Professional' :
-                          selectedPath.toLowerCase().includes('ai') || selectedPath.toLowerCase().includes('intelligence') ? 'AI-07 - Sertifikat AI Developer Associate' :
-                            'WD-07 - Sertifikat full stack web developer'}
-                  </h3>
-                  <p className="text-[10px] text-indigo-500 font-bold mt-0.5">Milestone · diraih setelah semua level selesai</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -751,28 +696,6 @@ const CourseMap: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 block mb-2">Level</label>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2">
-                    {['Beginner', 'Intermediate', 'Advanced'].map((lvl) => {
-                      const isChecked = selectedLevel === lvl;
-                      return (
-                        <label key={lvl} className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors">
-                          <input
-                            type="radio"
-                            name="level"
-                            value={lvl}
-                            checked={isChecked}
-                            onChange={() => setSelectedLevel(lvl)}
-                            className="w-4 h-4 text-[#5850ec] focus:ring-[#5850ec] border-gray-300"
-                          />
-                          <span>{lvl}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Status</label>
@@ -899,12 +822,12 @@ const CourseMap: React.FC = () => {
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Pilih Kursus</label>
                   <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50 shadow-inner">
-                    {displayCourses.filter(mk => mk.exists).length === 0 ? (
+                    {mataKuliahList.length === 0 ? (
                       <span className="text-xs text-gray-400 italic font-semibold block py-1">
-                        Belum ada kursus di database untuk path ini
+                        Belum ada kursus di database
                       </span>
                     ) : (
-                      displayCourses.filter(mk => mk.exists).map(mk => {
+                      mataKuliahList.map(mk => {
                         const isChecked = selectedBundledCourses.includes(mk.id);
                         return (
                           <label key={mk.id} className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-600 hover:text-indigo-600 transition-colors">
