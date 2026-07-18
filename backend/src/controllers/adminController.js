@@ -435,11 +435,19 @@ const downloadSertifikat = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({ where: { id: sertifikat.userId } });
-    const course = await prisma.mataKuliah.findUnique({ where: { id: sertifikat.mataKuliahId } });
+    const course = await prisma.mataKuliah.findUnique({ 
+      where: { id: sertifikat.mataKuliahId },
+      include: { pengajar: true }
+    });
 
     if (!user || !course) {
       return res.status(404).send('<h1>Informasi sertifikat tidak lengkap</h1>');
     }
+
+    const signeeName = course.pengajar ? course.pengajar.nama : 'Admin LMS Hybrid';
+    const signeeTitle = course.pengajar 
+      ? (course.pengajar.role === 'DOSEN' ? 'Dosen Pengajar' : 'Kepala Akademik') 
+      : 'Kepala Akademik';
 
     const formattedDate = new Date(sertifikat.createdAt).toLocaleDateString('id-ID', {
       day: 'numeric',
@@ -511,8 +519,8 @@ const downloadSertifikat = async (req, res) => {
     </g>
 
     <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1.5" />
-    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#e2e8f0" text-anchor="middle">Admin LMS Hybrid</text>
-    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">Kepala Akademik</text>
+    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#e2e8f0" text-anchor="middle">${signeeName}</text>
+    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">${signeeTitle}</text>
   </g>
 
   <!-- Center: Cryptographic Seal & Verification QR Code -->

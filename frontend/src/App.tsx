@@ -20,6 +20,7 @@ import KoreksiUploadDetail from './pages/asisten/KoreksiUploadDetail';
 import KursusTersedia from './pages/user/KursusTersedia';
 import KursusSaya from './pages/user/KursusSaya';
 import DetailKursus from './pages/user/DetailKursus';
+import EnrolmentOptions from './pages/user/EnrolmentOptions';
 import UjianPage from './pages/user/UjianPage';
 import HasilSkorAI from './pages/user/HasilSkorAI';
 import UserProfile from './pages/user/UserProfile';
@@ -77,6 +78,7 @@ const App = () => {
         <Route path="/user/dashboard" element={<ProtectedRoute allowedRole="user"><KursusTersedia /></ProtectedRoute>} />
         <Route path="/user/kursus-saya" element={<ProtectedRoute allowedRole="user"><KursusSaya /></ProtectedRoute>} />
         <Route path="/user/detail-kursus" element={<ProtectedRoute allowedRole="user"><DetailKursus /></ProtectedRoute>} />
+        <Route path="/user/enrolment-options" element={<ProtectedRoute allowedRole="user"><EnrolmentOptions /></ProtectedRoute>} />
         <Route path="/user/materi-sesi" element={<ProtectedRoute allowedRole="user"><MateriSesi /></ProtectedRoute>} />
         <Route path="/user/view-pdf" element={<ProtectedRoute allowedRole="user"><ViewPDF /></ProtectedRoute>} />
         <Route path="/user/kelas-online" element={<ProtectedRoute allowedRole="user"><KelasOnline /></ProtectedRoute>} />

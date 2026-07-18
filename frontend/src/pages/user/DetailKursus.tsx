@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { useJadwalStore } from '../../store/useJadwalStore';
+import { usePendaftaranStore } from '../../store/usePendaftaranStore';
 import { 
   HiOutlineCheckCircle, 
   HiOutlineLockClosed,
@@ -20,7 +21,9 @@ const DetailKursus: React.FC = () => {
   
   const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
   const { jadwalList, fetchJadwal } = useJadwalStore();
+  const { pendaftaranList, fetchMyPendaftaran, isLoading: isPendaftaranLoading } = usePendaftaranStore();
 
+  const [hasCheckedEnrollment, setHasCheckedEnrollment] = useState(false);
   const [summary, setSummary] = useState<{
     avgRefleksi: number;
     avgTugas: number;
@@ -31,13 +34,23 @@ const DetailKursus: React.FC = () => {
 
   useEffect(() => {
     fetchMataKuliah();
+    fetchMyPendaftaran().then(() => setHasCheckedEnrollment(true));
     if (courseId) {
       fetchJadwal(courseId);
       api.get(`/student/course-summary/${courseId}`)
         .then(res => setSummary(res.data))
         .catch(err => console.error('Failed to fetch course summary', err));
     }
-  }, [courseId, fetchMataKuliah, fetchJadwal]);
+  }, [courseId, fetchMataKuliah, fetchJadwal, fetchMyPendaftaran]);
+
+  useEffect(() => {
+    if (hasCheckedEnrollment && !isPendaftaranLoading && courseId) {
+      const isEnrolled = pendaftaranList.some(p => p.mataKuliahId === courseId);
+      if (!isEnrolled) {
+        navigate(`/user/enrolment-options?id=${courseId}`, { replace: true });
+      }
+    }
+  }, [hasCheckedEnrollment, isPendaftaranLoading, pendaftaranList, courseId, navigate]);
 
   const course = mataKuliahList.find(mk => mk.id === courseId);
   const completedSessions = summary ? summary.completedMeetings : jadwalList.filter(s => s.tgl && s.topik).length;

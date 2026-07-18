@@ -452,15 +452,7 @@ const KursusTersedia: React.FC = () => {
           if (isRegistered) {
             navigate(`/user/detail-kursus?id=${course.id}`);
           } else {
-            const priceInfo = getPriceDisplay(course.warna);
-            const isPaid = priceInfo.current !== 'Gratis';
-            if (isPaid) {
-              setSelectedCourseToEnroll(course);
-              setReferralInput("");
-              setIsEnrollModalOpen(true);
-            } else {
-              handleEnroll(course.id);
-            }
+            navigate(`/user/enrolment-options?id=${course.id}`);
           }
         }}
       >
@@ -680,14 +672,7 @@ const KursusTersedia: React.FC = () => {
           if (isRegistered) {
             navigate(`/user/detail-kursus?id=${course.id}`);
           } else {
-            const isPaid = priceInfo.current !== 'Gratis';
-            if (isPaid) {
-              setSelectedCourseToEnroll(course);
-              setReferralInput("");
-              setIsEnrollModalOpen(true);
-            } else {
-              handleEnroll(course.id);
-            }
+            navigate(`/user/enrolment-options?id=${course.id}`);
           }
         }}
         className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[260px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
