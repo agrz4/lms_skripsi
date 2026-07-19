@@ -444,10 +444,13 @@ const downloadSertifikat = async (req, res) => {
       return res.status(404).send('<h1>Informasi sertifikat tidak lengkap</h1>');
     }
 
-    const signeeName = course.pengajar ? course.pengajar.nama : 'Admin LMS Hybrid';
-    const signeeTitle = course.pengajar 
+    const signee1Name = course.ttd1Nama || (course.pengajar ? course.pengajar.nama : 'Admin LMS Hybrid');
+    const signee1Title = course.ttd1Jabatan || (course.pengajar 
       ? (course.pengajar.role === 'DOSEN' ? 'Dosen Pengajar' : 'Kepala Akademik') 
-      : 'Kepala Akademik';
+      : 'Kepala Akademik');
+
+    const signee2Name = course.ttd2Nama || 'Dr. H. Budi Santoso, M.T.';
+    const signee2Title = course.ttd2Jabatan || 'Kepala Akademik';
 
     const formattedDate = new Date(sertifikat.createdAt).toLocaleDateString('id-ID', {
       day: 'numeric',
@@ -501,7 +504,7 @@ const downloadSertifikat = async (req, res) => {
   
   <text x="400" y="420" font-family="'Inter', sans-serif" font-size="14" font-weight="700" fill="#a7f3d0" text-anchor="middle">Dengan Predikat Nilai Kumulatif: ${sertifikat.nilai} / 100</text>
 
-  <!-- Left Side: Digital Signature of Kepala Akademik -->
+  <!-- Left Side: Digital Signature of Pihak 1 -->
   <g transform="translate(130, 480)">
     <!-- Real-looking digital ink signature stroke -->
     <path d="M 20 -25 C 35 -45, 50 -5, 65 -35 C 80 -55, 85 -20, 100 -25 C 115 -30, 120 -10, 135 -20 M 50 -35 L 110 -15" 
@@ -519,11 +522,12 @@ const downloadSertifikat = async (req, res) => {
     </g>
 
     <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1.5" />
-    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#e2e8f0" text-anchor="middle">${signeeName}</text>
-    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">${signeeTitle}</text>
+    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#e2e8f0" text-anchor="middle">${signee1Name}</text>
+    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">${signee1Title}</text>
   </g>
 
-  <!-- Center: Cryptographic Seal & Verification QR Code -->
+  <!-- Center: Cryptographic Seal & Verification QR Code & Date of Issuance -->
+  <text x="400" y="440" font-family="'Inter', sans-serif" font-size="9" font-weight="700" fill="#94a3b8" text-anchor="middle">Diterbitkan: ${formattedDate}</text>
   <g transform="translate(370, 455)">
     <!-- QR Code border & box -->
     <rect x="-5" y="-5" width="70" height="70" fill="#1e293b" stroke="#334155" stroke-width="1.5" rx="6" filter="url(#shadow)" />
@@ -563,19 +567,29 @@ const downloadSertifikat = async (req, res) => {
     <text x="30" y="87" font-family="'Inter', sans-serif" font-size="7" font-weight="900" fill="#34d399" letter-spacing="0.5" text-anchor="middle">✓ VERIFIED SIGNATURE</text>
   </g>
 
-  <!-- Right Side: Date of Issuance -->
+  <!-- Right Side: Digital Signature of Pihak 2 -->
   <g transform="translate(520, 480)">
-    <!-- Security fingerprint waves -->
-    <path d="M 40 -35 A 15 15 0 0 1 110 -35" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.4" />
-    <path d="M 45 -30 A 10 10 0 0 1 105 -30" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.3" />
-    <path d="M 50 -25 A 5 5 0 0 1 100 -25" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.2" />
+    <!-- Real-looking digital ink signature stroke (using a slightly different path so they look like different handwriting!) -->
+    <path d="M 25 -30 C 40 -15, 45 -45, 60 -15 C 75 -5, 80 -45, 95 -20 C 110 -10, 125 -35, 130 -15 M 40 -20 L 120 -30" 
+          fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
+    <path d="M 30 -25 Q 60 -45 80 -15 T 110 -25" 
+          fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" />
+    <circle cx="75" cy="-20" r="22" fill="none" stroke="#047857" stroke-width="1" stroke-dasharray="1,4" opacity="0.4" />
     
+    <!-- Stamp/Seal overlay on signature (greenish color for different seal!) -->
+    <g transform="translate(120, -20)" opacity="0.25">
+      <circle cx="0" cy="0" r="25" fill="none" stroke="#34d399" stroke-width="1.5" />
+      <circle cx="0" cy="0" r="21" fill="none" stroke="#34d399" stroke-width="0.5" stroke-dasharray="2,2" />
+      <path d="M-5,-5 L5,5 M-5,5 L5,-5" stroke="#34d399" stroke-width="1" />
+      <text x="0" y="3" font-family="'Inter', sans-serif" font-size="5" font-weight="bold" fill="#34d399" text-anchor="middle">OFFICIAL</text>
+    </g>
+
     <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1.5" />
-    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">${formattedDate}</text>
-    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">Tanggal Penerbitan</text>
+    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#e2e8f0" text-anchor="middle">${signee2Name}</text>
+    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">${signee2Title}</text>
   </g>
 
-  <text x="400" y="550" font-family="'Courier New', monospace" font-size="10" fill="#475569" text-anchor="middle">No: ${sertifikat.noSertifikat}</text>
+  <text x="400" y="565" font-family="'Courier New', monospace" font-size="10" fill="#475569" text-anchor="middle">No: ${sertifikat.noSertifikat}</text>
 </svg>
 `;
 

@@ -29,6 +29,10 @@ export interface MataKuliah {
   pertemuan?: any[]; // For storing detail sessions
   prerequisites?: any[];
   prerequisiteFor?: any[];
+  ttd1Nama?: string;
+  ttd1Jabatan?: string;
+  ttd2Nama?: string;
+  ttd2Jabatan?: string;
 }
 
 interface MataKuliahState {

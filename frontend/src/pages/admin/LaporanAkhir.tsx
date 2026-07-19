@@ -6,12 +6,21 @@ import {
   HiOutlineBookOpen,
   HiOutlineArrowDownTray,
   HiOutlineTrophy,
-  HiOutlineClock
+  HiOutlineClock,
+  HiOutlinePencilSquare
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import api from '../../lib/api';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
+import { usePengajarStore } from '../../store/usePengajarStore';
 
 interface StudentReport {
   userId: string;
@@ -34,12 +43,21 @@ const LaporanAkhir: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const courseIdParam = searchParams.get('courseId') || '';
 
-  const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
+  const { mataKuliahList, fetchMataKuliah, updateMataKuliah } = useMataKuliahStore();
+  const { pengajarList, fetchPengajar } = usePengajarStore();
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courseIdParam);
 
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<StudentReport[]>([]);
   const [courseName, setCourseName] = useState('');
+
+  // Signature Config States
+  const [isTtdModalOpen, setIsTtdModalOpen] = useState(false);
+  const [ttd1Nama, setTtd1Nama] = useState('');
+  const [ttd1Jabatan, setTtd1Jabatan] = useState('');
+  const [ttd2Nama, setTtd2Nama] = useState('');
+  const [ttd2Jabatan, setTtd2Jabatan] = useState('');
+  const [savingTtd, setSavingTtd] = useState(false);
   
   // Search, Filter, and Pagination States
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +69,8 @@ const LaporanAkhir: React.FC = () => {
 
   useEffect(() => {
     fetchMataKuliah();
-  }, [fetchMataKuliah]);
+    fetchPengajar();
+  }, [fetchMataKuliah, fetchPengajar]);
 
   useEffect(() => {
     if (selectedCourseId) {
@@ -63,6 +82,39 @@ const LaporanAkhir: React.FC = () => {
       setCourseName('');
     }
   }, [selectedCourseId]);
+
+  const selectedCourseObj = mataKuliahList.find(mk => mk.id === selectedCourseId);
+  const displayInstructors = pengajarList.filter(p => p.role === 'DOSEN' || p.role === 'ADMIN' || p.role === 'ASISTEN');
+
+  useEffect(() => {
+    if (selectedCourseObj) {
+      setTtd1Nama(selectedCourseObj.ttd1Nama || '');
+      setTtd1Jabatan(selectedCourseObj.ttd1Jabatan || '');
+      setTtd2Nama(selectedCourseObj.ttd2Nama || '');
+      setTtd2Jabatan(selectedCourseObj.ttd2Jabatan || '');
+    }
+  }, [selectedCourseId, selectedCourseObj]);
+
+  const handleSaveSignature = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourseId) return;
+    setSavingTtd(true);
+    try {
+      await updateMataKuliah(selectedCourseId, {
+        ttd1Nama,
+        ttd1Jabatan,
+        ttd2Nama,
+        ttd2Jabatan,
+      });
+      alert('Konfigurasi tanda tangan digital berhasil disimpan.');
+      setIsTtdModalOpen(false);
+    } catch (error: any) {
+      console.error('Failed to save signature configuration:', error);
+      alert('Gagal menyimpan konfigurasi tanda tangan.');
+    } finally {
+      setSavingTtd(false);
+    }
+  };
 
   const fetchReport = async (courseId: string) => {
     setLoading(true);
@@ -134,7 +186,6 @@ const LaporanAkhir: React.FC = () => {
   };
 
   // Find currently selected course to read dynamic meetings count
-  const selectedCourseObj = mataKuliahList.find(mk => mk.id === selectedCourseId);
   const totalMeetings = selectedCourseObj?.jumlahPertemuan || 3;
 
   // Filter report data based on search and status
@@ -194,6 +245,15 @@ const LaporanAkhir: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
+          {selectedCourseId && (
+            <Button
+              onClick={() => setIsTtdModalOpen(true)}
+              className="bg-[#5850ec] hover:bg-[#4338ca] text-white font-extrabold rounded-xl h-10 px-4 shadow-sm uppercase tracking-wider text-[10px] flex items-center gap-2 border-none transition-all"
+            >
+              <HiOutlinePencilSquare className="text-sm" /> Atur Tanda Tangan
+            </Button>
+          )}
+
           <Button
             onClick={handleDownloadAllCertificates}
             disabled={!reportData.some(s => s.status === 'Lulus' && s.certificate)}
@@ -465,6 +525,145 @@ const LaporanAkhir: React.FC = () => {
           </Card>
         </div>
       )}
+
+      {/* Modal Dialog: Atur Tanda Tangan */}
+      <Dialog open={isTtdModalOpen} onOpenChange={setIsTtdModalOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+            <DialogTitle className="text-xl font-black">Atur Pihak Tanda Tangan</DialogTitle>
+            <DialogDescription className="text-xs text-white/80 mt-1">
+              Sesuaikan nama dan jabatan pihak yang berwenang menandatangani sertifikat kelulusan digital untuk mata kuliah ini.
+            </DialogDescription>
+          </div>
+          <form onSubmit={handleSaveSignature} className="p-6 space-y-6">
+            <div className="space-y-4">
+              {/* Pihak 1 (Kiri) */}
+              <div className="space-y-2.5">
+                <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest">Pihak 1 (Kiri - Dosen/Instruktur)</h4>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase block mb-0.5">Pilih Pihak 1 Terdaftar</label>
+                  <select
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      if (!selectedId) return;
+                      const foundUser = pengajarList.find(p => p.id === selectedId);
+                      if (foundUser) {
+                        setTtd1Nama(foundUser.nama);
+                        const title = foundUser.role === 'DOSEN' ? 'Dosen Pengajar' : 'Kepala Akademik';
+                        setTtd1Jabatan(title);
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold shadow-sm text-gray-700"
+                  >
+                    <option value="">-- Pilih dari Dosen/Admin --</option>
+                    {displayInstructors.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama} ({p.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Nama Pihak 1</label>
+                    <input
+                      type="text"
+                      value={ttd1Nama}
+                      onChange={(e) => setTtd1Nama(e.target.value)}
+                      placeholder={selectedCourseObj?.pengajar?.nama || "Dr. Ahmad Dosen"}
+                      className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold shadow-sm text-gray-800 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Jabatan Pihak 1</label>
+                    <input
+                      type="text"
+                      value={ttd1Jabatan}
+                      onChange={(e) => setTtd1Jabatan(e.target.value)}
+                      placeholder="Dosen Pengajar"
+                      className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold shadow-sm text-gray-800 placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* Pihak 2 (Kanan) */}
+              <div className="space-y-2.5">
+                <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest">Pihak 2 (Kanan - Rektor/Akademik)</h4>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase block mb-0.5">Pilih Pihak 2 Terdaftar</label>
+                  <select
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      if (!selectedId) return;
+                      const foundUser = pengajarList.find(p => p.id === selectedId);
+                      if (foundUser) {
+                        setTtd2Nama(foundUser.nama);
+                        const title = foundUser.role === 'DOSEN' ? 'Dosen Pengajar' : 'Kepala Akademik';
+                        setTtd2Jabatan(title);
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold shadow-sm text-gray-700"
+                  >
+                    <option value="">-- Pilih dari Dosen/Admin --</option>
+                    {displayInstructors.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama} ({p.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Nama Pihak 2</label>
+                    <input
+                      type="text"
+                      value={ttd2Nama}
+                      onChange={(e) => setTtd2Nama(e.target.value)}
+                      placeholder="Dr. H. Budi Santoso, M.T."
+                      className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold shadow-sm text-gray-800 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Jabatan Pihak 2</label>
+                    <input
+                      type="text"
+                      value={ttd2Jabatan}
+                      onChange={(e) => setTtd2Jabatan(e.target.value)}
+                      placeholder="Kepala Akademik"
+                      className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold shadow-sm text-gray-800 placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsTtdModalOpen(false)}
+                className="bg-transparent border border-gray-200 text-gray-500 font-bold rounded-xl px-5 h-9"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingTtd}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-5 h-9"
+              >
+                {savingTtd ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

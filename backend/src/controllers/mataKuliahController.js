@@ -36,7 +36,7 @@ const getAllMataKuliah = async (req, res) => {
 };
 
 const createMataKuliah = async (req, res) => {
-  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, jumlahPertemuan } = req.body;
+  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, jumlahPertemuan, ttd1Nama, ttd1Jabatan, ttd2Nama, ttd2Jabatan } = req.body;
   try {
     const numMeetings = jumlahPertemuan ? parseInt(jumlahPertemuan) : 14;
     // 1. Create Mata Kuliah
@@ -53,7 +53,11 @@ const createMataKuliah = async (req, res) => {
         statusPendaftaran: statusPendaftaran || undefined,
         tipeKursus: tipeKursus ? tipeKursus.toUpperCase() : undefined,
         pengajar: pengajarId ? { connect: { id: pengajarId } } : undefined,
-        jumlahPertemuan: numMeetings
+        jumlahPertemuan: numMeetings,
+        ttd1Nama,
+        ttd1Jabatan,
+        ttd2Nama,
+        ttd2Jabatan
       }
     });
 
@@ -106,7 +110,7 @@ const createMataKuliah = async (req, res) => {
 
 const updateMataKuliah = async (req, res) => {
   const { id } = req.params;
-  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, prerequisites, jumlahPertemuan } = req.body;
+  const { nama, kode, published, deskripsi, kapasitas, kategori, statusPendaftaran, tipeKursus, pengajarId, level, warna, prerequisites, jumlahPertemuan, ttd1Nama, ttd1Jabatan, ttd2Nama, ttd2Jabatan } = req.body;
   try {
     const existingCourse = await prisma.mataKuliah.findUnique({
       where: { id },
@@ -134,7 +138,11 @@ const updateMataKuliah = async (req, res) => {
         jumlahPertemuan: targetMeetingsCount,
         prerequisites: prerequisites ? {
           set: prerequisites.map(pId => ({ id: typeof pId === 'object' ? pId.id : pId }))
-        } : undefined
+        } : undefined,
+        ttd1Nama: ttd1Nama !== undefined ? ttd1Nama : undefined,
+        ttd1Jabatan: ttd1Jabatan !== undefined ? ttd1Jabatan : undefined,
+        ttd2Nama: ttd2Nama !== undefined ? ttd2Nama : undefined,
+        ttd2Jabatan: ttd2Jabatan !== undefined ? ttd2Jabatan : undefined
       },
       include: {
         prerequisites: true,

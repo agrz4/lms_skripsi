@@ -48,6 +48,12 @@ model MataKuliah {
   pendaftaran       Pendaftaran[]
   ujian             Ujian?
 
+  // Digital signature configurations
+  ttd1Nama          String?
+  ttd1Jabatan       String?
+  ttd2Nama          String?
+  ttd2Jabatan       String?
+
   // self-referencing many-to-many relationship
   prerequisites     MataKuliah[]  @relation("MataKuliahPrerequisites")
   prerequisiteFor   MataKuliah[]  @relation("MataKuliahPrerequisites")
