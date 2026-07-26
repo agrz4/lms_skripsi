@@ -6,7 +6,13 @@ import {
   HiOutlineArrowRight, 
   HiOutlineChevronDown,
   HiOutlineTag,
-  HiOutlineClock
+  HiOutlineClock,
+  HiOutlineSparkles,
+  HiOutlineInformationCircle,
+  HiOutlineCheck,
+  HiOutlineClipboard,
+  HiOutlineCreditCard,
+  HiOutlineCheckCircle
 } from 'react-icons/hi2';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +29,13 @@ const EnrolmentOptions: React.FC = () => {
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [referralInput, setReferralInput] = useState("");
   const [isEnrolling, setIsEnrolling] = useState(false);
+
+  // Payment Simulation States
+  const [paymentStep, setPaymentStep] = useState<'details' | 'simulate' | 'success'>('details');
+  const [selectedBank, setSelectedBank] = useState<'Mandiri' | 'BCA' | 'BRI'>('Mandiri');
+  const [generatedVA, setGeneratedVA] = useState("");
+  const [generatedInvoice, setGeneratedInvoice] = useState("");
+  const [copiedVA, setCopiedVA] = useState(false);
 
   useEffect(() => {
     if (mataKuliahList.length === 0) {
@@ -71,22 +84,23 @@ const EnrolmentOptions: React.FC = () => {
     }
   };
 
-  const performEnrollment = async (id: string, customPrice: string, referralCode?: string) => {
+  const performEnrollment = async (id: string, customPrice: string, referralCode?: string, customInvoice?: string, customMethod?: string) => {
     try {
       setIsEnrolling(true);
       await enrollKursus(id, {
         referralCode: referralCode || undefined,
         harga: customPrice,
-        invoiceNo: `INV/MK/${Date.now()}`,
-        method: 'Mandiri Virtual Account',
+        invoiceNo: customInvoice || `INV/MK/${Date.now()}`,
+        method: customMethod || 'Mandiri Virtual Account',
         status: 'Lunas'
       });
-      alert(referralCode 
-        ? `Berhasil mendaftar kelas dengan diskon referral! Harga akhir: Rp ${parseInt(customPrice, 10).toLocaleString('id-ID')}`
-        : 'Berhasil mendaftar kelas!'
-      );
       await fetchMyPendaftaran();
-      navigate(`/user/detail-kursus?id=${id}`);
+      
+      if (isEnrollModalOpen) {
+        setPaymentStep('success');
+      } else {
+        navigate(`/user/detail-kursus?id=${id}`);
+      }
     } catch (err) {
       console.error('Failed to enroll:', err);
       alert('Gagal mendaftar kelas.');
@@ -214,93 +228,292 @@ const EnrolmentOptions: React.FC = () => {
       </div>
 
       {/* Enroll & Payment Simulation Dialog Modal for Paid Courses */}
-      <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-[1.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-          <div className="bg-[#1d75d3] px-6 py-5 text-white text-left">
-            <h2 className="text-lg font-black tracking-wide leading-none">Enroll Kursus</h2>
+      <Dialog open={isEnrollModalOpen} onOpenChange={(open) => {
+        setIsEnrollModalOpen(open);
+        if (!open) {
+          setPaymentStep('details');
+          setReferralInput("");
+          setCopiedVA(false);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white text-left">
+          {/* Header Banner */}
+          <div className="bg-[#1d75d3] px-6 py-5 text-white">
+            <h2 className="text-lg font-black tracking-wide leading-none">
+              {paymentStep === 'details' ? 'Enroll Kursus' : paymentStep === 'simulate' ? 'Simulasi Pembayaran' : 'Pembayaran Sukses'}
+            </h2>
             <p className="text-xs text-blue-100 font-bold mt-2 tracking-wide uppercase">
               {course.nama}
             </p>
           </div>
 
-          <div className="p-6 space-y-6 text-left">
-            {(() => {
-              const priceNum = parseInt(course.warna?.replace(/[^0-9]/g, '') || '0', 10);
-              const hasReferral = referralInput.trim().length > 0;
-              const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
-              const finalPrice = priceNum - discountAmount;
+          {paymentStep === 'details' ? (
+            /* Step 1: Details & Bank Selection */
+            <div className="p-6 space-y-6">
+              {(() => {
+                const priceNum = parseInt(course.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                const hasReferral = referralInput.trim().length > 0;
+                const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                const finalPrice = priceNum - discountAmount;
 
-              return (
-                <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60">
-                  <div className="flex justify-between items-center px-5 py-4">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Harga kursus</span>
-                    <span className="text-sm font-black text-gray-800">
-                      {priceInfo.current}
-                    </span>
+                return (
+                  <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60">
+                    <div className="flex justify-between items-center px-5 py-4">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Harga kursus</span>
+                      <span className="text-sm font-black text-gray-800">
+                        {priceInfo.current}
+                      </span>
+                    </div>
+                    {hasReferral && (
+                      <div className="flex justify-between items-center px-5 py-3 bg-emerald-50/50">
+                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                          <HiOutlineSparkles className="w-3.5 h-3.5" /> Diskon Referral (10%)
+                        </span>
+                        <span className="text-xs font-bold text-emerald-600">
+                          - Rp {discountAmount.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center px-5 py-4 bg-gray-50/50">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total bayar</span>
+                      <span className="text-base font-black text-red-500">
+                        Rp {finalPrice.toLocaleString('id-ID')}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center px-5 py-4 bg-gray-50/50">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total bayar</span>
-                    <span className="text-base font-black text-red-500">
-                      Rp {finalPrice.toLocaleString('id-ID')}
-                    </span>
+                );
+              })()}
+
+              {/* Referral Code input */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <HiOutlineTag className="text-sm text-gray-400 shrink-0" />
+                  <span>Kode Referral</span>
+                </div>
+                <input 
+                  type="text"
+                  value={referralInput}
+                  onChange={(e) => setReferralInput(e.target.value)}
+                  placeholder="Masukkan kode referral jika ada"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-inner"
+                />
+                <p className="text-[10px] text-gray-400 font-bold">
+                  * Gunakan kode referral untuk mendapatkan diskon 10%
+                </p>
+              </div>
+
+              {/* Bank Selection */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <HiOutlineCreditCard className="text-sm text-gray-400 shrink-0" />
+                  <span>Pilih Bank Virtual Account</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['Mandiri', 'BCA', 'BRI'] as const).map((bank) => (
+                    <button
+                      key={bank}
+                      type="button"
+                      onClick={() => setSelectedBank(bank)}
+                      className={`py-3 px-4 rounded-xl border text-xs font-black uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-1 ${
+                        selectedBank === bank
+                          ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="text-[9px] font-bold text-gray-400">VA</span>
+                      {bank}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Info Waktu */}
+              <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
+                <HiOutlineClock className="text-xs text-gray-400 shrink-0" />
+                <span>Waktu pendaftaran akan dicatat: {new Date().toLocaleTimeString('id-ID')}</span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-4 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEnrollModalOpen(false)}
+                  className="flex-1 py-6 bg-gray-100 hover:bg-gray-200 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    // Generate VA code
+                    const bankPrefix = selectedBank === 'Mandiri' ? '88008' : selectedBank === 'BCA' ? '3901' : '126';
+                    const randomDigits = Math.floor(10000000 + Math.random() * 90000000).toString();
+                    setGeneratedVA(bankPrefix + randomDigits);
+                    setGeneratedInvoice(`INV/MK/${Date.now()}`);
+                    setPaymentStep('simulate');
+                  }}
+                  className="flex-1 py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
+                >
+                  Lanjutkan
+                </Button>
+              </div>
+            </div>
+          ) : paymentStep === 'simulate' ? (
+            /* Step 2: Payment Simulation */
+            <div className="p-6 space-y-6 text-left">
+              {/* Simulation Banner */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                <HiOutlineInformationCircle className="text-amber-500 text-lg shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-black text-amber-800 uppercase tracking-wide">Mode Simulasi Pembayaran</h4>
+                  <p className="text-[10px] text-amber-700 font-semibold mt-1 leading-relaxed">
+                    Salin nomor Virtual Account di bawah untuk melakukan simulasi transfer bank. Klik tombol konfirmasi untuk menyelesaikan pendaftaran secara instan.
+                  </p>
+                </div>
+              </div>
+
+              {/* VA & Invoice Details */}
+              <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60 text-xs">
+                <div className="flex justify-between items-center px-5 py-3">
+                  <span className="font-bold text-gray-450 uppercase tracking-wider text-[10px]">No. Invoice</span>
+                  <span className="font-mono font-bold text-gray-700">{generatedInvoice}</span>
+                </div>
+                <div className="flex justify-between items-center px-5 py-3">
+                  <span className="font-bold text-gray-450 uppercase tracking-wider text-[10px]">Metode Pembayaran</span>
+                  <span className="font-black text-gray-800 uppercase tracking-wide">{selectedBank} Virtual Account</span>
+                </div>
+                <div className="flex justify-between items-center px-5 py-4 bg-white">
+                  <span className="font-bold text-gray-450 uppercase tracking-wider text-[10px]">Virtual Account</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-blue-600 text-sm tracking-wider">{generatedVA}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedVA);
+                        setCopiedVA(true);
+                        setTimeout(() => setCopiedVA(false), 2000);
+                      }}
+                      className="h-7 px-2 text-[10px] font-bold text-blue-600 hover:bg-blue-50 rounded-lg flex items-center gap-1 border border-blue-100"
+                    >
+                      {copiedVA ? (
+                        <>
+                          <HiOutlineCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <HiOutlineClipboard className="w-3 h-3" />
+                          <span>Salin</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
-              );
-            })()}
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
-                <HiOutlineTag className="text-sm text-gray-400 shrink-0" />
-                <span>Kode Referral</span>
+                <div className="flex justify-between items-center px-5 py-4">
+                  <span className="font-bold text-gray-450 uppercase tracking-wider text-[10px]">Total Tagihan</span>
+                  <span className="font-black text-red-500 text-sm">
+                    {(() => {
+                      const priceNum = parseInt(course.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                      const hasReferral = referralInput.trim().length > 0;
+                      const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                      const finalPrice = priceNum - discountAmount;
+                      return `Rp ${finalPrice.toLocaleString('id-ID')}`;
+                    })()}
+                  </span>
+                </div>
               </div>
-              <input 
-                type="text"
-                value={referralInput}
-                onChange={(e) => setReferralInput(e.target.value)}
-                placeholder="Masukkan kode referral jika ada"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-inner"
-              />
-              <p className="text-[10px] text-gray-400 font-bold">
-                * Gunakan kode referral untuk mendapatkan diskon 10%
-              </p>
-            </div>
 
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
-              <HiOutlineClock className="text-xs text-gray-400 shrink-0" />
-              <span>Waktu pendaftaran akan dicatat: {new Date().toLocaleTimeString('id-ID')}</span>
-            </div>
+              {/* Status Indicator */}
+              <div className="flex items-center justify-center gap-2 p-3 bg-orange-50 border border-orange-100 rounded-xl text-orange-600 font-bold text-xs uppercase tracking-wider">
+                <span className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></span>
+                <span>Menunggu Pembayaran</span>
+              </div>
 
-            <div className="flex gap-4 pt-2">
+              {/* Action buttons */}
+              <div className="flex gap-4 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPaymentStep('details')}
+                  className="flex-1 py-6 bg-gray-100 hover:bg-gray-200 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
+                >
+                  Kembali
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isEnrolling}
+                  onClick={async () => {
+                    const priceNum = parseInt(course.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                    const hasReferral = referralInput.trim().length > 0;
+                    const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                    const finalPrice = priceNum - discountAmount;
+                    
+                    await performEnrollment(
+                      course.id, 
+                      finalPrice.toString(),
+                      referralInput.trim() || undefined,
+                      generatedInvoice,
+                      `${selectedBank} Virtual Account`
+                    );
+                  }}
+                  className="flex-1 py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2"
+                >
+                  {isEnrolling ? 'Memproses...' : (
+                    <>
+                      <HiOutlineCheckCircle className="text-base" />
+                      <span>Simulasikan Bayar</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Step 3: Success Screen */
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500 animate-bounce">
+                <HiOutlineCheckCircle className="w-12 h-12" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-black text-gray-900">Pembayaran Berhasil!</h3>
+                <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                  Selamat! Anda telah terdaftar pada kelas <strong>{course.nama}</strong>. Pembayaran telah diverifikasi secara otomatis oleh sistem simulasi.
+                </p>
+              </div>
+
+              {/* Transaction Receipt */}
+              <div className="border border-gray-150 rounded-2xl bg-gray-50 p-4 divide-y divide-gray-150/60 text-xs text-left">
+                <div className="flex justify-between py-2">
+                  <span className="font-semibold text-gray-500">No. Invoice</span>
+                  <span className="font-mono font-bold text-gray-800">{generatedInvoice}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="font-semibold text-gray-500">Metode</span>
+                  <span className="font-bold text-gray-800">{selectedBank} Virtual Account</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="font-semibold text-gray-500">Status</span>
+                  <span className="font-bold text-emerald-600 flex items-center gap-1">
+                    <HiOutlineCheckCircle className="w-3.5 h-3.5" /> Lunas
+                  </span>
+                </div>
+              </div>
+
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => setIsEnrollModalOpen(false)}
-                className="flex-1 py-6 bg-gray-100 hover:bg-gray-200 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
-              >
-                Batal
-              </Button>
-              <Button
-                type="button"
-                disabled={isEnrolling}
-                onClick={async () => {
-                  const priceNum = parseInt(course.warna?.replace(/[^0-9]/g, '') || '0', 10);
-                  const hasReferral = referralInput.trim().length > 0;
-                  const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
-                  const finalPrice = priceNum - discountAmount;
-                  
-                  await performEnrollment(
-                    course.id, 
-                    finalPrice.toString(),
-                    referralInput.trim() || undefined
-                  );
+                onClick={() => {
                   setIsEnrollModalOpen(false);
+                  setPaymentStep('details');
+                  navigate(`/user/detail-kursus?id=${course.id}`);
                 }}
-                className="flex-1 py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
+                className="w-full py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all flex items-center justify-center gap-2"
               >
-                {isEnrolling ? 'Memproses...' : 'Konfirmasi Enroll'}
+                <span>Mulai Belajar Sekarang</span>
+                <HiOutlineArrowRight className="w-4 h-4" />
               </Button>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

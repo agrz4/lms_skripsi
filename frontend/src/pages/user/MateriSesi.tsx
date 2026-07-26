@@ -213,6 +213,16 @@ const MateriSesi: React.FC = () => {
     m.nama && 
     (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video'))
   );
+
+  const isZoomExpired = () => {
+    const dateStr = pertemuanDetail?.tgl || session?.tgl;
+    if (!dateStr) return false;
+    const meetingDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    meetingDate.setHours(0, 0, 0, 0);
+    return today.getTime() > meetingDate.getTime();
+  };
   
   const videos = materiList.filter(
     m => m.videoUrl && 
@@ -658,30 +668,57 @@ const MateriSesi: React.FC = () => {
             <div className="space-y-8">
               {/* Online Meeting Card */}
               {zoomLinkMateri ? (
-                <Card className="rounded-[2rem] border border-gray-200 shadow-sm bg-white p-8">
-                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet)</h3>
-                  <div className="bg-[#EBF5FF] border border-[#D0E7FF] p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                      <div className="w-14 h-14 bg-[#2D8CFF] rounded-xl flex items-center justify-center shadow-md shrink-0">
-                        <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24">
-                          <path d="M17.472 10.373a1.599 1.599 0 0 0-1.6 1.6v.053a10.978 10.978 0 0 1-5.748 5.748h-.053a1.599 1.599 0 0 0-1.6-1.6H5.2c-.88 0-1.6.72-1.6 1.6V19.4c0 .88.72 1.6 1.6 1.6H8.4a1.6 1.6 0 0 0 1.6-1.6v-.053a10.978 10.978 0 0 1 5.748-5.748h.053a1.599 1.599 0 0 0 1.6 1.6H18.8c.88 0 1.6-.72 1.6-1.6V11.973a1.599 1.599 0 0 0-1.6-1.6h-1.328zM5.2 2.6H8.4a1.6 1.6 0 0 1 1.6 1.6v3.2c0 .88-.72 1.6-1.6 1.6H5.2c-.88 0-1.6-.72-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6zm13.6 0H18.8a1.6 1.6 0 0 1 1.6 1.6v3.2a1.6 1.6 0 0 1-1.6 1.6H18.8a1.6 1.6 0 0 1-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6z"/>
-                        </svg>
+                isZoomExpired() ? (
+                  <Card className="rounded-[2rem] border border-red-200 shadow-sm bg-red-50/10 p-8">
+                    <h3 className="text-xs font-black text-red-500 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet) - Sesi Berakhir</h3>
+                    <div className="bg-red-50/50 border border-red-100 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                          <svg className="w-8 h-8 text-red-500 fill-current" viewBox="0 0 24 24">
+                            <path d="M17.472 10.373a1.599 1.599 0 0 0-1.6 1.6v.053a10.978 10.978 0 0 1-5.748 5.748h-.053a1.599 1.599 0 0 0-1.6-1.6H5.2c-.88 0-1.6.72-1.6 1.6V19.4c0 .88.72 1.6 1.6 1.6H8.4a1.6 1.6 0 0 0 1.6-1.6v-.053a10.978 10.978 0 0 1 5.748-5.748h.053a1.599 1.599 0 0 0 1.6 1.6H18.8c.88 0 1.6-.72 1.6-1.6V11.973a1.599 1.599 0 0 0-1.6-1.6h-1.328zM5.2 2.6H8.4a1.6 1.6 0 0 1 1.6 1.6v3.2c0 .88-.72 1.6-1.6 1.6H5.2c-.88 0-1.6-.72-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6zm13.6 0H18.8a1.6 1.6 0 0 1 1.6 1.6v3.2a1.6 1.6 0 0 1-1.6 1.6H18.8a1.6 1.6 0 0 1-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6z"/>
+                          </svg>
+                        </div>
+                        <div className="text-left">
+                          <h4 className="text-base font-black text-red-950">Kelas Online via Zoom</h4>
+                          <p className="text-xs font-bold text-red-700/60 mt-1">
+                            Batas waktu bergabung sudah habis karena telah melewati tanggal pelaksanaan ({pertemuanDetail?.tgl ? new Date(pertemuanDetail.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}).
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <h4 className="text-base font-black text-blue-950">Kelas Online via Zoom</h4>
-                        <p className="text-xs font-bold text-blue-700/60 mt-1 truncate max-w-xs md:max-w-md">
-                          Link: {zoomLinkMateri.videoUrl}
-                        </p>
-                      </div>
+                      <Button 
+                        disabled
+                        className="w-full sm:w-auto bg-gray-200 text-gray-400 border border-gray-300 font-black text-xs py-3.5 px-6 rounded-xl flex items-center gap-1.5 justify-center shadow-none cursor-not-allowed"
+                      >
+                        Zoom Berakhir
+                      </Button>
                     </div>
-                    <Button 
-                      onClick={() => window.open(zoomLinkMateri.videoUrl, '_blank')}
-                      className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-3.5 px-6 rounded-xl flex items-center gap-1.5 justify-center shadow-lg shadow-blue-100"
-                    >
-                      Gabung Zoom
-                    </Button>
-                  </div>
-                </Card>
+                  </Card>
+                ) : (
+                  <Card className="rounded-[2rem] border border-gray-200 shadow-sm bg-white p-8">
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet)</h3>
+                    <div className="bg-[#EBF5FF] border border-[#D0E7FF] p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="w-14 h-14 bg-[#2D8CFF] rounded-xl flex items-center justify-center shadow-md shrink-0">
+                          <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24">
+                            <path d="M17.472 10.373a1.599 1.599 0 0 0-1.6 1.6v.053a10.978 10.978 0 0 1-5.748 5.748h-.053a1.599 1.599 0 0 0-1.6-1.6H5.2c-.88 0-1.6.72-1.6 1.6V19.4c0 .88.72 1.6 1.6 1.6H8.4a1.6 1.6 0 0 0 1.6-1.6v-.053a10.978 10.978 0 0 1 5.748-5.748h.053a1.599 1.599 0 0 0 1.6 1.6H18.8c.88 0 1.6-.72 1.6-1.6V11.973a1.599 1.599 0 0 0-1.6-1.6h-1.328zM5.2 2.6H8.4a1.6 1.6 0 0 1 1.6 1.6v3.2c0 .88-.72 1.6-1.6 1.6H5.2c-.88 0-1.6-.72-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6zm13.6 0H18.8a1.6 1.6 0 0 1 1.6 1.6v3.2a1.6 1.6 0 0 1-1.6 1.6H18.8a1.6 1.6 0 0 1-1.6-1.6V4.2c0-.88.72-1.6 1.6-1.6z"/>
+                          </svg>
+                        </div>
+                        <div className="text-left">
+                          <h4 className="text-base font-black text-blue-950">Kelas Online via Zoom</h4>
+                          <p className="text-xs font-bold text-blue-700/60 mt-1 truncate max-w-xs md:max-w-md">
+                            Link: {zoomLinkMateri.videoUrl}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => window.open(zoomLinkMateri.videoUrl, '_blank')}
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-3.5 px-6 rounded-xl flex items-center gap-1.5 justify-center shadow-lg shadow-blue-100"
+                      >
+                        Gabung Zoom
+                      </Button>
+                    </div>
+                  </Card>
+                )
               ) : (
                 <Card className="rounded-[2rem] border border-gray-200 shadow-sm bg-white p-8">
                   <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Online Meeting (Zoom/Meet)</h3>
