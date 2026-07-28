@@ -66,6 +66,17 @@ const getFormattedCurrentTime = () => {
   return `${day} ${month} ${year}, ${hours}.${minutes}.${seconds}`;
 };
 
+const getActivationTime = () => {
+  const now = new Date();
+  const day = now.getDate();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${day} ${month} ${year} - ${hours}.${minutes}`;
+};
+
 // Helper for dynamic developer card images matching topics
 const getCourseImageUrl = (kode: string) => {
   const k = (kode || '').toLowerCase();
@@ -1429,16 +1440,30 @@ const KursusTersedia: React.FC = () => {
           setCopiedVA(false);
         }
       }}>
-        <DialogContent className="sm:max-w-md rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+        <DialogContent className={`rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white transition-all duration-300 ${paymentStep === 'success' ? 'sm:max-w-xl' : 'sm:max-w-md'}`}>
           {/* Header Banner */}
-          <div className="bg-[#1d75d3] px-6 py-5 text-white">
-            <h2 className="text-lg font-black tracking-wide leading-none">
-              {paymentStep === 'details' ? 'Enroll Kursus' : paymentStep === 'simulate' ? 'Simulasi Pembayaran' : 'Pembayaran Sukses'}
-            </h2>
-            <p className="text-xs text-blue-100 font-bold mt-2 tracking-wide uppercase">
-              {selectedCourseToEnroll?.nama || 'Nama Kursus'}
-            </p>
-          </div>
+          {paymentStep === 'success' ? (
+            <div className="bg-[#0fa44a] px-6 py-6 text-white flex items-center gap-4 text-left">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#0fa44a] shrink-0 shadow-sm">
+                <HiOutlineCheck className="w-6 h-6 stroke-[3]" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-lg font-black tracking-wide leading-tight text-white">Pembayaran Berhasil</h2>
+                <p className="text-[11px] text-white/95 font-bold mt-1 leading-snug">
+                  Kursus <strong className="font-black text-white">{selectedCourseToEnroll?.nama || 'Nama Kursus'}</strong> sudah aktif di akun kamu.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#1d75d3] px-6 py-5 text-white">
+              <h2 className="text-lg font-black tracking-wide leading-none">
+                {paymentStep === 'details' ? 'Enroll Kursus' : paymentStep === 'simulate' ? 'Simulasi Pembayaran' : 'Pembayaran Sukses'}
+              </h2>
+              <p className="text-xs text-blue-100 font-bold mt-2 tracking-wide uppercase">
+                {selectedCourseToEnroll?.nama || 'Nama Kursus'}
+              </p>
+            </div>
+          )}
 
           {paymentStep === 'details' ? (
             /* Step 1: Details & Bank Selection */
@@ -1669,49 +1694,106 @@ const KursusTersedia: React.FC = () => {
             </div>
           ) : (
             /* Step 3: Success Screen */
-            <div className="p-8 text-center space-y-6">
-              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500 animate-bounce">
-                <HiOutlineCheckCircle className="w-12 h-12" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-black text-gray-900">Pembayaran Berhasil!</h3>
-                <p className="text-xs text-gray-500 font-semibold leading-relaxed">
-                  Selamat! Anda telah terdaftar pada kelas <strong>{selectedCourseToEnroll?.nama}</strong>. Pembayaran telah diverifikasi secara otomatis oleh sistem simulasi.
-                </p>
-              </div>
-
+            <div className="p-6 space-y-6 text-left">
               {/* Transaction Receipt */}
-              <div className="border border-gray-150 rounded-2xl bg-gray-50 p-4 divide-y divide-gray-150/60 text-xs text-left">
-                <div className="flex justify-between py-2">
-                  <span className="font-semibold text-gray-500">No. Invoice</span>
-                  <span className="font-mono font-bold text-gray-800">{generatedInvoice}</span>
+              <div className="border border-gray-150 rounded-2xl bg-gray-50/40 overflow-hidden divide-y divide-gray-150/60 text-xs">
+                <div className="flex justify-between items-center px-5 py-3.5">
+                  <span className="font-black text-gray-400 uppercase tracking-widest text-[9px]">No. Invoice</span>
+                  <span className="font-mono font-black text-gray-800">{generatedInvoice}</span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="font-semibold text-gray-500">Metode</span>
-                  <span className="font-bold text-gray-800">{selectedBank} Virtual Account</span>
+                <div className="flex justify-between items-center px-5 py-3.5">
+                  <span className="font-black text-gray-400 uppercase tracking-widest text-[9px]">Metode Pembayaran</span>
+                  <span className="font-black text-gray-800 uppercase tracking-wide">{selectedBank} Virtual Account</span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="font-semibold text-gray-500">Status</span>
-                  <span className="font-bold text-emerald-600 flex items-center gap-1">
-                    <HiOutlineCheckCircle className="w-3.5 h-3.5" /> Lunas
-                  </span>
+                <div className="flex justify-between items-center px-5 py-3.5">
+                  <span className="font-black text-gray-400 uppercase tracking-widest text-[9px]">Waktu Aktivasi</span>
+                  <span className="font-black text-gray-800">{getActivationTime()}</span>
+                </div>
+                <div className="flex justify-between items-center px-5 py-4 bg-white">
+                  <span className="font-black text-gray-400 uppercase tracking-widest text-[9px]">Total Dibayar</span>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider">
+                      Lunas
+                    </span>
+                    <span className="font-black text-gray-900 text-sm">
+                      {(() => {
+                        if (!selectedCourseToEnroll) return 'Rp 0';
+                        const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                        const hasReferral = referralInput.trim().length > 0;
+                        const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                        const finalPrice = priceNum - discountAmount;
+                        return `Rp ${finalPrice.toLocaleString('id-ID')}`;
+                      })()}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <Button
-                type="button"
-                onClick={() => {
-                  setIsEnrollModalOpen(false);
-                  setPaymentStep('details');
-                  if (selectedCourseToEnroll?.id) {
-                    navigate(`/user/detail-kursus?id=${selectedCourseToEnroll.id}`);
-                  }
-                }}
-                className="w-full py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all flex items-center justify-center gap-2"
-              >
-                <span>Mulai Belajar Sekarang</span>
-                <HiOutlineArrowRight className="w-4 h-4" />
-              </Button>
+              {/* Access Section */}
+              <div className="space-y-3">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  Akses Yang Kamu Dapat
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="border border-gray-150 bg-gray-50/20 rounded-2xl p-4">
+                    <span className="text-xl font-black text-blue-600 block mb-1">
+                      {selectedCourseToEnroll?.jumlahPertemuan || 12}
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold leading-tight block">
+                      modul terbuka penuh
+                    </span>
+                  </div>
+                  <div className="border border-gray-150 bg-gray-50/20 rounded-2xl p-4">
+                    <span className="text-xl font-black text-blue-600 block mb-1">
+                      ∞
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold leading-tight block">
+                      akses tanpa batas waktu
+                    </span>
+                  </div>
+                  <div className="border border-gray-150 bg-gray-50/20 rounded-2xl p-4">
+                    <span className="text-xl font-black text-blue-600 block mb-1">
+                      1
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold leading-tight block">
+                      sertifikat saat lulus
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setIsEnrollModalOpen(false);
+                    setPaymentStep('details');
+                    if (selectedCourseToEnroll?.id) {
+                      navigate(`/user/detail-kursus?id=${selectedCourseToEnroll.id}`);
+                    }
+                  }}
+                  className="flex-[2.5] py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
+                >
+                  Mulai Belajar Sekarang
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setIsEnrollModalOpen(false);
+                    setPaymentStep('details');
+                    navigate('/user/dashboard');
+                  }}
+                  className="flex-[1.5] py-6 bg-gray-100 hover:bg-gray-250 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
+                >
+                  Lihat Kursus Saya
+                </Button>
+              </div>
+
+              {/* Footer Text */}
+              <p className="text-[9px] text-gray-400 font-bold leading-relaxed text-center">
+                Invoice sudah dikirim ke {user?.email || 'budi.santoso@email.com'}. Bisa diunduh kapan saja di menu Hasil & Sertifikat.
+              </p>
             </div>
           )}
         </DialogContent>
