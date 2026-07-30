@@ -10,7 +10,6 @@ import {
   HiOutlineSparkles,
   HiOutlineSquares2X2,
   HiOutlinePencilSquare,
-  HiOutlineArrowLeftOnRectangle,
   HiOutlinePlus,
   HiOutlineQueueList,
   HiOutlineUser,
@@ -67,7 +66,6 @@ const Sidebar: React.FC = () => {
       title: 'LAPORAN',
       items: [
         { name: 'Hasil & Sertifikat', icon: <HiOutlineChartBar />, path: '/user/hasil-skor' },
-        { name: 'Profile', icon: <HiOutlineUser />, path: '/user/profile' },
       ]
     }
   ];
@@ -93,10 +91,7 @@ const Sidebar: React.FC = () => {
     { name: 'Add Materi', icon: <HiOutlinePlus />, path: '/pengajar/add-materi' },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    window.location.href = '/login';
-  };
+
 
   const isStudent = role === 'user' || role === 'mahasiswa';
   const isAsisten = role === 'asisten';
@@ -239,22 +234,8 @@ const Sidebar: React.FC = () => {
           ))
         ) : null}
       </div>
-
-      {/* Logout Section */}
-      <div className={`p-4 ${isBlueTheme ? 'bg-black/5' : 'border-t border-gray-100'}`}>
-        <button 
-          onClick={handleLogout}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-            isBlueTheme ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-slate-500 hover:bg-red-50 hover:text-red-600'
-          }`}
-        >
-          <HiOutlineArrowLeftOnRectangle className="text-lg" />
-          Logout
-        </button>
-      </div>
     </div>
   );
 };
 
 export default Sidebar;
-

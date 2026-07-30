@@ -39,6 +39,7 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; 
   if (!role) {
     return <Navigate to="/login" replace />;
   }
+  if (allowedRole === 'any') return <AdminLayout>{children}</AdminLayout>;
   if (allowedRole === 'admin' && role !== 'admin') return <Navigate to="/login" replace />;
   if (allowedRole === 'pengajar' && role !== 'pengajar') return <Navigate to="/login" replace />;
   if (allowedRole === 'asisten' && role !== 'asisten') return <Navigate to="/login" replace />;
@@ -84,7 +85,7 @@ const App = () => {
         <Route path="/user/kelas-online" element={<ProtectedRoute allowedRole="user"><KelasOnline /></ProtectedRoute>} />
         <Route path="/user/ujian" element={<ProtectedRoute allowedRole="user"><UjianPage /></ProtectedRoute>} />
         <Route path="/user/hasil-skor" element={<ProtectedRoute allowedRole="user"><HasilSkorAI /></ProtectedRoute>} />
-        <Route path="/user/profile" element={<ProtectedRoute allowedRole="user"><UserProfile /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute allowedRole="any"><UserProfile /></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="/" element={<LandingPage />} />
