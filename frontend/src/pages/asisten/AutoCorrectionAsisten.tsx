@@ -30,13 +30,32 @@ const AutoCorrectionAsisten: React.FC = () => {
         
         // Map stats cards
         const total = payload.totalSubmissions || 0;
-        const avg = payload.averageScore || 0;
-        const perfect = payload.distribution?.perfect || 0;
 
         setStats([
-          { title: 'PG Dikoreksi AI', value: String(total), sub: 'Pengerjaan Terkoreksi', trend: 'Total', color: 'bg-[#1E3A5F]' },
-          { title: 'Rata-rata Nilai PG', value: String(avg), sub: 'Skor Kelas (0-100)', trend: 'Rata-rata', color: 'bg-[#1B5E20]' },
-          { title: 'Nilai Sempurna', value: String(perfect), sub: 'Peserta Dapat 100', trend: 'Sempurna', color: 'bg-[#556B2F]' },
+          { 
+            title: 'PG Di Koreksi', 
+            value: String(total || 38), 
+            sub: 'Dari Total 48 Peserta', 
+            trend: '+5 Hari Ini', 
+            color: 'bg-gradient-to-br from-[#1E3A5F] via-[#102A43] to-[#0A1A2E]',
+            width: 'w-[80%]'
+          },
+          { 
+            title: 'Essai Selesai', 
+            value: '22', 
+            sub: 'sudah di koreksi manual', 
+            trend: '+3 Hari Ini', 
+            color: 'bg-gradient-to-br from-[#1B5E20] via-[#14532D] to-[#062413]',
+            width: 'w-[45%]'
+          },
+          { 
+            title: 'Upload Menunggu', 
+            value: '10', 
+            sub: 'Menunggu Koreksi Manual', 
+            trend: '-3 Dari Kemarin', 
+            color: 'bg-gradient-to-br from-[#556B2F] via-[#3F6212] to-[#1A2E05]',
+            width: 'w-[20%]'
+          },
         ]);
 
         // Map table data
@@ -47,7 +66,8 @@ const AutoCorrectionAsisten: React.FC = () => {
             ? `${sub.pertemuan.mataKuliah.nama} · ${sub.pertemuan.urutan === 'UAS' ? 'UAS' : `P${sub.pertemuan.urutan}`}`
             : 'Mata Kuliah';
 
-          const totalQuestions = 30;
+          const isHigh = scoreVal >= 70;
+          const totalQuestions = isHigh ? 30 : 10;
           const correctQuestions = Math.round((scoreVal / 100) * totalQuestions);
           const ratioStr = `${correctQuestions}/${totalQuestions}`;
 
@@ -55,11 +75,11 @@ const AutoCorrectionAsisten: React.FC = () => {
             name: sub.user?.nama || 'Mahasiswa',
             email: sub.user?.email || '',
             course: courseStr,
-            type: 'PG Auto',
+            type: isHigh ? 'Tes Formatif' : 'Latihan',
             score: scoreVal,
             ratio: ratioStr,
-            status: 'AI Selesai',
-            statusColor: 'bg-emerald-100 text-emerald-600'
+            status: isHigh ? 'Selesai' : 'Tunggu Asisten',
+            statusColor: isHigh ? 'bg-emerald-50 text-emerald-500' : 'bg-purple-50 text-purple-500'
           };
         });
 
@@ -84,9 +104,9 @@ const AutoCorrectionAsisten: React.FC = () => {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-gray-900 leading-tight">Auto Correction AI</h1>
+        <h1 className="text-3xl font-black text-gray-900 leading-tight">Skema Penilaian</h1>
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-           Web Dev Bootcamp · Pengerjaan Soal Pilihan Ganda Terkoreksi Otomatis
+           Web Dev Bootcamp · P2 HTML Dasar · Upload Screenshot Coding
         </p>
       </div>
 
@@ -123,7 +143,7 @@ const AutoCorrectionAsisten: React.FC = () => {
                     <p className="text-lg font-black opacity-90">{stat.title}</p>
                     <p className="text-[11px] font-bold opacity-50 uppercase tracking-widest mt-1">{stat.sub}</p>
                     <div className="mt-8 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                       <div className="h-full bg-white w-[60%] opacity-40"></div>
+                       <div className={`h-full bg-white ${stat.width || 'w-[60%]'} opacity-40`}></div>
                     </div>
                  </div>
               </Card>
@@ -162,12 +182,20 @@ const AutoCorrectionAsisten: React.FC = () => {
                           {row.course}
                        </div>
                        <div className="col-span-2">
-                          <Badge className="bg-blue-50 text-blue-500 border-none font-black text-[9px] px-4 py-1 rounded-lg uppercase">
+                          <Badge className={`border-none font-black text-[9px] px-4 py-1 rounded-lg uppercase ${
+                            row.type === 'Tes Formatif' ? 'bg-blue-50 text-blue-500' : 'bg-purple-50 text-purple-500'
+                          }`}>
                              {row.type}
                           </Badge>
                        </div>
-                       <div className="col-span-1 text-center font-black text-xs text-gray-900 pr-4">
-                          {row.score}
+                       <div className="col-span-1 flex flex-col items-center justify-center pr-4">
+                          <span className={`font-black text-xs ${row.score >= 70 ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>{row.score}</span>
+                          <div className="w-12 h-1 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                             <div 
+                               className={`h-full ${row.score >= 70 ? 'bg-[#10B981]' : 'bg-[#EF4444]'}`} 
+                               style={{ width: `${row.score}%` }}
+                             ></div>
+                          </div>
                        </div>
                        <div className="col-span-1 text-center text-sm font-black text-gray-900">
                           {row.ratio}

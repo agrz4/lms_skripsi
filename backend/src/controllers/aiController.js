@@ -144,26 +144,18 @@ const getStatsPGHandler = async (req, res) => {
           submissions: [
             {
               id: 'sim-1',
-              user: { nama: 'Budi Santoso', email: 'budi@lms.com' },
-              pertemuan: { urutan: 3, mataKuliah: { nama: 'Dasar Pemrograman Web' } },
-              score: 90,
-              aiScore: 90,
+              user: { nama: 'Budi Santoso', email: 'budi.santoso@mahasiswa.ac.id' },
+              pertemuan: { urutan: 1, mataKuliah: { nama: 'Web Dev' } },
+              score: 87,
+              aiScore: 87,
               createdAt: new Date().toISOString()
             },
             {
               id: 'sim-2',
-              user: { nama: 'Ani Setyawati', email: 'ani@lms.com' },
-              pertemuan: { urutan: 3, mataKuliah: { nama: 'Dasar Pemrograman Web' } },
-              score: 100,
-              aiScore: 100,
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'sim-3',
-              user: { nama: 'Candra Wijaya', email: 'candra@lms.com' },
-              pertemuan: { urutan: 2, mataKuliah: { nama: 'Dasar Pemrograman Web' } },
-              score: 80,
-              aiScore: 80,
+              user: { nama: 'Ani Susanti', email: 'ani.susanti@mahasiswa.ac.id' },
+              pertemuan: { urutan: 3, mataKuliah: { nama: 'Web Dev' } },
+              score: 50,
+              aiScore: 50,
               createdAt: new Date().toISOString()
             }
           ]

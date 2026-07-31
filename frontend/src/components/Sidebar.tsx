@@ -13,6 +13,7 @@ import {
   HiOutlinePlus,
   HiOutlineQueueList,
   HiOutlineUser,
+  HiOutlineArrowPath,
 } from 'react-icons/hi2';
 import { useAuthStore } from '../store/useAuthStore';
 import logoImg from '../assets/logo.png';
@@ -74,14 +75,9 @@ const Sidebar: React.FC = () => {
     {
       title: 'MENU UTAMA',
       items: [
-        { name: 'Koreksi Manual', icon: <HiOutlinePencilSquare />, path: '/asisten/koreksi' },
+        { name: 'Koreksi', icon: <HiOutlinePencilSquare />, path: '/asisten/koreksi' },
         { name: 'Koreksi Upload', icon: <HiOutlineClipboardDocumentList />, path: '/asisten/upload' },
-      ]
-    },
-    {
-      title: 'AI MODULE',
-      items: [
-        { name: 'Auto Correction', icon: <HiOutlineSparkles />, path: '/asisten/auto-correction' },
+        { name: 'Skema Penilaian', icon: <HiOutlineArrowPath />, path: '/asisten/auto-correction' },
       ]
     }
   ];
