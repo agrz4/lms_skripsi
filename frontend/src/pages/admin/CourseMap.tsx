@@ -512,7 +512,7 @@ const CourseMap: React.FC = () => {
             handleCourseSelect(course.id);
           }
         }}
-        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[260px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
+        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[215px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
           isSelected ? 'ring-4 ring-indigo-500/25 scale-[1.02] border-indigo-500' : ''
         } ${!course.exists ? 'opacity-70 hover:opacity-100 border-dashed' : ''}`}
       >
@@ -612,36 +612,20 @@ const CourseMap: React.FC = () => {
                     {cat.kategoriName}
                   </h3>
 
-                  {/* Vertical Flow Container */}
-                  <div className="flex flex-col items-center py-4 gap-4">
-                    {cat.flowColumns.map((column, colIdx) => (
+                  {/* Wrapping Horizontal Flow Container (No Scroll) */}
+                  <div className="flex flex-row flex-wrap py-6 gap-y-8 gap-x-6 w-full justify-center items-center">
+                    {cat.flowColumns.map((column) => (
                       <React.Fragment key={column.depth}>
-                        {/* Row/stack containing courses at this depth */}
-                        <div className="flex flex-wrap gap-4 justify-center py-2">
+                        {/* Column containing courses at this depth (vertical stack if multiple) */}
+                        <div className="flex flex-col gap-4 justify-center items-center min-w-[215px]">
                           {column.courses.map((course, idx) => renderCourseCard(course, idx))}
                         </div>
-
-                        {/* Connection Arrow between columns (now vertical) */}
-                        {colIdx < cat.flowColumns.length - 1 && (
-                          <div className="flex items-center justify-center text-gray-400 font-black py-1 select-none">
-                            <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
-                            </svg>
-                          </div>
-                        )}
                       </React.Fragment>
                     ))}
 
-                    {/* Add Node inline connector for this category (now vertical) */}
-                    <div className="flex items-center justify-center text-gray-300 font-black py-1 select-none">
-                      <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
-                      </svg>
-                    </div>
-
                     <div
                       onClick={() => handleAddNodeClick('Beginner')}
-                      className="w-[260px] h-[80px] rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-[#5850ec]/5 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group"
+                      className="w-[215px] h-[80px] rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-[#5850ec]/5 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group shrink-0"
                     >
                       <span className="text-lg text-gray-400 group-hover:text-indigo-600 font-black">+</span>
                       <span className="text-[9px] font-black text-gray-400 group-hover:text-indigo-600 uppercase tracking-wider">Tambah Node</span>

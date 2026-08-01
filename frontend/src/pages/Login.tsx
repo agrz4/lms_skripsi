@@ -29,10 +29,10 @@ const roleConfigs: Record<Role, RoleConfig> = {
     badge: 'ADMIN',
     gradientClass: 'bg-gradient-to-br from-violet-600 to-indigo-900',
     focusRingClass: 'focus:ring-violet-500',
-    welcomePart1: 'Welcome',
-    welcomePart2: 'back, To',
+    welcomePart1: 'Selamat datang kembali,',
+    welcomePart2: '',
     welcomeRole: 'Admin!',
-    subtitle: 'Masuk untuk melanjutkan perjalananmu Membuat Kursus Baru.',
+    subtitle: 'Masuk untuk melanjutkan perjalananmu membuat kursus baru.',
     heading: 'Kelola Kursus dengan Mudah dan Efisien di HybridLMS!',
     description: 'Tambah pengajar, atur jadwal, upload materi, dan pantau kemajuan peserta dari satu dasbor terpadu.',
     emailPlaceholder: 'admin@lms.com',
@@ -45,14 +45,14 @@ const roleConfigs: Record<Role, RoleConfig> = {
     badge: 'Pengajar',
     gradientClass: 'bg-gradient-to-br from-[#EA580C] to-[#C2410C]',
     focusRingClass: 'focus:ring-orange-500',
-    welcomePart1: 'Welcome',
-    welcomePart2: 'back, To',
+    welcomePart1: 'Selamat datang kembali,',
+    welcomePart2: '',
     welcomeRole: 'Pengajar!',
-    subtitle: 'Masuk untuk melanjutkan perjalananmu Sebagai Pengajar',
+    subtitle: 'Masuk untuk melanjutkan perjalananmu sebagai pengajar.',
     heading: 'Ajar Lebih Cerdas, Dampak Lebih Luas bersama HybridLMS!',
     description: 'Kelola jadwal mengajar, upload materi kursus, pantau perkembangan peserta, dan review soal AI dalam satu platform.',
     emailPlaceholder: 'dosen@lms.com',
-    emailLabel: 'Email Admin',
+    emailLabel: 'Email',
     demoRoleTab: 'DOSEN',
     patternType: 'circles',
   },
@@ -61,14 +61,14 @@ const roleConfigs: Record<Role, RoleConfig> = {
     badge: 'Asisten',
     gradientClass: 'bg-gradient-to-br from-[#10B981] to-[#047857]',
     focusRingClass: 'focus:ring-emerald-500',
-    welcomePart1: 'Welcome',
-    welcomePart2: 'back, To',
+    welcomePart1: 'Selamat datang kembali,',
+    welcomePart2: '',
     welcomeRole: 'Asisten!',
-    subtitle: 'Masuk untuk melanjutkan perjalananmu Mengoreksi murid dan membantu pengajar',
-    heading: 'Bantu Peserta Belajar, Pantau Progress Setiap Pertemuan!',
+    subtitle: 'Masuk untuk melanjutkan perjalananmu mengoreksi tugas peserta dan membantu pengajar.',
+    heading: 'Bantu Peserta Belajar, Pantau Progres Setiap Pertemuan!',
     description: 'Dampingi peserta, catat kehadiran, bantu pengajar dalam operasional kursus, dan pantau laporan belajar harian.',
     emailPlaceholder: 'asisten@lms.com',
-    emailLabel: 'Email Admin',
+    emailLabel: 'Email',
     demoRoleTab: 'ASISTEN',
     patternType: 'circles',
   },
@@ -275,7 +275,7 @@ const Login: React.FC = () => {
         {/* Bottom: Small Decorative Dots & License */}
         <div className="flex justify-between items-center z-10 text-xs text-white/50">
           <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
-          <span>© 2026 HybridLMS. All rights reserved.</span>
+          <span>© 2026 HybridLMS. Hak Cipta Dilindungi.</span>
           <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
         </div>
       </div>
@@ -437,17 +437,19 @@ const Login: React.FC = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Sign in dengan Google
+              Masuk dengan Google
             </button>
           </form>
 
           {/* Footer Text */}
-          <div className="mt-8 text-center text-sm">
-            <span className="text-slate-400">Belum punya akun? </span>
-            <Link to="/register" className="font-semibold underline transition-colors" style={{ color: getRoleColor(activeRole) }}>
-              Daftar sebagai Peserta
-            </Link>
-          </div>
+          {activeRole === 'user' && (
+            <div className="mt-8 text-center text-sm">
+              <span className="text-slate-400">Belum punya akun? </span>
+              <Link to="/register" className="font-semibold underline transition-colors" style={{ color: getRoleColor(activeRole) }}>
+                Daftar sebagai Peserta
+              </Link>
+            </div>
+          )}
 
           {/* Quick Login / Demo Accounts Panel */}
           <div className="mt-10 border border-slate-100 bg-slate-50/50 backdrop-blur-sm rounded-2xl p-5 w-full">

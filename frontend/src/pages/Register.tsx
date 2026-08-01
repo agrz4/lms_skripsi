@@ -110,9 +110,9 @@ const Register: React.FC = () => {
             />
           </div>
 
-          {/* Change Password Group */}
+          {/* Password Group */}
           <div className="space-y-2 pt-2">
-            <label className="text-sm font-extrabold text-slate-900 ml-1 block">Change Password</label>
+            <label className="text-sm font-extrabold text-slate-900 ml-1 block">Password</label>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1 relative">

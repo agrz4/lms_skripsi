@@ -694,7 +694,7 @@ const KursusTersedia: React.FC = () => {
             navigate(`/user/enrolment-options?id=${course.id}`);
           }
         }}
-        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[260px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
+        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[215px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
           isRegistered ? 'ring-4 ring-emerald-500/25 border-emerald-500' : ''
         } ${isLocked ? 'opacity-85 cursor-not-allowed' : ''}`}
       >
@@ -848,23 +848,14 @@ const KursusTersedia: React.FC = () => {
                 {cat.kategoriName}
               </h3>
 
-              {/* Vertical Flow Container */}
-              <div className="flex flex-col items-center py-4 gap-4">
-                {cat.flowColumns.map((column, colIdx) => (
+              {/* Wrapping Horizontal Flow Container (No Scroll) */}
+              <div className="flex flex-row flex-wrap py-6 gap-y-8 gap-x-6 w-full justify-center items-center">
+                {cat.flowColumns.map((column) => (
                   <React.Fragment key={column.depth}>
-                    {/* Row/stack containing courses at this depth */}
-                    <div className="flex flex-wrap gap-4 justify-center py-2">
+                    {/* Column containing courses at this depth (vertical stack if multiple) */}
+                    <div className="flex flex-col gap-4 justify-center items-center min-w-[215px]">
                       {column.courses.map((course) => renderUserCourseCard(course))}
                     </div>
-
-                    {/* Connection Arrow between columns (vertical) */}
-                    {colIdx < cat.flowColumns.length - 1 && (
-                      <div className="flex items-center justify-center text-gray-400 font-black py-1 select-none">
-                        <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
-                        </svg>
-                      </div>
-                    )}
                   </React.Fragment>
                 ))}
               </div>
