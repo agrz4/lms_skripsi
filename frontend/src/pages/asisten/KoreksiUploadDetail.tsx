@@ -252,7 +252,7 @@ const KoreksiUploadDetail: React.FC = () => {
     const parts = [];
     if (screenshotSub) parts.push("Screenshot");
     if (fileSub) parts.push("File Program");
-    if (refleksiSub) parts.push("Refleksi");
+    if (refleksiSub) parts.push("Latihan");
     return parts.join(" + ") || "Tugas Mandiri";
   };
 
@@ -388,12 +388,12 @@ const KoreksiUploadDetail: React.FC = () => {
                 </div>
               )}
 
-              {/* Jawaban Refleksi Content */}
+              {/* Jawaban Latihan Content */}
               {!isMockAni && refleksiSub && (
                 <div className="p-6 bg-emerald-50/50 border border-emerald-100 rounded-2xl text-left">
                   <div className="flex items-center gap-2 mb-2">
                      <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
-                     <h4 className="text-xs font-black text-emerald-950 uppercase tracking-wider">Jawaban Refleksi Mahasiswa</h4>
+                     <h4 className="text-xs font-black text-emerald-950 uppercase tracking-wider">Jawaban Latihan Mahasiswa</h4>
                   </div>
                   <p className="text-xs font-semibold text-gray-700 leading-relaxed bg-white/60 p-4 rounded-xl border border-emerald-100/30">
                     "{refleksiSub.content}"

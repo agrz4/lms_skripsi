@@ -662,14 +662,14 @@ const AddMateriAdmin: React.FC = () => {
             <Card className="rounded-2xl border border-slate-250/60 shadow-sm bg-white p-8 space-y-6">
               
               <div className="pb-4 border-b border-slate-150">
-                <h2 className="text-base font-black text-gray-950">Latihan & Refleksi</h2>
+                <h2 className="text-base font-black text-gray-950">Latihan & Tes Formatif</h2>
               </div>
 
               {/* Latihan PG (Green Dot) */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Latihan PG (Opsional)</h3>
+                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Tes Formatif</h3>
                 </div>
 
                 {/* PG List */}
@@ -678,7 +678,7 @@ const AddMateriAdmin: React.FC = () => {
                     {questionsList.map((q, qidx) => (
                       <div key={qidx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-150 rounded-xl group hover:border-slate-200 transition-colors">
                         <span className="text-xs font-bold text-gray-700 truncate pr-2">
-                          Soal PG {qidx + 1} — {q}
+                          Soal Tes Formatif {qidx + 1} — {q}
                         </span>
                         <button 
                           type="button"
@@ -705,7 +705,7 @@ const AddMateriAdmin: React.FC = () => {
                         }
                       }}
                       className="bg-slate-50 border-slate-200 rounded-xl py-5 pl-4 pr-12 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                      placeholder="Masukkan Soal PG..."
+                      placeholder="Masukkan Soal Tes Formatif..."
                     />
                     <div className="absolute right-4 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
                       <HiOutlineCheck className="text-xs stroke-[3px]" />
@@ -719,7 +719,7 @@ const AddMateriAdmin: React.FC = () => {
                   onClick={handleAddQuestion}
                   className="w-full bg-[#047857] hover:bg-[#065F46] text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md"
                 >
-                  + Soal PG
+                  + Soal Tes Formatif
                 </Button>
               </div>
 
@@ -745,23 +745,23 @@ const AddMateriAdmin: React.FC = () => {
               <div className="space-y-4 pt-6 border-t border-slate-150">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Refleksi Materi</h3>
+                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Latihan</h3>
                 </div>
 
                 {/* AI Review Alert Box */}
                 <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl">
                   <p className="text-[10px] text-rose-700 font-bold leading-relaxed">
-                    Refleksi di-input oleh peserta secara manual. AI akan memberi saran skor sebagai referensi untuk Asisten.
+                    Latihan di-input oleh peserta secara manual. AI akan memberi saran skor sebagai referensi untuk Asisten.
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 block">Pertanyaan Refleksi</label>
+                  <label className="text-xs font-bold text-gray-700 block">Pertanyaan Latihan</label>
                   <textarea 
                     value={refleksi}
                     onChange={(e) => setRefleksi(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                    placeholder="Tuliskan pertanyaan refleksi utama untuk pertemuan ini..."
+                    placeholder="Tuliskan pertanyaan latihan utama untuk pertemuan ini..."
                   />
                 </div>
               </div>

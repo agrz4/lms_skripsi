@@ -30,7 +30,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import api from '../../lib/api';
 
-// High-quality mock questions for Latihan PG if none exist on the backend
+// High-quality mock questions for Latihan Test Formatif if none exist on the backend
 const MOCK_CSS_SOAL = [
   {
     id: 'mock-1',
@@ -193,7 +193,7 @@ const MateriSesi: React.FC = () => {
   const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
   const pdfTotalPages = 18;
 
-  // Latihan PG State
+  // Latihan Test Formatif State
   const [pgSoalList, setPgSoalList] = useState<any[]>([]);
   const [activePgIdx, setActivePgIdx] = useState(0);
   const [pgAnswers, setPgAnswers] = useState<{ [key: string]: string }>({});
@@ -633,7 +633,7 @@ const MateriSesi: React.FC = () => {
               : 'bg-white text-gray-750 border-gray-250 hover:bg-gray-50'
           }`}
         >
-          <HiOutlinePencilSquare className="text-base" /> Latihan PG
+          <HiOutlinePencilSquare className="text-base" /> Test Formatif
         </Button>
 
         <Button 
@@ -644,7 +644,7 @@ const MateriSesi: React.FC = () => {
               : 'bg-white text-gray-750 border-gray-250 hover:bg-gray-50'
           }`}
         >
-          Upload Tugas
+          In-Text Activity
         </Button>
 
         <Button 
@@ -655,7 +655,7 @@ const MateriSesi: React.FC = () => {
               : 'bg-white text-gray-750 border-gray-250 hover:bg-gray-50'
           }`}
         >
-          Refleksi
+          Latihan
         </Button>
       </div>
 
@@ -918,7 +918,7 @@ const MateriSesi: React.FC = () => {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h2 className="text-xl font-black text-gray-900 leading-none">
-                      Latihan Pilihan Ganda ({pgSoalList.length > 0 ? pgSoalList.length : MOCK_CSS_SOAL.length} Soal)
+                      Latihan Test Formatif ({pgSoalList.length > 0 ? pgSoalList.length : MOCK_CSS_SOAL.length} Soal)
                     </h2>
                     <p className="text-[10px] font-bold text-gray-400 uppercase mt-2">Pilih salah satu jawaban yang menurut Anda paling tepat</p>
                   </div>
@@ -1047,7 +1047,7 @@ const MateriSesi: React.FC = () => {
                 <Card className="rounded-[2.5rem] border border-gray-200 shadow-sm bg-white p-10">
                    <div className="flex justify-between items-center mb-8">
                       <div>
-                         <h2 className="text-xl font-black text-gray-900 text-left">Upload Latihan P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
+                         <h2 className="text-xl font-black text-gray-900 text-left">Upload In-Text Activity P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
                          <p className="text-xs font-bold text-gray-400 mt-1 text-left">Silakan unggah screenshot/PDF hasil pengerjaan coding dan folder zip project atau file PDF tugas Anda.</p>
                       </div>
                       <Button 
@@ -1154,7 +1154,7 @@ const MateriSesi: React.FC = () => {
                 /* Moodle-style Submission Status Table */
                 <Card className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white p-8">
                   <div className="mb-6">
-                    <h2 className="text-xl font-black text-gray-950 text-left">Latihan P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
+                    <h2 className="text-xl font-black text-gray-950 text-left">In-Text Activity P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
                     <p className="text-xs text-gray-400 font-bold mt-1 text-left">Buat layout CSS sederhana dan upload screenshot hasilnya + file zip project / PDF</p>
                   </div>
 
@@ -1264,7 +1264,7 @@ const MateriSesi: React.FC = () => {
             <Card className="rounded-[2.5rem] border border-gray-200 shadow-sm bg-white p-10 space-y-8">
               <div className="flex justify-between items-center border-b border-gray-150 pb-4">
                 <div>
-                   <h2 className="text-xl font-black text-gray-900 text-left">Refleksi Pembelajaran</h2>
+                   <h2 className="text-xl font-black text-gray-900 text-left">Latihan (Refleksi)</h2>
                    <p className="text-xs font-bold text-gray-400 mt-1 text-left">
                      Jelaskan pemahaman Anda mengenai materi pelajaran pertemuan ini dan evaluasikan diri Anda.
                    </p>
@@ -1343,111 +1343,7 @@ const MateriSesi: React.FC = () => {
             </Card>
           )}
 
-          {/* Latihan Praktik Section: Only visible in non-full-width tabs (Zoom, Materi, PDF, Latihan) */}
-          {!isFullWidthTab && (
-            <Card className="rounded-[2.5rem] border border-gray-200 shadow-sm bg-white p-10 mt-8">
-               <div className="flex justify-between items-center mb-8">
-                  <div>
-                     <h2 className="text-xl font-black text-gray-900 text-left">Latihan Praktik</h2>
-                     <p className="text-xs font-bold text-gray-400 mt-1 text-left">Upload screenshot/PDF hasil kerja serta file zip project atau PDF tugas untuk verifikasi asisten</p>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-600 border-none font-black text-[9px] px-4 py-1.5 uppercase tracking-widest rounded-full">
-                     Praktik Modul
-                  </Badge>
-               </div>
-               <div className="space-y-4">
-                  {/* Input Files (Hidden) */}
-                  <input 
-                    type="file" 
-                    id="screenshot-input-main" 
-                    accept="image/*,.pdf,application/pdf" 
-                    className="hidden" 
-                    onChange={handleScreenshotUpload} 
-                  />
-                  <input 
-                    type="file" 
-                    id="program-input-main" 
-                    accept=".zip,.rar,.tar.gz,.pdf,application/pdf" 
-                    className="hidden" 
-                    onChange={handleProgramUpload} 
-                  />
 
-                  {/* Box Screenshot */}
-                  <div 
-                    onClick={() => !isUploadingScreenshot && document.getElementById('screenshot-input-main')?.click()}
-                    className={`w-full p-6 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${
-                      screenshotUrl ? 'border-emerald-300 bg-emerald-50/20' : 
-                      isUploadingScreenshot ? 'border-blue-300 bg-blue-50/10 animate-pulse' : 'border-gray-200 bg-gray-50/50 hover:border-blue-300'
-                    }`}
-                  >
-                     {isUploadingScreenshot ? (
-                       <div className="w-full space-y-2 text-center">
-                         <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                           <span>Mengupload screenshot atau PDF...</span>
-                           <span>{screenshotProgress}%</span>
-                         </div>
-                         <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                           <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${screenshotProgress}%` }}></div>
-                         </div>
-                       </div>
-                     ) : screenshotUrl ? (
-                       <div className="flex items-center gap-3 w-full justify-between">
-                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">✓</div>
-                           <div className="text-left">
-                             <p className="text-xs font-black text-emerald-950">Screenshot / PDF Terupload</p>
-                             <p className="text-[9px] text-gray-400 font-bold truncate max-w-xs">{screenshotFileName}</p>
-                           </div>
-                         </div>
-                         <Badge className="bg-emerald-150 text-emerald-700 border-none font-bold text-[9px] px-3 py-1 rounded-full cursor-pointer hover:bg-emerald-200">Ganti File</Badge>
-                       </div>
-                     ) : (
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-500 text-lg shadow-sm">📸</div>
-                          <span className="text-xs font-black text-gray-500">Upload Screenshot / PDF (.png/.jpg/.pdf)</span>
-                       </div>
-                     )}
-                  </div>
-
-                  {/* Box ZIP Program File */}
-                  <div 
-                    onClick={() => !isUploadingProgram && document.getElementById('program-input-main')?.click()}
-                    className={`w-full p-6 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${
-                      programUrl ? 'border-emerald-300 bg-emerald-50/20' : 
-                      isUploadingProgram ? 'border-blue-300 bg-blue-50/10 animate-pulse' : 'border-gray-200 bg-gray-50/50 hover:border-blue-300'
-                    }`}
-                  >
-                     {isUploadingProgram ? (
-                       <div className="w-full space-y-2 text-center">
-                         <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                           <span>Mengupload file program atau PDF...</span>
-                           <span>{programProgress}%</span>
-                         </div>
-                         <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                           <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${programProgress}%` }}></div>
-                         </div>
-                       </div>
-                     ) : programUrl ? (
-                       <div className="flex items-center gap-3 w-full justify-between">
-                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm shadow-sm">✓</div>
-                           <div className="text-left">
-                             <p className="text-xs font-black text-emerald-950">File Program / PDF Terupload</p>
-                             <p className="text-[9px] text-gray-400 font-bold truncate max-w-xs">{programFileName}</p>
-                           </div>
-                         </div>
-                         <Badge className="bg-emerald-150 text-emerald-700 border-none font-bold text-[9px] px-3 py-1 rounded-full cursor-pointer hover:bg-emerald-200">Ganti File</Badge>
-                       </div>
-                     ) : (
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500 text-lg shadow-sm">🗜️</div>
-                          <span className="text-xs font-black text-gray-500">Upload File Program / PDF (.zip, .pdf)</span>
-                       </div>
-                     )}
-                  </div>
-               </div>
-            </Card>
-          )}
         </div>
 
         {/* Right Column Sidebar: Only visible in non-full-width tabs */}
@@ -1487,7 +1383,7 @@ const MateriSesi: React.FC = () => {
 
                   {/* Status item 4: Latihan PG */}
                   <div className="p-5 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">Latihan PG</span>
+                     <span className="text-xs font-bold text-gray-500">Latihan Test Formatif</span>
                      {pgSubmitted ? (
                        <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
                           ✓ {pgScore ? `${Math.round(pgScore/10)}/10` : '9/10'}
@@ -1501,7 +1397,7 @@ const MateriSesi: React.FC = () => {
 
                   {/* Status item 5: Upload Tugas */}
                   <div className="p-5 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">Upload Tugas</span>
+                     <span className="text-xs font-bold text-gray-500">Upload In-Text Activity</span>
                      {hasUploadedFiles ? (
                        <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
                           ✓ Submitted
@@ -1515,7 +1411,7 @@ const MateriSesi: React.FC = () => {
 
                   {/* Status item 6: Refleksi */}
                   <div className="p-5 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">Refleksi</span>
+                     <span className="text-xs font-bold text-gray-500">Latihan</span>
                      {aiScoreRef !== null ? (
                        <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
                           ✓ Nilai: {aiScoreRef}
@@ -1529,24 +1425,8 @@ const MateriSesi: React.FC = () => {
                </div>
             </Card>
 
-            {/* Mint green Pertemuan Selesai card */}
-            {isCompleted ? (
-              <div className="bg-[#D1EAE0] border border-[#A6D4C0] p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 text-center shadow-sm">
-                 <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-600 relative">
-                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                   </svg>
-                   <span className="absolute -top-1.5 -right-1.5 bg-orange-400 text-white rounded-full p-1 text-[10px] leading-none shadow-md font-bold">✓</span>
-                 </div>
-                 <div>
-                    <h4 className="text-base font-black text-emerald-950">Pertemuan {pertemuanDetail?.urutan || session?.urutan || '1'} Selesai</h4>
-                    <p className="text-xs font-bold text-emerald-800/80 mt-1">
-                       Semua tugas sudah dikumpulkan
-                    </p>
-                 </div>
-              </div>
-            ) : (
-              /* Refleksi Card - fallback to draft input if meeting not complete */
+            {/* Refleksi Card - fallback to draft input if meeting not complete */}
+            {!isCompleted && (
               <Card className="rounded-[2rem] border-2 border-emerald-100 shadow-xl shadow-emerald-50 bg-[#E9F7F2] p-8 text-left">
                  <div className="flex items-center gap-2 mb-4 justify-between">
                     <div className="flex items-center gap-2">
@@ -1593,17 +1473,6 @@ const MateriSesi: React.FC = () => {
                  </Button>
               </Card>
             )}
-
-            {/* AI Learning Buddy hint section */}
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-[2.5rem] border border-white shadow-xl shadow-indigo-100/50 text-left">
-               <div className="flex items-center gap-2 mb-4">
-                  <HiOutlineSparkles className="text-indigo-600" />
-                  <h3 className="text-xs font-black text-indigo-900 uppercase">AI Learning Buddy</h3>
-               </div>
-               <p className="text-[10px] text-indigo-800/60 font-bold leading-relaxed">
-                  Tulis refleksi dengan mendalam! Engine AI Gemini akan menilai kualitas penjelasan esaimu secara instan untuk membantu Asisten memberi nilai terbaik.
-               </p>
-            </div>
           </div>
         )}
       </div>

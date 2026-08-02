@@ -134,8 +134,8 @@ const ManajemenMateri: React.FC = () => {
                   <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">TANGGAL</th>
                   <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">JENIS</th>
                   <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">VIDEO</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">REFLEKSI</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">LATIHAN PG</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">LATIHAN</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">TES FORMATIF</th>
                   <th className="py-4 px-4 text-[10px] font-black text-gray-900 uppercase tracking-wider">STATUS</th>
                   <th className="py-4 px-6 text-[10px] font-black text-gray-900 uppercase tracking-wider text-center">AKSI</th>
                 </tr>

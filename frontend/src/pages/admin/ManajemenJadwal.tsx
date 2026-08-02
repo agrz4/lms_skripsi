@@ -34,6 +34,7 @@ const ManajemenJadwal: React.FC = () => {
 
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [editingSession, setEditingSession] = useState<Pertemuan | null>(null);
   const [formData, setFormData] = useState({
     topik: '',
@@ -103,8 +104,9 @@ const ManajemenJadwal: React.FC = () => {
     });
   };
 
-  const handleEditClick = (session: Pertemuan) => {
+  const handleEditClick = (session: Pertemuan, editMode: boolean = true) => {
     setEditingSession(session);
+    setIsEditMode(editMode);
 
     let initialHari = 'Senin';
     if (session.tgl) {
@@ -144,7 +146,7 @@ const ManajemenJadwal: React.FC = () => {
     // Open modal for the first unconfigured session
     const nextSession = jadwalList.find(s => !s.tgl || !s.jam) || jadwalList[0];
     if (nextSession) {
-      handleEditClick(nextSession);
+      handleEditClick(nextSession, false);
     }
   };
 
@@ -223,7 +225,7 @@ const ManajemenJadwal: React.FC = () => {
     ? ''
     : (pengajarList.find(p => p.id === formData.asistenId)?.nama || editingSession?.asisten?.nama || formData.asistenId);
 
-  const isEditMode = !!(editingSession?.tgl || editingSession?.jam);
+
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
@@ -338,7 +340,7 @@ const ManajemenJadwal: React.FC = () => {
                           <td className="py-4 px-8">
                             {s.tgl && s.jam ? (
                               <button
-                                onClick={() => handleEditClick(s)}
+                                onClick={() => handleEditClick(s, true)}
                                 className="text-[#5D5FEF] hover:text-[#4D4FCF] text-lg cursor-pointer transition-all hover:scale-110 bg-transparent border-none p-0 flex items-center"
                                 title="Edit Jadwal"
                               >
@@ -346,7 +348,7 @@ const ManajemenJadwal: React.FC = () => {
                               </button>
                             ) : (
                               <button 
-                                onClick={() => handleEditClick(s)}
+                                onClick={() => handleEditClick(s, false)}
                                 className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold px-3 py-1.5 rounded-xl text-[10px] cursor-pointer transition-all border border-emerald-100 flex items-center gap-1"
                               >
                                 <HiOutlinePlus className="text-[10px]" /> Add Jadwal

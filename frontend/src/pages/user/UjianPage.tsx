@@ -26,13 +26,26 @@ interface SoalItem {
   };
 }
 
+const getCourseImageUrl = (kode: string) => {
+  const k = (kode || '').toLowerCase();
+  if (k.includes('wd-01') || k.includes('html') || k.includes('css')) {
+    return 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=500&auto=format&fit=crop&q=60';
+  }
+  if (k.includes('wd-02') || k.includes('javascript') || k.includes('js')) {
+    return 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=500&auto=format&fit=crop&q=60';
+  }
+  if (k.includes('wd-03') || k.includes('react')) {
+    return 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=500&auto=format&fit=crop&q=60';
+  }
+  return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&auto=format&fit=crop&q=60';
+};
+
 const UjianPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get('courseId') || '';
 
   const { pendaftaranList, fetchMyPendaftaran } = usePendaftaranStore();
-  const [hasCheckedEnrollments, setHasCheckedEnrollments] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
@@ -47,33 +60,27 @@ const UjianPage: React.FC = () => {
   // Timer state
   const [timeLeft, setTimeLeft] = useState(5400); // 90 minutes in seconds
   const [submitting, setSubmitting] = useState(false);
+  const [examStarted, setExamStarted] = useState(false);
+
+  const currentPendaftaran = pendaftaranList.find(p => p.mataKuliahId === courseId);
+  const courseName = currentPendaftaran?.mataKuliah?.nama || 'Mata Kuliah';
 
   useEffect(() => {
-    if (courseId) {
-      fetchUjianData();
-    } else {
-      const checkEnrollments = async () => {
-        setLoading(true);
-        await fetchMyPendaftaran();
-        setHasCheckedEnrollments(true);
+    const initData = async () => {
+      setLoading(true);
+      await fetchMyPendaftaran();
+      if (courseId) {
+        await fetchUjianData();
+      } else {
         setLoading(false);
-      };
-      checkEnrollments();
-    }
-  }, [courseId]);
-
-  // Redirect if exactly one enrollment is found
-  useEffect(() => {
-    if (!courseId && hasCheckedEnrollments && !loading) {
-      if (pendaftaranList.length === 1) {
-        navigate(`/user/ujian?courseId=${pendaftaranList[0].mataKuliahId}`, { replace: true });
       }
-    }
-  }, [courseId, hasCheckedEnrollments, pendaftaranList, loading, navigate]);
+    };
+    initData();
+  }, [courseId]);
 
   // Timer Countdown Effect
   useEffect(() => {
-    if (loading || locked || timeLeft <= 0) return;
+    if (loading || locked || !examStarted || timeLeft <= 0) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -86,7 +93,7 @@ const UjianPage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [loading, locked, timeLeft]);
+  }, [loading, locked, examStarted, timeLeft]);
 
   const fetchUjianData = async () => {
     setLoading(true);
@@ -232,41 +239,60 @@ const UjianPage: React.FC = () => {
     }
 
     return (
-      <div className="p-8 bg-slate-50 min-h-screen pb-20">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900">Ujian AI - Pilih Kelas</h1>
-            <p className="text-xs text-gray-400 font-bold uppercase mt-1 tracking-wider">Silakan pilih kelas yang ingin Anda ikuti ujian akhirnya</p>
+      <div className="p-8 bg-[#dcdcdc] min-h-screen pb-20">
+        <div className="max-w-[1400px] mx-auto space-y-8">
+          <div className="text-left">
+            <h1 className="text-3xl font-black text-slate-800">Ujian - Pilih Kelas</h1>
+            <p className="text-sm font-bold text-slate-500 mt-1">Silahkan Pilih Kelas Yang Ingin Anda Ikuti Ujian Akhir</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {pendaftaranList.map((p) => {
               const mk = p.mataKuliah;
               if (!mk) return null;
+              
+              const imageUrl = getCourseImageUrl(mk.kode);
               return (
                 <Card 
                   key={p.id}
-                  className="rounded-[2rem] border-none shadow-sm bg-white p-8 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+                  className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300 group cursor-pointer"
                   onClick={() => navigate(`/user/ujian?courseId=${p.mataKuliahId}`)}
                 >
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <Badge className="bg-indigo-55 text-indigo-600 border-none font-bold text-[9px] px-3 py-1 uppercase tracking-widest">
+                  <div className="relative w-full h-48 overflow-hidden select-none">
+                    <img 
+                      src={imageUrl} 
+                      alt={mk.nama} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
+                    />
+                    {/* Badge Overlay */}
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100/90 backdrop-blur-sm text-blue-800 font-extrabold text-[9px] rounded-full uppercase tracking-wider">
+                        • {mk.kategori || 'Programming'}
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 bg-black/60 backdrop-blur-sm text-white font-extrabold text-[9px] rounded-md tracking-wider">
                         {mk.kode}
-                      </Badge>
-                      <HiOutlineSparkles className="text-indigo-400 text-xl opacity-60 group-hover:scale-110 transition-all" />
+                      </span>
                     </div>
-                    <h3 className="text-xl font-black text-gray-900 group-hover:text-indigo-600 transition-all">
-                      {mk.nama}
-                    </h3>
-                    <p className="text-xs text-gray-400 line-clamp-2">
-                      {mk.deskripsi || 'Mata kuliah pembelajaran sistem LMS Hybrid.'}
-                    </p>
                   </div>
-                  <div className="pt-6 mt-6 border-t border-gray-50 flex justify-end">
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-[10px] px-6 py-4 uppercase tracking-widest shadow-md">
-                      Ambil Ujian
-                    </Button>
+
+                  <div className="p-6 flex-1 flex flex-col justify-between">
+                    <div className="text-left">
+                      <h3 className="text-lg font-black text-slate-800 tracking-tight leading-tight group-hover:text-blue-600 transition-all">
+                        {mk.nama}
+                      </h3>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        {mk.kode}
+                      </p>
+                      <p className="text-xs text-slate-500 font-semibold leading-relaxed mt-3 mb-6">
+                        {mk.deskripsi || 'Mata kuliah pembelajaran sistem LMS Hybrid.'}
+                      </p>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-gray-100 flex justify-start">
+                      <Button className="bg-[#1b62b7] hover:bg-[#154c8f] text-white font-extrabold text-xs px-6 py-2.5 rounded-lg flex items-center justify-center border-none shadow-sm transition-all">
+                        Ambil Ujian
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               );
@@ -325,6 +351,64 @@ const UjianPage: React.FC = () => {
     );
   }
 
+  if (!examStarted) {
+    const formattedDate = currentPendaftaran?.createdAt 
+      ? new Date(currentPendaftaran.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '19 Mar 2025';
+
+    return (
+      <div className="p-8 bg-[#dcdcdc] min-h-screen pb-20">
+        <div className="max-w-[1400px] mx-auto space-y-6">
+          {/* Breadcrumb Back link */}
+          <button 
+            onClick={() => navigate('/user/ujian')}
+            className="flex items-center gap-2 text-xs font-black text-slate-600 hover:text-slate-900 transition-all uppercase tracking-wider text-left border-none bg-transparent p-0"
+          >
+            <HiOutlineChevronLeft className="text-base stroke-[3]" /> List Ujian Akhir — {courseName}
+          </button>
+
+          {/* Banner Card */}
+          <div className="bg-gradient-to-r from-blue-500 via-blue-450 to-[#8eb3df] text-white rounded-2xl p-6 flex justify-between items-center shadow-sm">
+             <span className="text-sm font-black tracking-wide">
+                Web Dev Bootcamp · Micro Learning · {formattedDate}
+             </span>
+             <Badge className="bg-amber-100 text-amber-800 border-none px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-wider select-none">
+                Sedang Berjalan
+             </Badge>
+          </div>
+
+          {/* Start Exam Card */}
+          <Card className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white p-10 text-left space-y-6">
+             <div>
+                <h2 className="text-2xl font-black text-slate-800">
+                   Ujian Akhir — {courseName}
+                </h2>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-wider">
+                   {soalList.length} soal
+                </p>
+             </div>
+
+             {/* Info alert box */}
+             <div className="bg-[#ebf8ff] border border-[#bee3f8] p-5 rounded-xl flex items-center gap-3 text-slate-700 text-xs font-semibold">
+                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full shrink-0"></span>
+                <span>
+                   Kamu Telah Menyelesaikan Semua Materi Silahkan Mulai Ujian Akhir Sebagai Syarat Mendapatkan Sertifikat.
+                </span>
+             </div>
+
+             {/* Action Button */}
+             <Button 
+                onClick={() => setExamStarted(true)}
+                className="w-full bg-[#10b981] hover:bg-[#059669] text-white font-black py-7 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-none"
+             >
+                Mulai Ujian Akhir →
+             </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   const currentQuestion = soalList[currentIdx];
   const isAnswered = (id: string) => !!answers[id];
 
@@ -334,7 +418,7 @@ const UjianPage: React.FC = () => {
         {/* Top Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900">Ujian Akhir Semester</h1>
+            <h1 className="text-3xl font-extrabold text-gray-900">Ujian Akhir - {courseName}</h1>
             <p className="text-xs text-gray-400 font-bold uppercase mt-1 tracking-wider">LMS Hybrid HybridAI System</p>
           </div>
 

@@ -1405,10 +1405,8 @@ const KursusTersedia: React.FC = () => {
       ) : activeFilter === 'Referall' ? (
         renderReferralSection()
       ) : (
-        <div className="flex flex-col gap-2">
-          {renderLevelSection('LEVEL 1 — BEGINNER', beginnerCourses, 'text-emerald-600')}
-          {renderLevelSection('LEVEL 2 — INTERMEDIATE', intermediateCourses, 'text-amber-600')}
-          {renderLevelSection('LEVEL 3 — ADVANCED', advancedCourses, 'text-[#5850ec]')}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {filteredCourses.map(course => renderCourseCard(course))}
         </div>
       )}
       

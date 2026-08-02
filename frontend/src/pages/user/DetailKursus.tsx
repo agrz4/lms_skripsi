@@ -201,7 +201,7 @@ const DetailKursus: React.FC = () => {
             </div>
             <div className="divide-y divide-gray-50">
                <div className="p-6 flex justify-between items-center">
-                  <span className="text-xs font-bold text-gray-500">Rata Latihan PG</span>
+                  <span className="text-xs font-bold text-gray-500">Rata Latihan Test Formatif</span>
                   <span className="text-lg font-black text-gray-900">{summary && summary.avgTugas !== null ? summary.avgTugas : '—'}</span>
                </div>
                <div className="p-6 flex justify-between items-center">

@@ -110,15 +110,7 @@ const AutoCorrectionAsisten: React.FC = () => {
         </p>
       </div>
 
-      {/* Info Banner */}
-      <div className="bg-[#1A202C] p-5 rounded-2xl flex items-center gap-4 mb-10 shadow-lg">
-         <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
-            <HiOutlineCpuChip className="text-xl" />
-         </div>
-         <p className="text-[11px] font-bold text-blue-100/80 leading-relaxed">
-            🤖 AI otomatis mengoreksi Latihan PG. Untuk Refleksi Esai — AI memberikan skor referensi, asisten meng-input nilai final. Untuk Upload Screenshot/File — asisten me-review secara manual.
-         </p>
-      </div>
+
 
       {loading ? (
         <div className="p-12 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">

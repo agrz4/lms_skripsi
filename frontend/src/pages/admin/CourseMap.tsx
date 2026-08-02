@@ -21,8 +21,8 @@ const formatHarga = (hargaStr: string | undefined | null) => {
 
 // Colors mapping matching the mockup screenshot
 const getCourseCardStyles = (level: string, index: number) => {
-  const lvl = level.toLowerCase();
-  if (lvl === 'beginner') {
+  const lvl = (level || '').toLowerCase();
+  if (lvl === 'beginner' || lvl === 'dasar') {
     const beginnerThemes = [
       {
         bg: 'bg-[#adcbe3]',
@@ -40,7 +40,7 @@ const getCourseCardStyles = (level: string, index: number) => {
       }
     ];
     return beginnerThemes[index % beginnerThemes.length];
-  } else if (lvl === 'intermediate') {
+  } else if (lvl === 'intermediate' || lvl === 'lanjutan') {
     const intermediateThemes = [
       {
         bg: 'bg-[#dce3a4]',
@@ -102,7 +102,7 @@ const CourseMap: React.FC = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [newCourseName, setNewCourseName] = useState<string>('');
   const [newCourseCode, setNewCourseCode] = useState<string>('');
-  const [selectedLevel, setSelectedLevel] = useState<string>('Beginner');
+  const [selectedLevel, setSelectedLevel] = useState<string>('Dasar');
   const [harga, setHarga] = useState<string>('0');
   const [published, setPublished] = useState<boolean>(false);
   const [jumlahPertemuan, setJumlahPertemuan] = useState<number>(3);
@@ -134,7 +134,7 @@ const CourseMap: React.FC = () => {
     setSelectedCourseId(id);
     const course = mataKuliahList.find(mk => mk.id === id);
     if (course) {
-      setSelectedLevel(course.level || selectedLevel || 'Beginner');
+      setSelectedLevel(course.level || selectedLevel || 'Dasar');
       setHarga(course.warna || '0');
       setPublished(course.published);
       setJumlahPertemuan(course.jumlahPertemuan || 3);
@@ -183,7 +183,7 @@ const CourseMap: React.FC = () => {
         setSelectedCourseId('');
         setNewCourseName('');
         setNewCourseCode('');
-        setSelectedLevel('Beginner');
+        setSelectedLevel('Dasar');
         setHarga('0');
         setPublished(false);
         setJumlahPertemuan(3);
@@ -224,11 +224,11 @@ const CourseMap: React.FC = () => {
       });
 
       alert('Node peta kursus berhasil disimpan!');
-      // Reset form states
+      // Reset states
       setSelectedCourseId('');
       setNewCourseName('');
       setNewCourseCode('');
-      setSelectedLevel('Beginner');
+      setSelectedLevel('Dasar');
       setHarga('0');
       setPublished(false);
       setJumlahPertemuan(3);
@@ -295,7 +295,7 @@ const CourseMap: React.FC = () => {
     setSelectedCourseId('');
     setNewCourseName('');
     setNewCourseCode('');
-    setSelectedLevel('Beginner');
+    setSelectedLevel('Dasar');
     setHarga('0');
     setPublished(false);
     setJumlahPertemuan(3);
@@ -375,7 +375,7 @@ const CourseMap: React.FC = () => {
     return dbCourses.map(c => ({
       ...c,
       exists: true,
-      level: c.level || 'Beginner'
+      level: c.level || 'Dasar'
     }));
   }, [mataKuliahList, selectedPaket]);
 
@@ -495,7 +495,7 @@ const CourseMap: React.FC = () => {
         onClick={() => {
           if (!course.exists) {
             if (confirm(`Kursus "${course.nama}" (${course.kode}) belum dibuat di database. Apakah Anda ingin membuatnya sekarang?`)) {
-              setSelectedLevel(course.level || 'Beginner');
+              setSelectedLevel(course.level || 'Dasar');
               setSelectedCourseId('');
               setNewCourseName(course.nama);
               setNewCourseCode(course.kode);
@@ -582,7 +582,7 @@ const CourseMap: React.FC = () => {
             + Buat Paket
           </button>
           <button
-            onClick={() => handleAddNodeClick('Beginner')}
+            onClick={() => handleAddNodeClick('Dasar')}
             className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-extrabold rounded-full text-xs px-4 py-2.5 transition-all shadow-sm border-none cursor-pointer"
           >
             + Tambah Kursus
@@ -624,7 +624,7 @@ const CourseMap: React.FC = () => {
                     ))}
 
                     <div
-                      onClick={() => handleAddNodeClick('Beginner')}
+                      onClick={() => handleAddNodeClick('Dasar')}
                       className="w-[215px] h-[80px] rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-[#5850ec]/5 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group shrink-0"
                     >
                       <span className="text-lg text-gray-400 group-hover:text-indigo-600 font-black">+</span>

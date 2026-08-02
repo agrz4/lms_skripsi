@@ -94,9 +94,8 @@ const BuatKursus: React.FC = () => {
                     <SelectValue placeholder="Pilih Kategori / Level" />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="Beginner">Beginner</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
+                    <SelectItem value="Dasar">Dasar</SelectItem>
+                    <SelectItem value="Lanjutan">Lanjutan</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

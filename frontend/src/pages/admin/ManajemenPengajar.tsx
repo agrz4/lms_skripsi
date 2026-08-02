@@ -286,7 +286,7 @@ const ManajemenPengajar: React.FC = () => {
                 ) : (
                   paginatedInstructors.map((item) => {
                     const isActive = !item.nama.toLowerCase().includes('hartono') && !item.nama.toLowerCase().includes('wijaya');
-                    
+
                     return (
                       <TableRow key={item.id} className="hover:bg-gray-55 transition-colors border-b border-gray-100">
                         <TableCell className="py-4 px-6">
@@ -357,11 +357,10 @@ const ManajemenPengajar: React.FC = () => {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-7 h-7 rounded-md font-bold text-xs transition-all ${
-                    currentPage === page
+                  className={`w-7 h-7 rounded-md font-bold text-xs transition-all ${currentPage === page
                       ? "bg-[#5850ec] text-white shadow-sm"
                       : "bg-[#e5e7eb] text-gray-700 hover:bg-gray-300"
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -445,7 +444,7 @@ const ManajemenPengajar: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Keahlian Pelatihan</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Pelatihan</label>
                   <Select onValueChange={(val) => handleSelectChange('pelatihan', val)} value={formatPelatihan(formData.pelatihan)}>
                     <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/30 py-5 px-4 text-xs font-semibold text-slate-600">
                       <SelectValue placeholder="Pilih Pelatihan" />

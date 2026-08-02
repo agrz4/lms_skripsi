@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  HiOutlinePlayCircle, 
+import {
+  HiOutlinePlayCircle,
   HiOutlinePlus,
   HiOutlineTrash,
   HiOutlineArrowLeft,
@@ -38,7 +38,7 @@ const AddMateri: React.FC = () => {
   const [allMeetings, setAllMeetings] = useState<any[]>([]);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
   const [meeting, setMeeting] = useState<any>(null);
-  
+
   const [videos, setVideos] = useState<VideoItem[]>([
     { nama: '', source: 'upload', url: '' }
   ]);
@@ -64,7 +64,7 @@ const AddMateri: React.FC = () => {
     try {
       const pertemuanRes = await api.get('/pertemuan');
       const allPertemuan = pertemuanRes.data || [];
-      
+
       // Sort: first by course name, then by meeting order (urutan)
       const sortedPertemuan = [...allPertemuan].sort((a: any, b: any) => {
         const nameA = a.mataKuliah?.nama || '';
@@ -73,7 +73,7 @@ const AddMateri: React.FC = () => {
         if (cmp !== 0) return cmp;
         return a.urutan - b.urutan;
       });
-      
+
       setAllMeetings(sortedPertemuan);
 
       if (pertemuanId) {
@@ -83,7 +83,7 @@ const AddMateri: React.FC = () => {
 
         const materiRes = await api.get(`/materi?pertemuanId=${pertemuanId}`);
         const existingMateri = materiRes.data || [];
-        
+
         const loadedVideos: VideoItem[] = [];
         const loadedSubMateri: SubMateriItem[] = [];
         let loadedRefleksi = '';
@@ -91,7 +91,7 @@ const AddMateri: React.FC = () => {
         // Separate Zoom-related items
         const zoomVideosFromBackend = existingMateri.filter((m: any) => m.videoUrl && (m.videoUrl.toLowerCase().includes('zoom.us') || m.videoUrl.toLowerCase().includes('zoomlink')));
         const zoomRecordingVideos = existingMateri.filter((m: any) => m.videoUrl && m.nama && (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video')));
-        const otherVideos = existingMateri.filter((m: any) => m.videoUrl && 
+        const otherVideos = existingMateri.filter((m: any) => m.videoUrl &&
           !(m.videoUrl.toLowerCase().includes('zoom.us') || m.videoUrl.toLowerCase().includes('zoomlink')) &&
           !(m.nama && (m.nama.toLowerCase().includes('rekaman zoom') || m.nama.toLowerCase().includes('zoom video')))
         );
@@ -101,7 +101,7 @@ const AddMateri: React.FC = () => {
           const mainZoomLink = zoomVideosFromBackend[0]?.videoUrl || '';
           const mainZoomId = zoomVideosFromBackend[0]?.id;
           const firstRecording = zoomRecordingVideos[0]?.videoUrl || '';
-          
+
           loadedVideos.push({
             id: mainZoomId,
             nama: zoomVideosFromBackend[0]?.nama || 'Zoom Meeting',
@@ -242,13 +242,13 @@ const AddMateri: React.FC = () => {
           const updated = [...prev];
           if (updated[index]) {
             if (isZoomRekaman) {
-              updated[index] = { 
-                ...updated[index], 
+              updated[index] = {
+                ...updated[index],
                 rekamanUrl: res.data.fileUrl
               };
             } else {
-              updated[index] = { 
-                ...updated[index], 
+              updated[index] = {
+                ...updated[index],
                 url: res.data.fileUrl,
                 nama: updated[index].nama && !updated[index].nama.startsWith('Video') ? updated[index].nama : file.name
               };
@@ -277,8 +277,8 @@ const AddMateri: React.FC = () => {
         setSubMateri((prev) => {
           const updated = [...prev];
           if (updated[index]) {
-            updated[index] = { 
-              ...updated[index], 
+            updated[index] = {
+              ...updated[index],
               url: res.data.fileUrl,
               nama: updated[index].nama && !updated[index].nama.startsWith('Sub Materi') ? updated[index].nama : file.name
             };
@@ -431,7 +431,7 @@ const AddMateri: React.FC = () => {
         const parsed = JSON.parse(qStr);
         return `${parsed.pertanyaan} (Kunci: ${parsed.correctAnswer})`;
       }
-    } catch (e) {}
+    } catch (e) { }
     return qStr;
   };
 
@@ -490,10 +490,10 @@ const AddMateri: React.FC = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Left Column: Media & Sub-Materi */}
           <div className="lg:col-span-7 space-y-6">
-            
+
             {/* Konten Video Card */}
             <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-6 space-y-6">
               <div>
@@ -508,8 +508,8 @@ const AddMateri: React.FC = () => {
                         Video {idx + 1} — {v.nama || 'Intro CSS'}
                       </label>
                       {videos.length > 1 && (
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => handleRemoveVideo(idx)}
                           className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px]"
                         >
@@ -576,8 +576,8 @@ const AddMateri: React.FC = () => {
                           {v.rekamanUrl ? (
                             <div className="bg-[#d2e3fc] text-[#1967d2] font-semibold text-xs py-3 px-4 rounded-lg flex items-center justify-between shadow-sm">
                               <span className="truncate max-w-[80%]">{v.rekamanUrl.substring(v.rekamanUrl.lastIndexOf('/') + 1)}</span>
-                              <button 
-                                type="button" 
+                              <button
+                                type="button"
                                 onClick={() => handleUpdateVideo(idx, 'rekamanUrl', '')}
                                 className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px] shrink-0"
                               >
@@ -586,8 +586,8 @@ const AddMateri: React.FC = () => {
                             </div>
                           ) : (
                             <div className="h-12 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/30 transition-colors cursor-pointer relative">
-                              <input 
-                                type="file" 
+                              <input
+                                type="file"
                                 accept="video/*"
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
@@ -615,8 +615,8 @@ const AddMateri: React.FC = () => {
                               <span className="shrink-0">▶</span>
                               <span className="truncate">{v.url.substring(v.url.lastIndexOf('/') + 1)}</span>
                             </div>
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               onClick={() => handleUpdateVideo(idx, 'url', '')}
                               className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px] shrink-0"
                             >
@@ -625,8 +625,8 @@ const AddMateri: React.FC = () => {
                           </div>
                         ) : (
                           <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
-                            <input 
-                              type="file" 
+                            <input
+                              type="file"
                               accept="video/*"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
@@ -649,7 +649,7 @@ const AddMateri: React.FC = () => {
               </div>
 
               {/* Add Video Button */}
-              <button 
+              <button
                 type="button"
                 onClick={handleAddVideo}
                 className="w-full bg-white hover:bg-gray-50 border border-dashed border-gray-300 text-gray-500 font-bold py-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -676,16 +676,15 @@ const AddMateri: React.FC = () => {
                     />
 
                     {sm.url ? (
-                      <div className={`p-4 rounded-xl flex items-center justify-between font-bold text-xs ${
-                        idx === 0 
-                          ? 'bg-[#e6f4ea] text-[#137333] border border-green-150' 
+                      <div className={`p-4 rounded-xl flex items-center justify-between font-bold text-xs ${idx === 0
+                          ? 'bg-[#e6f4ea] text-[#137333] border border-green-150'
                           : 'bg-white text-gray-700 border border-gray-200 shadow-sm'
-                      }`}>
+                        }`}>
                         <div className="flex items-center gap-2.5 truncate pr-2">
                           <HiOutlineDocumentText className="text-lg shrink-0" />
                           <span className="truncate">{sm.nama || `Sub Materi ${idx + 1}`}</span>
                         </div>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => handleRemoveSubMateri(idx)}
                           className="text-red-500 hover:text-red-750 font-bold uppercase text-[10px] shrink-0"
@@ -695,8 +694,8 @@ const AddMateri: React.FC = () => {
                       </div>
                     ) : (
                       <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
-                        <input 
-                          type="file" 
+                        <input
+                          type="file"
                           accept=".pdf,.doc,.docx"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
@@ -717,7 +716,7 @@ const AddMateri: React.FC = () => {
               </div>
 
               {/* Add Sub-Materi Button */}
-              <button 
+              <button
                 type="button"
                 onClick={handleAddSubMateri}
                 className="w-full bg-white hover:bg-gray-50 border border-dashed border-gray-300 text-gray-500 font-bold py-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -730,10 +729,10 @@ const AddMateri: React.FC = () => {
 
           {/* Right Column: Quiz, Tasks & Reflection */}
           <div className="lg:col-span-5 space-y-6">
-            
+
             {/* Latihan & Refleksi Configuration Card */}
             <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-6 space-y-6">
-              
+
               <div>
                 <h2 className="text-sm font-bold text-gray-900 pb-2 border-b border-gray-100">Latihan & Refleksi</h2>
               </div>
@@ -751,7 +750,7 @@ const AddMateri: React.FC = () => {
                     questionsList.map((q, qidx) => (
                       <div key={qidx} className="flex items-center justify-between text-xs font-bold text-gray-700 py-1">
                         <span className="truncate pr-2">Soal {qidx + 1} — {getQuestionDisplay(q)}</span>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => handleRemoveQuestion(qidx)}
                           className="text-red-500 hover:text-red-700 text-[10px] uppercase font-bold shrink-0"
@@ -769,7 +768,7 @@ const AddMateri: React.FC = () => {
                 {/* Add PG Input */}
                 <div className="space-y-3">
                   <div className="relative flex items-center">
-                    <Input 
+                    <Input
                       value={newQuestion}
                       onChange={(e) => setNewQuestion(e.target.value)}
                       onKeyDown={(e) => {
@@ -787,14 +786,14 @@ const AddMateri: React.FC = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       type="button"
                       onClick={handleAddQuestion}
                       className="flex-1 bg-[#10b981] hover:bg-[#059669] text-white font-bold h-9 text-xs rounded-lg"
                     >
                       + Soal PG
                     </Button>
-                    <Button 
+                    <Button
                       type="button"
                       className="bg-[#f3f4f6] hover:bg-[#e5e7eb] text-gray-700 border border-gray-300 rounded-lg h-9 text-xs font-bold px-4"
                     >
@@ -813,7 +812,7 @@ const AddMateri: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-gray-650">Deskripsi Tugas Upload</label>
-                  <textarea 
+                  <textarea
                     value={tugasCoding}
                     onChange={(e) => setTugasCoding(e.target.value)}
                     className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none transition-all resize-none"
@@ -823,31 +822,31 @@ const AddMateri: React.FC = () => {
                 </div>
               </div>
 
-              {/* Refleksi (Red Dot) */}
+              {/* Latihan (Red Dot) */}
               <div className="space-y-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Refleksi Materi (Input Peserta)</h3>
+                  <h3 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Latihan (Input Peserta)</h3>
                 </div>
 
                 {/* AI Review Alert Box */}
                 <div className="p-3 bg-[#fce8e6] text-[#c5221f] rounded-lg text-[10px] font-bold leading-normal">
-                  Peserta input refleksi manual - AI beri skor referensi untuk Asisten
+                  Peserta input latihan manual - AI beri skor referensi untuk Asisten
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-650">Pertanyaan Refleksi</label>
-                  <textarea 
+                  <label className="text-xs font-semibold text-gray-650">Pertanyaan Latihan</label>
+                  <textarea
                     value={refleksi}
                     onChange={(e) => setRefleksi(e.target.value)}
                     className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 text-xs font-semibold text-gray-800 h-28 focus:bg-white focus:outline-none transition-all resize-none"
-                    placeholder="Tuliskan pertanyaan refleksi utama..."
+                    placeholder="Tuliskan pertanyaan latihan utama..."
                   />
                 </div>
               </div>
 
               {/* Save Button */}
-              <Button 
+              <Button
                 type="button"
                 onClick={() => handleSaveMateri(false)}
                 disabled={saving}

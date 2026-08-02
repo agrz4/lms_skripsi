@@ -228,7 +228,7 @@ const KelasOnline: React.FC = () => {
                    </Badge>
                 </div>
                 <div className="p-6 flex justify-between items-center">
-                   <span className="text-xs font-bold text-gray-500">Latihan PG</span>
+                   <span className="text-xs font-bold text-gray-500">Latihan Test Formatif</span>
                    <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[8px] px-3 py-0.5 rounded-full uppercase">
                       ✓ Selesai
                    </Badge>

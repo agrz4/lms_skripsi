@@ -223,7 +223,7 @@ const HalamanKoreksi: React.FC = () => {
                     className="rounded-xl border-none bg-indigo-50 text-indigo-600 font-black text-[10px] px-4 py-3 outline-none cursor-pointer"
                   >
                     <option value="ALL">SEMUA JENIS</option>
-                    <option value="REFLEKSI">REFLEKSI ESAI</option>
+                    <option value="REFLEKSI">LATIHAN</option>
                     <option value="FILE_UPLOAD">FILE PROGRAM</option>
                     <option value="SCREENSHOT">SCREENSHOT</option>
                   </select>
@@ -284,7 +284,7 @@ const HalamanKoreksi: React.FC = () => {
                        }`}>
                           {task.type === 'REFLEKSI' && <HiOutlineChatBubbleBottomCenterText className="mr-1" />}
                           {task.type !== 'REFLEKSI' && <HiOutlineDocumentDuplicate className="mr-1" />}
-                          {task.type}
+                          {task.type === 'REFLEKSI' ? 'LATIHAN' : task.type}
                        </Badge>
                     </div>
                     <div className="col-span-1 text-center text-sm font-black text-gray-900">
@@ -328,7 +328,7 @@ const HalamanKoreksi: React.FC = () => {
                </div>
                <h3 className="text-lg font-black text-gray-900 mb-2">Belum Ada Tugas Terpilih</h3>
                <p className="text-xs font-bold text-gray-400 max-w-xs leading-relaxed uppercase tracking-wider">
-                  PILIH SALAH SATU TUGAS MAHASISWA BERJENIS REFLEKSI DI TABEL KIRI UNTUK MEMULAI PROSES PENILAIAN.
+                  PILIH SALAH SATU TUGAS MAHASISWA BERJENIS LATIHAN DI TABEL KIRI UNTUK MEMULAI PROSES PENILAIAN.
                </p>
             </Card>
           ) : (
@@ -354,7 +354,7 @@ const HalamanKoreksi: React.FC = () => {
                   </div>
 
                   <div>
-                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block">Jawaban Refleksi Peserta</label>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block">Jawaban Latihan Peserta</label>
                      <div className="p-6 bg-gray-50 rounded-2xl text-[11px] font-medium text-gray-600 leading-relaxed border border-gray-100 max-h-48 overflow-y-auto">
                         {selectedTask.content || '—'}
                      </div>

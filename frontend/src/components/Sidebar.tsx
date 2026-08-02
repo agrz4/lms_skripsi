@@ -55,12 +55,7 @@ const Sidebar: React.FC = () => {
       items: [
         { name: 'Kursus Tersedia', icon: <HiOutlineSquares2X2 />, path: '/user/dashboard' },
         { name: 'My courses', icon: <HiOutlineBookOpen />, path: '/user/kursus-saya' },
-      ]
-    },
-    {
-      title: 'AI MODULE',
-      items: [
-        { name: 'Ujian AI', icon: <HiOutlineCpuChip />, path: '/user/ujian' },
+        { name: 'Ujian', icon: <HiOutlineCpuChip />, path: '/user/ujian' },
       ]
     },
     {

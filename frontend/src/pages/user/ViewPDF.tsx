@@ -209,13 +209,13 @@ const ViewPDF: React.FC = () => {
           {/* Bottom Latihan Section */}
           <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-10">
              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-xl font-black text-gray-900">Latihan PG</h2>
+                <h2 className="text-xl font-black text-gray-900">Latihan Test Formatif</h2>
                 <Badge className="bg-gray-100 text-gray-400 border-none font-black text-[9px] px-4 py-1 uppercase tracking-widest">
                    Belum Dikerjakan
                 </Badge>
              </div>
              <Button className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black py-8 rounded-2xl shadow-xl shadow-emerald-100 uppercase tracking-widest text-xs">
-                Mulai Latihan PG (10 Soal)
+                Mulai Latihan Test Formatif (10 Soal)
              </Button>
           </Card>
         </div>
@@ -280,7 +280,7 @@ const ViewPDF: React.FC = () => {
                    </Badge>
                 </div>
                 <div className="p-6 flex justify-between items-center">
-                   <span className="text-xs font-bold text-gray-500">Latihan PG</span>
+                   <span className="text-xs font-bold text-gray-500">Latihan Test Formatif</span>
                    <Badge className="text-gray-300 bg-gray-50 border-none font-black text-[8px] px-3 py-0.5 rounded-full uppercase">
                       Belum
                    </Badge>

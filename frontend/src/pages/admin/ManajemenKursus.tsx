@@ -459,7 +459,6 @@ const ManajemenKursus: React.FC = () => {
               <TableHeader className="bg-white">
                 <TableRow className="border-b border-gray-150 hover:bg-transparent">
                   <TableHead className="py-4 px-6 text-xs font-black text-gray-900 tracking-wider">Nama Kursus</TableHead>
-                  <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Level</TableHead>
                   <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Pengajar</TableHead>
                   <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Jadwal</TableHead>
                   <TableHead className="py-4 px-4 text-xs font-black text-gray-900 tracking-wider">Materi</TableHead>
@@ -472,7 +471,7 @@ const ManajemenKursus: React.FC = () => {
               <TableBody className="divide-y divide-gray-100 bg-white">
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-32 text-center">
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <div className="w-8 h-8 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Memuat Kursus...</p>
@@ -480,7 +479,7 @@ const ManajemenKursus: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedCourses.map((item) => {
+                  paginatedCourses.map((item, index) => {
                     const isSelected = selectedCourseId === item.id;
                     return (
                       <TableRow
@@ -491,9 +490,9 @@ const ManajemenKursus: React.FC = () => {
                       >
                         <TableCell className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            <div className={`w-1.5 h-8 rounded-full shrink-0 ${item.level.toLowerCase() === 'beginner'
+                            <div className={`w-1.5 h-8 rounded-full shrink-0 ${(item.level.toLowerCase() === 'beginner' || item.level.toLowerCase() === 'dasar')
                                 ? 'bg-[#5850ec]'
-                                : item.level.toLowerCase() === 'intermediate'
+                                : (item.level.toLowerCase() === 'intermediate' || item.level.toLowerCase() === 'lanjutan')
                                   ? 'bg-[#10b981]'
                                   : 'bg-[#3b82f6]'
                               }`}></div>
@@ -503,14 +502,9 @@ const ManajemenKursus: React.FC = () => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-4">
-                          <Badge className={`rounded-full px-3.5 py-0.5 text-[10px] font-bold border-none shadow-none uppercase ${getLevelBadgeStyles(item.level)}`}>
-                            {item.level}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="py-4 px-4 text-xs font-semibold text-gray-800">{item.pengajarNama}</TableCell>
-                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-850">{item.jadwalText || '-'}</TableCell>
-                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-850">{item.materiText || '-'}</TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-855">{item.jadwalText || '-'}</TableCell>
+                        <TableCell className="py-4 px-4 text-xs font-semibold text-gray-855">{item.materiText || '-'}</TableCell>
                         <TableCell className="py-4 px-4 text-xs font-semibold text-gray-800">{item.pesertaCount}</TableCell>
                         <TableCell className="py-4 px-4">
                           <Badge className={`rounded-full px-3.5 py-0.5 text-[10px] font-bold border-none shadow-none uppercase ${getAiStatusBadgeStyles(item.aiStatus)}`}>
@@ -716,9 +710,8 @@ const ManajemenKursus: React.FC = () => {
                     <SelectValue placeholder="Pilih Kategori" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="Beginner">Beginner</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
+                    <SelectItem value="Dasar">Dasar</SelectItem>
+                    <SelectItem value="Lanjutan">Lanjutan</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
