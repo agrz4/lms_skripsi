@@ -59,24 +59,26 @@ async function main() {
   // Mahasiswa Utama
   const mhs = await prisma.user.upsert({
     where: { email: 'mhs@lms.com' },
-    update: { nama: 'Rizky Mahasiswa', password: password, role: 'MAHASISWA' },
+    update: { nama: 'Rizky Mahasiswa', password: password, role: 'MAHASISWA', noWhatsapp: '081234567890' },
     create: {
       email: 'mhs@lms.com',
       nama: 'Rizky Mahasiswa',
       password: password,
       role: 'MAHASISWA',
+      noWhatsapp: '081234567890',
     },
   });
 
   // Mahasiswa Referral (Asep)
   const userAsep = await prisma.user.upsert({
     where: { email: 'asep@lms.com' },
-    update: { nama: 'Asep Syarifudin', password: password, role: 'MAHASISWA' },
+    update: { nama: 'Asep Syarifudin', password: password, role: 'MAHASISWA', noWhatsapp: '089876543210' },
     create: {
       email: 'asep@lms.com',
       nama: 'Asep Syarifudin',
       password: password,
       role: 'MAHASISWA',
+      noWhatsapp: '089876543210',
     },
   });
 

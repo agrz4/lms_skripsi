@@ -8,6 +8,7 @@ const Register: React.FC = () => {
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
   const [instansi, setInstansi] = useState('');
+  const [noWhatsapp, setNoWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,7 @@ const Register: React.FC = () => {
     setError('');
 
     // Validations
-    if (!nama || !email || !instansi || !password || !confirmPassword) {
+    if (!nama || !email || !instansi || !noWhatsapp || !password || !confirmPassword) {
       setError('Semua field harus diisi.');
       return;
     }
@@ -37,6 +38,7 @@ const Register: React.FC = () => {
         email,
         password,
         instansi,
+        noWhatsapp,
         role: 'MAHASISWA' // Registrasi khusus untuk mahasiswa/peserta
       });
 
@@ -105,6 +107,18 @@ const Register: React.FC = () => {
               value={instansi}
               onChange={(e) => setInstansi(e.target.value)}
               placeholder="Nama instansi / universitas..."
+              className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-all text-sm"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-bold text-slate-800 ml-1">Nomor WhatsApp</label>
+            <input
+              type="text"
+              value={noWhatsapp}
+              onChange={(e) => setNoWhatsapp(e.target.value)}
+              placeholder="Contoh: 081234567890"
               className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-all text-sm"
               required
             />

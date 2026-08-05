@@ -101,7 +101,7 @@ Format output wajib berupa JSON array of objects murni (tanpa tag markdown \`\`\
     } else {
       // Acak soal dan ambil maksimal 15 soal agar pemrosesan Gemini cepat
       const shuffled = questionsFromDb.sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 15);
+      const selected = shuffled.slice(0, 30);
 
       const questionsToReturnList = [];
       const questionsToProcessWithGemini = [];

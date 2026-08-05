@@ -38,7 +38,7 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-  const { nama, email, password, role, instansi } = req.body;
+  const { nama, email, password, role, instansi, noWhatsapp } = req.body;
 
   try {
     let user = await prisma.user.findUnique({ where: { email } });
@@ -54,7 +54,8 @@ const register = async (req, res) => {
         email,
         password: hashedPassword,
         role: role || 'MAHASISWA',
-        instansi
+        instansi,
+        noWhatsapp: (role || 'MAHASISWA') === 'MAHASISWA' ? noWhatsapp : null
       }
     });
 
@@ -154,6 +155,7 @@ const getMe = async (req, res) => {
       email: user.email,
       role: user.role,
       instansi: user.instansi,
+      noWhatsapp: user.noWhatsapp,
       pelatihan: user.pelatihan,
       jadwal: user.jadwal,
       avatar,
@@ -168,7 +170,7 @@ const getMe = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-  const { nama, email, instansi, passwordLama, passwordBaru } = req.body;
+  const { nama, email, instansi, noWhatsapp, passwordLama, passwordBaru } = req.body;
   const userId = req.user.id;
 
   try {
@@ -189,6 +191,10 @@ const updateProfile = async (req, res) => {
     if (nama) updateData.nama = nama;
     if (email) updateData.email = email;
     if (instansi !== undefined) updateData.instansi = instansi;
+    
+    if (noWhatsapp !== undefined) {
+      updateData.noWhatsapp = user.role === 'MAHASISWA' ? noWhatsapp : null;
+    }
 
     if (passwordBaru) {
       if (!passwordLama) {
@@ -215,7 +221,8 @@ const updateProfile = async (req, res) => {
         nama: updatedUser.nama,
         email: updatedUser.email,
         role: updatedUser.role,
-        instansi: updatedUser.instansi
+        instansi: updatedUser.instansi,
+        noWhatsapp: updatedUser.noWhatsapp
       }
     });
   } catch (error) {

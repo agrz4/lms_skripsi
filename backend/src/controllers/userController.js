@@ -12,6 +12,7 @@ const getAllUsers = async (req, res) => {
         instansi: true,
         pelatihan: true,
         jadwal: true,
+        noWhatsapp: true,
         createdAt: true
       }
     });
@@ -22,7 +23,7 @@ const getAllUsers = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-  const { nama, email, password, role, instansi, pelatihan, jadwal } = req.body;
+  const { nama, email, password, role, instansi, pelatihan, jadwal, noWhatsapp } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
@@ -33,7 +34,8 @@ const createUser = async (req, res) => {
         role: role || 'MAHASISWA',
         instansi,
         pelatihan,
-        jadwal
+        jadwal,
+        noWhatsapp: (role || 'MAHASISWA') === 'MAHASISWA' ? noWhatsapp : null
       }
     });
     res.status(201).json(user);
@@ -44,11 +46,14 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { nama, email, role, password, instansi, pelatihan, jadwal } = req.body;
+  const { nama, email, role, password, instansi, pelatihan, jadwal, noWhatsapp } = req.body;
   try {
     const data = { nama, email, role, instansi, pelatihan, jadwal };
     if (password) {
       data.password = await bcrypt.hash(password, 10);
+    }
+    if (noWhatsapp !== undefined) {
+      data.noWhatsapp = role === 'MAHASISWA' ? noWhatsapp : null;
     }
     const user = await prisma.user.update({
       where: { id },

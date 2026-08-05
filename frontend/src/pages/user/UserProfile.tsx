@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
-import { HiOutlineCamera, HiOutlineUserCircle, HiOutlineAtSymbol, HiOutlineBuildingOffice2, HiOutlineLockClosed } from 'react-icons/hi2';
+import { HiOutlineCamera, HiOutlineUserCircle, HiOutlineAtSymbol, HiOutlineBuildingOffice2, HiOutlineLockClosed, HiOutlinePhone } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,8 @@ const UserProfile: React.FC = () => {
     const [formData, setFormData] = React.useState({
         nama: '',
         email: '',
-        instansi: ''
+        instansi: '',
+        noWhatsapp: ''
     });
     const [passwordLama, setPasswordLama] = React.useState('');
     const [passwordBaru, setPasswordBaru] = React.useState('');
@@ -28,7 +29,8 @@ const UserProfile: React.FC = () => {
             setFormData({
                 nama: user.nama || '',
                 email: user.email || '',
-                instansi: user.instansi || ''
+                instansi: user.instansi || '',
+                noWhatsapp: user.noWhatsapp || ''
             });
         }
     }, [user]);
@@ -61,6 +63,7 @@ const UserProfile: React.FC = () => {
             nama: formData.nama,
             email: formData.email,
             instansi: formData.instansi,
+            noWhatsapp: user?.role === 'MAHASISWA' ? formData.noWhatsapp : undefined,
             passwordLama: passwordBaru ? passwordLama : undefined,
             passwordBaru: passwordBaru ? passwordBaru : undefined,
         });
@@ -88,7 +91,7 @@ const UserProfile: React.FC = () => {
         <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
             <div className="mb-10">
                 <h1 className="text-3xl font-black text-gray-900 leading-tight">Data Profile</h1>
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-1">Nama · Email · Instansi</p>
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-1">Nama · Email · Instansi {user?.role === 'MAHASISWA' && '· WhatsApp'}</p>
             </div>
 
             <Card className="rounded-[2.5rem] border-none shadow-sm bg-white overflow-hidden max-w-5xl mx-auto">
@@ -121,7 +124,7 @@ const UserProfile: React.FC = () => {
                             ) : (
                                 <div className="bg-[#7198A8]/20 border border-[#7198A8]/10 p-4 rounded-xl flex items-center gap-4 mb-8">
                                     <div className="w-6 h-6 bg-[#7198A8] rounded-full flex items-center justify-center text-white text-[10px]">✓</div>
-                                    <span className="text-xs font-black text-[#51717e] uppercase tracking-widest">Data Profile: Nama · Email · Instansi</span>
+                                    <span className="text-xs font-black text-[#51717e] uppercase tracking-widest">Data Profile: Nama · Email · Instansi {user?.role === 'MAHASISWA' && '· WhatsApp'}</span>
                                 </div>
                             )}
 
@@ -162,6 +165,20 @@ const UserProfile: React.FC = () => {
                                         className="bg-white border-gray-200 rounded-xl py-6 font-bold text-gray-600 focus:ring-blue-500"
                                     />
                                 </div>
+                                {user?.role === 'MAHASISWA' && (
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-black text-gray-800 flex items-center gap-2">
+                                            <HiOutlinePhone className="text-lg text-gray-400" /> Nomor WhatsApp
+                                        </Label>
+                                        <Input
+                                            name="noWhatsapp"
+                                            value={formData.noWhatsapp}
+                                            onChange={handleChange}
+                                            placeholder="Contoh: 081234567890"
+                                            className="bg-white border-gray-200 rounded-xl py-6 font-bold text-gray-600 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

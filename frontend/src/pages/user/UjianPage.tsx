@@ -481,13 +481,7 @@ const UjianPage: React.FC = () => {
               </div>
               <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
             </Card>
-
-            <button 
-              disabled={submitting}
-              className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-purple-100 transition-all disabled:opacity-50"
-            >
-              <HiOutlineSparkles className="text-sm" /> AI Auto-Correction
-            </button>
+            {/* Card and Navigation spacer */}
           </div>
 
           {/* Center Questions Area */}

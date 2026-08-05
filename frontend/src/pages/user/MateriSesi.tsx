@@ -924,7 +924,7 @@ const MateriSesi: React.FC = () => {
                   </div>
                   {pgSubmitted ? (
                     <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-xs px-4 py-1.5 uppercase tracking-wider rounded-full">
-                       Skor AI: {pgScore}/100
+                       Skor: {pgScore}/100
                     </Badge>
                   ) : (
                     <Badge className="bg-amber-100 text-amber-600 border-none font-black text-xs px-4 py-1.5 uppercase tracking-wider rounded-full animate-pulse">

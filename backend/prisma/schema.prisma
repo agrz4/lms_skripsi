@@ -13,6 +13,7 @@ model User {
   password      String
   role          Role     @default(MAHASISWA)
   instansi      String?
+  noWhatsapp    String?
   pelatihan     String?
   jadwal        String?
   createdAt     DateTime @default(now())

@@ -8,12 +8,14 @@ interface User {
   role: string;
   instansi?: string;
   pelatihan?: string;
+  noWhatsapp?: string;
 }
 
 interface UpdateProfileData {
   nama?: string;
   email?: string;
   instansi?: string;
+  noWhatsapp?: string;
   passwordLama?: string;
   passwordBaru?: string;
 }
