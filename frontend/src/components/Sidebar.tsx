@@ -7,13 +7,11 @@ import {
   HiOutlineClipboardDocumentList, 
   HiOutlineChartBar,
   HiOutlineCpuChip,
-  HiOutlineSparkles,
   HiOutlineSquares2X2,
   HiOutlinePencilSquare,
   HiOutlinePlus,
   HiOutlineQueueList,
   HiOutlineUser,
-  HiOutlineArrowPath,
 } from 'react-icons/hi2';
 import { useAuthStore } from '../store/useAuthStore';
 import logoImg from '../assets/logo.png';
@@ -32,13 +30,6 @@ const Sidebar: React.FC = () => {
         { name: 'Course Map', icon: <HiOutlineQueueList />, path: '/admin/course-map' },
         { name: 'Jadwal', icon: <HiOutlineCalendar />, path: '/admin/jadwal' },
         { name: 'Materi', icon: <HiOutlineClipboardDocumentList />, path: '/admin/materi' },
-      ]
-    },
-    {
-      title: 'AI MODULE',
-      items: [
-        { name: 'AI Review Queue', icon: <HiOutlineCpuChip />, path: '/admin/ai-knowledge' },
-        { name: 'Auto Correction', icon: <HiOutlineSparkles />, path: '/admin/auto-correction' },
       ]
     },
     {
@@ -72,7 +63,6 @@ const Sidebar: React.FC = () => {
       items: [
         { name: 'Koreksi', icon: <HiOutlinePencilSquare />, path: '/asisten/koreksi' },
         { name: 'Koreksi Upload', icon: <HiOutlineClipboardDocumentList />, path: '/asisten/upload' },
-        { name: 'Skema Penilaian', icon: <HiOutlineArrowPath />, path: '/asisten/auto-correction' },
       ]
     }
   ];

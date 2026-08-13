@@ -57,12 +57,14 @@ const Navbar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-6">
+        {/* HIDE SEMENTARA NOTIFIKASI
         <button className="p-2 rounded-full relative transition-all text-xl text-white hover:bg-white/10">
           <HiOutlineBell />
           <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full border-2 bg-orange-400 border-[#357ABD]"></span>
         </button>
         
         <div className="h-8 w-px mx-2 bg-white/20"></div>
+        */}
         
         <div className="relative" ref={dropdownRef}>
           <button 
