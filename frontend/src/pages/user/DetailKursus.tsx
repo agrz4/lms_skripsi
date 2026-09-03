@@ -41,7 +41,7 @@ const DetailKursus: React.FC = () => {
 
   const course = mataKuliahList.find(mk => mk.id === courseId);
   const completedSessions = summary ? summary.completedMeetings : jadwalList.filter(s => s.tgl && s.topik).length;
-  const totalSessionsCount = summary ? summary.totalMeetings : (course?.jumlahPertemuan || 3);
+  const totalSessionsCount = summary ? summary.totalMeetings : (course?.jumlahPertemuan || 14);
   const progressPercent = totalSessionsCount > 0 ? Math.round((completedSessions / totalSessionsCount) * 100) : 0;
 
   const getSessionDescription = (pertemuan: any, isActive: boolean, isCompleted: boolean) => {

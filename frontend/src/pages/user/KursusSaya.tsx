@@ -42,7 +42,7 @@ const KursusSaya: React.FC = () => {
     ).length;
 
     // A course has custom sessions count
-    const totalSessions = mk.jumlahPertemuan || 3;
+    const totalSessions = mk.jumlahPertemuan || 14;
     const percentage = totalSessions > 0 ? Math.min(Math.round((completedSessions / totalSessions) * 100), 100) : 0;
 
     return {

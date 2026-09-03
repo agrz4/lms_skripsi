@@ -135,7 +135,7 @@ const LaporanAkhir: React.FC = () => {
 
   // Find currently selected course to read dynamic meetings count
   const selectedCourseObj = mataKuliahList.find(mk => mk.id === selectedCourseId);
-  const totalMeetings = selectedCourseObj?.jumlahPertemuan || 3;
+  const totalMeetings = selectedCourseObj?.jumlahPertemuan || 14;
 
   // Filter report data based on search and status
   const filteredReport = reportData.filter((student) => {

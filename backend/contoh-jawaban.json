@@ -1,0 +1,47 @@
+[
+  {
+    "id": "A1",
+    "kelompok": "SAMA",
+    "jawaban": "HTML atau Hyper Text Markup Language berisi teks dan struktur web, sementara CSS atau Cascading Style Sheets mengatur tampilan. Kedua teknologi ini bekerja bersama-sama dalam pengembangan situs web, dengan HTML menentukan konten yang akan ditampilkan di browser dan CSS memberikan gaya visual untuk halaman tersebut."
+  },
+  {
+    "id": "A2",
+    "kelompok": "SAMA",
+    "jawaban": "HTML memiliki dua bagian utama yaitu head yang berisi informasi tentang website seperti judul atau meta data, dan body yang mengandung konten yang akan ditampilkan pada layar browser. Head biasanya terletak di atas body."
+  },
+  {
+    "id": "B1",
+    "kelompok": "PARAFRASE",
+    "jawaban": "Menurut saya HTML itu ibarat rangka bangunan yang menentukan bagian apa saja yang ada di sebuah halaman, sedangkan CSS ibarat cat dan hiasannya yang membuat bangunan itu enak dilihat. Jadi keduanya saling melengkapi, satu mengurus isi dan susunannya, satu lagi mengurus rupanya."
+  },
+  {
+    "id": "B2",
+    "kelompok": "PARAFRASE",
+    "jawaban": "Dokumen HTML terbagi jadi dua wilayah. Wilayah pertama menyimpan keterangan mengenai halamannya sendiri, misalnya judul yang muncul di tab, dan bagian ini tidak kelihatan oleh pengunjung. Wilayah kedua berisi semua yang benar-benar tampil di layar ketika halaman dibuka."
+  },
+  {
+    "id": "B3",
+    "kelompok": "PARAFRASE",
+    "jawaban": "Yang saya pahami, salah satunya bertugas menyusun kerangka dan isi halaman, sedangkan yang lain bertugas mempercantik tampilannya. Tanpa yang kedua, halaman tetap bisa dibuka tapi tampilannya polos."
+  },
+  {
+    "id": "C1",
+    "kelompok": "SALAH_MAKNA",
+    "jawaban": "HTML atau Hyper Text Markup Language adalah bahasa yang digunakan untuk mengenkripsi data website agar aman, sedangkan CSS atau Cascading Style Sheets berfungsi sebagai basis data yang menyimpan konten halaman. Keduanya bekerja bersama-sama dalam pengembangan situs web."
+  },
+  {
+    "id": "C2",
+    "kelompok": "SALAH_MAKNA",
+    "jawaban": "HTML memiliki dua bagian utama yaitu head dan body. Head berfungsi menjalankan perhitungan server dan mengatur koneksi ke database, sementara body bertugas mengompresi gambar agar halaman lebih ringan saat dibuka di browser."
+  },
+  {
+    "id": "D1",
+    "kelompok": "TIDAK_RELEVAN",
+    "jawaban": "Saya merasa pertemuan ini cukup menarik dan pengajarnya menjelaskan dengan baik. Saya akan belajar lebih giat lagi supaya bisa memahami materi berikutnya dengan lebih mudah."
+  },
+  {
+    "id": "E1",
+    "kelompok": "SINGKAT_TEPAT",
+    "jawaban": "HTML singkatan Hyper Text Markup Language, terdiri dari head untuk informasi halaman dan body untuk kontennya"
+  }
+]

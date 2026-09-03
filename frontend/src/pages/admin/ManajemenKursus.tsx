@@ -104,7 +104,7 @@ const ManajemenKursus: React.FC = () => {
     level: 'Beginner',
     statusPendaftaran: 'Aktif',
     tipeKursus: 'Online',
-    jumlahPertemuan: 3
+    jumlahPertemuan: 14
   });
 
   useEffect(() => {
@@ -117,7 +117,7 @@ const ManajemenKursus: React.FC = () => {
     const pengajar = pengajarList.find(p => p.id === mk.pengajarId);
 
     // Calculate real progress
-    const totalSessions = mk.jumlahPertemuan || 3;
+    const totalSessions = mk.jumlahPertemuan || 14;
     const jadwalCount = mk._count?.pertemuan || 0;
     const materiCount = mk.pertemuan?.filter(p => p.materi && p.materi.length > 0).length || 0;
 
@@ -155,7 +155,7 @@ const ManajemenKursus: React.FC = () => {
   }) : dummyCourses.map(c => ({
     ...c,
     pengajarId: '',
-    jumlahPertemuan: 3,
+    jumlahPertemuan: 14,
     rawJadwalCount: c.jadwalText ? parseInt(c.jadwalText.split('/')[0]) : 0,
     rawMateriCount: c.materiText ? parseInt(c.materiText.split('/')[0]) : 0,
     rawPublished: c.published,
@@ -413,8 +413,7 @@ const ManajemenKursus: React.FC = () => {
               kategori: 'Beginner',
               level: 'Beginner',
               statusPendaftaran: 'Aktif',
-              tipeKursus: 'Online',
-              jumlahPertemuan: 3
+              tipeKursus: 'Online'
             });
             setIsModalOpen(true);
           }}

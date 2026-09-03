@@ -1,0 +1,226 @@
+[
+    {
+        "id": 1,
+        "question": "Apa yang dimaksud dengan algoritma?",
+        "expectedByHuman": "Algoritma adalah urutan langkah-langkah logis untuk menyelesaikan suatu masalah yang disusun secara sistematis dan logis.",
+        "reason": "Definisi algoritma dijelaskan secara langsung pada materi.",
+        "sourcePage": [
+            2,
+            4
+        ],
+        "difficulty": "easy",
+        "type": "definition",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [],
+        "rubric": []
+    },
+    {
+        "id": 2,
+        "question": "Mengapa algoritma sangat penting sebelum membuat program?",
+        "expectedByHuman": "Karena algoritma membantu memahami alur program, mempermudah pengembangan, dan menghasilkan output yang benar.",
+        "reason": "Materi menjelaskan pentingnya algoritma sebelum proses pemrograman.",
+        "sourcePage": [
+            2
+        ],
+        "difficulty": "easy",
+        "type": "concept",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [
+            ""
+        ],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "question": "Sebutkan minimal lima fungsi algoritma.",
+        "expectedByHuman": "Memecahkan program yang rumit, menyederhanakan program besar, dapat digunakan berulang, memudahkan pembuatan program, mengatasi masalah secara logis, meminimalkan penulisan berulang, mempermudah pengembangan, mempermudah pencarian error, mempermudah modifikasi, dan mempermudah dokumentasi.",
+        "reason": "Daftar fungsi algoritma terdapat pada materi.",
+        "sourcePage": [
+            2
+        ],
+        "difficulty": "medium",
+        "type": "list",
+        "score": 15,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [
+            ""
+        ],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "question": "Jelaskan tahapan umum pembuatan sebuah program.",
+        "expectedByHuman": "Dimulai dari mendefinisikan masalah, menentukan algoritma, menulis program, menguji program, hingga dokumentasi.",
+        "reason": "Tahapan pembuatan program dijelaskan pada bagian proses pembuatan software.",
+        "sourcePage": [
+            3
+        ],
+        "difficulty": "medium",
+        "type": "process",
+        "score": 15,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [],
+        "rubric": []
+    },
+    {
+        "id": 5,
+        "question": "Apa saja bagian utama struktur suatu program?",
+        "expectedByHuman": "Input, Output, Proses Pengolahan Data, dan Penyimpanan Data.",
+        "reason": "Materi menjelaskan empat bagian utama struktur program.",
+        "sourcePage": [
+            3,
+            4
+        ],
+        "difficulty": "easy",
+        "type": "list",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [
+            ""
+        ],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "question": "Apa pengertian Flowchart Sistem?",
+        "expectedByHuman": "Flowchart Sistem adalah bagan yang menunjukkan alur kerja atau prosedur dalam suatu sistem secara keseluruhan.",
+        "reason": "Definisi Flowchart Sistem diberikan pada awal subbab 3.1.",
+        "sourcePage": [
+            6,
+            7
+        ],
+        "difficulty": "medium",
+        "type": "definition",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [],
+        "rubric": []
+    },
+    {
+        "id": 7,
+        "question": "Sebutkan lima jenis flowchart.",
+        "expectedByHuman": "Flowchart Sistem, Flowchart Paperwork/Dokumen, Flowchart Skematik, Flowchart Program, dan Flowchart Proses.",
+        "reason": "Kelima jenis flowchart dijelaskan pada materi.",
+        "sourcePage": [
+            6
+        ],
+        "difficulty": "easy",
+        "type": "list",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [
+            ""
+        ],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    },
+    {
+        "id": 8,
+        "question": "Apa fungsi Flowchart Program?",
+        "expectedByHuman": "Flowchart Program menjelaskan langkah-langkah program secara rinci sesuai urutan pelaksanaannya.",
+        "reason": "Definisi Flowchart Program dijelaskan pada subbab 3.4.",
+        "sourcePage": [
+            10
+        ],
+        "difficulty": "medium",
+        "type": "concept",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [],
+        "rubric": []
+    },
+    {
+        "id": 9,
+        "question": "Apa fungsi Flowchart Proses?",
+        "expectedByHuman": "Flowchart Proses digunakan untuk memecah dan menganalisis langkah-langkah suatu prosedur atau sistem, terutama pada proses industri dan analisis sistem.",
+        "reason": "Penjelasan terdapat pada subbab 3.5.",
+        "sourcePage": [
+            12
+        ],
+        "difficulty": "medium",
+        "type": "concept",
+        "score": 10,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [
+            ""
+        ],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    },
+    {
+        "id": 10,
+        "question": "Sebutkan minimal tiga pedoman dalam membuat flowchart.",
+        "expectedByHuman": "Flowchart digambar dari atas ke bawah dan kiri ke kanan, setiap aktivitas harus didefinisikan dengan jelas, setiap langkah harus berada pada urutan yang benar, menggunakan simbol standar, dan menentukan awal serta akhir aktivitas dengan jelas.",
+        "reason": "Pedoman flowchart terdapat pada bagian 2.",
+        "sourcePage": [
+            5
+        ],
+        "difficulty": "medium",
+        "type": "list",
+        "score": 15,
+        "outOfContext": false,
+        "aiAnswer": "",
+        "keyPoints": [
+            ""
+        ],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    },
+    {
+        "id": 11,
+        "question": "Apa perbedaan TCP dan UDP?",
+        "expectedByHuman": "Informasi tersebut tidak terdapat pada materi.",
+        "reason": "Materi hanya membahas algoritma dan flowchart.",
+        "sourcePage": [],
+        "difficulty": "hard",
+        "type": "out_of_context",
+        "score": 0,
+        "outOfContext": true,
+        "aiAnswer": "",
+        "keyPoints": [],
+        "rubric": [
+            {
+                "point": "",
+                "score": 0
+            }
+        ]
+    }
+]

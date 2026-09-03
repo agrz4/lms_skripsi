@@ -7,41 +7,41 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  nama          String
-  email         String   @unique
-  password      String
-  role          Role     @default(MAHASISWA)
-  instansi      String?
-  pelatihan     String?
-  jadwal        String?
-  createdAt     DateTime @default(now())
-  soal          Soal[]
-  jadwalDosen   Pertemuan[] @relation("DosenPertemuan")
-  jadwalAsisten Pertemuan[] @relation("AsistenPertemuan")
-  mataKuliah    MataKuliah[] @relation("PengajarMataKuliah")
-  pendaftaran   Pendaftaran[]
-  submissions   Submission[]
-  progress      StudentProgress[]
+  id               String            @id @default(uuid())
+  nama             String
+  email            String            @unique
+  password         String
+  role             Role              @default(MAHASISWA)
+  instansi         String?
+  pelatihan        String?
+  jadwal           String?
+  createdAt        DateTime          @default(now())
+  soal             Soal[]
+  jadwalDosen      Pertemuan[]       @relation("DosenPertemuan")
+  jadwalAsisten    Pertemuan[]       @relation("AsistenPertemuan")
+  mataKuliah       MataKuliah[]      @relation("PengajarMataKuliah")
+  pendaftaran      Pendaftaran[]
+  submissions      Submission[]
+  progress         StudentProgress[]
   ujianSubmissions UjianSubmission[]
 }
 
 model MataKuliah {
-  id                String   @id @default(uuid())
+  id                String        @id @default(uuid())
   nama              String
-  kode              String   @unique
-  published         Boolean  @default(false)
+  kode              String        @unique
+  published         Boolean       @default(false)
   deskripsi         String?
   kapasitas         Int?
   kategori          String?
-  level             String?  @default("Beginner")
-  warna             String?  @default("blue")
+  level             String?       @default("Beginner")
+  warna             String?       @default("blue")
   statusPendaftaran String?
   tipeKursus        TipeKursus?
   pengajarId        String?
-  pengajar          User?    @relation("PengajarMataKuliah", fields: [pengajarId], references: [id])
-  jumlahPertemuan   Int      @default(3)
-  createdAt         DateTime @default(now())
+  pengajar          User?         @relation("PengajarMataKuliah", fields: [pengajarId], references: [id])
+  jumlahPertemuan   Int           @default(14)
+  createdAt         DateTime      @default(now())
   soal              Soal[]
   pertemuan         Pertemuan[]
   materi            Materi[]
@@ -49,28 +49,28 @@ model MataKuliah {
   ujian             Ujian?
 
   // self-referencing many-to-many relationship
-  prerequisites     MataKuliah[]  @relation("MataKuliahPrerequisites")
-  prerequisiteFor   MataKuliah[]  @relation("MataKuliahPrerequisites")
-  pakets            Paket[]       @relation("PaketMataKuliah")
+  prerequisites   MataKuliah[] @relation("MataKuliahPrerequisites")
+  prerequisiteFor MataKuliah[] @relation("MataKuliahPrerequisites")
+  pakets          Paket[]      @relation("PaketMataKuliah")
 }
 
 model Pertemuan {
-  id           String     @id @default(uuid())
+  id           String            @id @default(uuid())
   mataKuliahId String
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
-  urutan       Int        // 1-14
+  mataKuliah   MataKuliah        @relation(fields: [mataKuliahId], references: [id])
+  urutan       Int // 1-14
   topik        String?
   tgl          DateTime?
   jam          String?
   dosenId      String?
-  dosen        User?      @relation("DosenPertemuan", fields: [dosenId], references: [id])
+  dosen        User?             @relation("DosenPertemuan", fields: [dosenId], references: [id])
   asistenId    String?
-  asisten      User?      @relation("AsistenPertemuan", fields: [asistenId], references: [id])
+  asisten      User?             @relation("AsistenPertemuan", fields: [asistenId], references: [id])
   materi       Materi[]
   soal         Soal[]
   submissions  Submission[]
   progress     StudentProgress[]
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime          @default(now())
 }
 
 model Materi {
@@ -82,46 +82,76 @@ model Materi {
   mataKuliah      MataKuliah      @relation(fields: [mataKuliahId], references: [id])
   fileUrl         String?
   videoUrl        String?
+  transcript      String?
   refleksi        String?
+  summary         String?
   embeddingStatus EmbeddingStatus @default(WAITING)
   createdAt       DateTime        @default(now())
+  vectors         MateriVector[]
 }
 
 model Sertifikat {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   userId       String
   mataKuliahId String
   nilai        Float
-  noSertifikat String     @unique
+  noSertifikat String   @unique
   fileUrl      String?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime @default(now())
 }
 
 model Soal {
-  id           String     @id @default(uuid())
-  pertanyaan   String
-  tipesoal     TipeSoal
-  status       SoalStatus @default(APPROVED)
-  mataKuliahId String
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
-  pertemuanId  String?
-  pertemuan    Pertemuan? @relation(fields: [pertemuanId], references: [id])
-  dibuatOleh   String
-  pembuat      User       @relation(fields: [dibuatOleh], references: [id])
-  createdAt    DateTime   @default(now())
-  evaluasi     Evaluasi[]
-  vector       SoalVector?
+  id             String          @id @default(uuid())
+  pertanyaan     String
+  tipesoal       TipeSoal
+  status         SoalStatus      @default(APPROVED)
+  mataKuliahId   String
+  mataKuliah     MataKuliah      @relation(fields: [mataKuliahId], references: [id])
+  pertemuanId    String?
+  pertemuan      Pertemuan?      @relation(fields: [pertemuanId], references: [id])
+  dibuatOleh     String
+  pembuat        User            @relation(fields: [dibuatOleh], references: [id])
+  createdAt      DateTime        @default(now())
+  evaluasi       Evaluasi[]
+  vector         SoalVector?
+  expectedAnswer ExpectedAnswer?
+}
+
+model ExpectedAnswer {
+  id String @id @default(uuid())
+
+  soalId String @unique
+
+  soal Soal @relation(fields: [soalId], references: [id], onDelete: Cascade)
+
+  expectedAnswer String? @db.Text
+
+  rubric Json?
+
+  keywords Json?
+
+  learningObjectives String? @db.Text
+
+  status String @default("PROCESSING")
+
+  model String?
+
+  promptVersion String?
+
+  generatedAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
 }
 
 model Evaluasi {
-  id           String   @id @default(uuid())
-  soalId       String
-  soal         Soal     @relation(fields: [soalId], references: [id])
-  skorKualitas Float
+  id               String   @id @default(uuid())
+  soalId           String
+  soal             Soal     @relation(fields: [soalId], references: [id])
+  skorKualitas     Float
   tingkatKesulitan String
-  isDuplikat   Boolean  @default(false)
-  saranPerbaikan String?
-  createdAt    DateTime @default(now())
+  isDuplikat       Boolean  @default(false)
+  saranPerbaikan   String?
+  createdAt        DateTime @default(now())
 }
 
 enum Role {
@@ -157,14 +187,34 @@ enum EmbeddingStatus {
 }
 
 model SoalVector {
-  id           String                      @id @default(uuid())
-  soalId       String                      @unique
-  soal         Soal                        @relation(fields: [soalId], references: [id])
+  id           String   @id @default(uuid())
+  soalId       String   @unique
+  soal         Soal     @relation(fields: [soalId], references: [id])
   mataKuliahId String
   content      String
   embedding    String
   metadata     Json?
-  createdAt    DateTime                    @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model MateriVector {
+  id String @id @default(uuid())
+
+  materiId String
+
+  materi Materi @relation(fields: [materiId], references: [id], onDelete: Cascade)
+
+  chunkIndex Int
+
+  content String
+
+  embedding String
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([materiId])
 }
 
 model Pendaftaran {
@@ -174,43 +224,45 @@ model Pendaftaran {
   mataKuliahId String
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id])
   createdAt    DateTime   @default(now())
-  
+
   referralCode String?
-  harga        String?     @default("0")
+  harga        String? @default("0")
   invoiceNo    String?
-  status       String?     @default("Lunas")
-  method       String?     @default("Mandiri Virtual Account")
+  status       String? @default("Lunas")
+  method       String? @default("Mandiri Virtual Account")
 
   @@unique([userId, mataKuliahId])
 }
 
 model Submission {
-  id           String     @id @default(uuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id])
-  pertemuanId  String
-  pertemuan    Pertemuan  @relation(fields: [pertemuanId], references: [id])
-  type         String     // "REFLEKSI", "FILE_UPLOAD", "SCREENSHOT"
-  content      String?    // Teks jawaban refleksi
-  fileUrl      String?    // URL file yang diupload (ZIP/Screenshot)
-  score        Float?     // Nilai final dari asisten/pengajar (0-100)
-  aiScore      Float?     // Skor referensi otomatis dari AI (0-100)
-  feedback     String?    // Catatan koreksi dari asisten/pengajar
-  createdAt    DateTime   @default(now())
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  pertemuanId String
+  pertemuan   Pertemuan @relation(fields: [pertemuanId], references: [id])
+  type        String // "REFLEKSI", "FILE_UPLOAD", "SCREENSHOT"
+  content     String? // Teks jawaban refleksi
+  fileUrl     String? // URL file yang diupload (ZIP/Screenshot)
+  score       Float? // Nilai final dari asisten/pengajar (0-100)
+  aiScore     Float? // Skor referensi otomatis dari AI (0-100)
+  feedback    String? // Catatan koreksi dari asisten/pengajar
+  createdAt   DateTime  @default(now())
+
+  aiRubrik Json?
 
   @@unique([userId, pertemuanId, type])
 }
 
 model StudentProgress {
-  id           String     @id @default(uuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id])
-  pertemuanId  String
-  pertemuan    Pertemuan  @relation(fields: [pertemuanId], references: [id])
-  watchedTime  Int        @default(0)     // Persentase video ditonton (0-100)
-  isCompleted  Boolean    @default(false) // Status "Selesai" pada pertemuan
-  updatedAt    DateTime   @updatedAt
-  createdAt    DateTime   @default(now())
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  pertemuanId String
+  pertemuan   Pertemuan @relation(fields: [pertemuanId], references: [id])
+  watchedTime Int       @default(0) // Persentase video ditonton (0-100)
+  isCompleted Boolean   @default(false) // Status "Selesai" pada pertemuan
+  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now())
 
   @@unique([userId, pertemuanId])
 }
@@ -239,11 +291,11 @@ model UjianSubmission {
 }
 
 model Paket {
-  id          String       @id @default(uuid())
-  nama        String
-  deskripsi   String?
-  hargaPaket  String       @default("0")
-  hargaAsli   String       @default("0")
-  createdAt   DateTime     @default(now())
-  courses     MataKuliah[] @relation("PaketMataKuliah")
+  id         String       @id @default(uuid())
+  nama       String
+  deskripsi  String?
+  hargaPaket String       @default("0")
+  hargaAsli  String       @default("0")
+  createdAt  DateTime     @default(now())
+  courses    MataKuliah[] @relation("PaketMataKuliah")
 }

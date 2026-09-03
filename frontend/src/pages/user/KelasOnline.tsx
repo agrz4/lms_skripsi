@@ -44,10 +44,13 @@ const KelasOnline: React.FC = () => {
 
           if (reflectionSub) {
             setRefleksi(reflectionSub.content || '');
-            if (reflectionSub.aiScore) {
-              setAiScoreRef(reflectionSub.aiScore);
+
+            if (reflectionSub.score !== null && reflectionSub.score !== undefined) {
+               setAiScoreRef(reflectionSub.score);
+            } else if (reflectionSub.aiScore !== null && reflectionSub.aiScore !== undefined) {
+               setAiScoreRef(reflectionSub.aiScore);
             }
-          }
+         }
         })
         .catch(err => console.error('Gagal mengambil data submission sebelumnya', err));
     }
@@ -67,9 +70,9 @@ const KelasOnline: React.FC = () => {
         content: refleksi
       });
 
-      const score = response.data.data.aiScore;
+      const score = response.data.data.score ?? response.data.data.aiScore;
       setAiScoreRef(score);
-      showBanner('success', `Refleksi berhasil dikirim! AI menilai: ${score}/100.`);
+      showBanner('success', `Refleksi berhasil dikirim!`);
       
       // Update progress pertemuan ke completed secara otomatis
       await api.post('/student/status/progres', {

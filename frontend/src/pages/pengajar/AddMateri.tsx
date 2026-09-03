@@ -20,6 +20,10 @@ interface VideoItem {
   source: 'tiktok' | 'upload' | 'zoom';
   url: string;
   rekamanUrl?: string;
+
+  transcript?: string;
+  summary?: string;
+
   uploading?: boolean;
 }
 
@@ -105,9 +109,15 @@ const AddMateri: React.FC = () => {
           loadedVideos.push({
             id: mainZoomId,
             nama: zoomVideosFromBackend[0]?.nama || 'Zoom Meeting',
-            source: 'zoom',
+            source:'zoom',
+
             url: mainZoomLink,
-            rekamanUrl: firstRecording
+
+            rekamanUrl:firstRecording,
+
+            transcript:zoomVideosFromBackend[0]?.transcript,
+
+            summary:zoomVideosFromBackend[0]?.summary
           });
 
           // If there are more zoom recordings, load them as upload source
@@ -128,11 +138,20 @@ const AddMateri: React.FC = () => {
             src = 'tiktok';
           }
           loadedVideos.push({
-            id: m.id,
-            nama: m.nama || `Video ${loadedVideos.length + 1}`,
-            source: src,
-            url: m.videoUrl
-          });
+
+          id:m.id,
+
+          nama:m.nama,
+
+          source:src,
+
+          url:m.videoUrl,
+
+          transcript:m.transcript,
+
+          summary:m.summary
+
+      });
         });
 
         existingMateri.forEach((m: any) => {
@@ -242,16 +261,34 @@ const AddMateri: React.FC = () => {
           const updated = [...prev];
           if (updated[index]) {
             if (isZoomRekaman) {
-              updated[index] = { 
-                ...updated[index], 
-                rekamanUrl: res.data.fileUrl
-              };
+              updated[index] = {
+
+              ...updated[index],
+
+              rekamanUrl: res.data.fileUrl,
+
+              transcript: res.data.transcript,
+
+              summary: res.data.summary
+
+          };
             } else {
-              updated[index] = { 
-                ...updated[index], 
-                url: res.data.fileUrl,
-                nama: updated[index].nama && !updated[index].nama.startsWith('Video') ? updated[index].nama : file.name
-              };
+              updated[index] = {
+              ...updated[index],
+
+              url: res.data.fileUrl,
+
+              transcript: res.data.transcript,
+
+              summary: res.data.summary,
+
+              nama:
+                  updated[index].nama &&
+                  !updated[index].nama.startsWith("Video")
+                      ? updated[index].nama
+                      : file.name
+
+          };
             }
           }
           return updated;
@@ -313,28 +350,48 @@ const AddMateri: React.FC = () => {
 
       // Add videos
       videos.forEach((v, idx) => {
-        if (v.url.trim() || v.nama.trim() || (v.source === 'zoom' && (v.url.trim() || v.rekamanUrl?.trim()))) {
-          if (v.source === 'zoom') {
+        if (
+          v.url.trim() ||
+          v.nama.trim() ||
+          (v.source === "zoom" && (v.url.trim() || v.rekamanUrl?.trim()))
+        ) {
+
+          // Zoom Meeting
+          if (v.source === "zoom") {
+
+            // Link Zoom
             if (v.url.trim()) {
               payloads.push({
-                nama: v.nama || `Zoom Meeting`,
+                nama: v.nama || "Zoom Meeting",
                 videoUrl: v.url,
-                fileUrl: null
+                fileUrl: null,
+                transcript: v.transcript || null,
+                summary: v.summary || null
               });
             }
+
+            // Rekaman Zoom
             if (v.rekamanUrl && v.rekamanUrl.trim()) {
               payloads.push({
-                nama: `${v.nama || 'Pertemuan'} (Rekaman Zoom)`,
+                nama: `${v.nama || "Pertemuan"} (Rekaman Zoom)`,
                 videoUrl: v.rekamanUrl,
-                fileUrl: null
+                fileUrl: null,
+                transcript: v.transcript || null,
+                summary: v.summary || null
               });
             }
+
           } else {
+
+            // Upload Lokal / TikTok / YouTube
             payloads.push({
               nama: v.nama || `Video ${idx + 1}`,
               videoUrl: v.url || null,
-              fileUrl: null
+              fileUrl: null,
+              transcript: v.transcript || null,
+              summary: v.summary || null
             });
+
           }
         }
       });
@@ -353,7 +410,7 @@ const AddMateri: React.FC = () => {
       // If no payloads were created, add a default record
       if (payloads.length === 0) {
         payloads.push({
-          nama: 'Materi Utama',
+          nama: "Materi Utama",
           videoUrl: null,
           fileUrl: null
         });
@@ -366,23 +423,27 @@ const AddMateri: React.FC = () => {
       for (const p of payloads) {
         p.pertemuanId = meeting.id;
         p.mataKuliahId = meeting.mataKuliahId;
-        await api.post('/materi', p);
+
+        await api.post("/materi", p);
       }
 
       // 4. Save PG questions
       const questions = pgQuestions
-        .split('\n')
-        .map(q => q.trim())
-        .filter(q => q.length > 0);
+        .split("\n")
+        .map((q) => q.trim())
+        .filter((q) => q.length > 0);
 
-      const soalList = questions.map(q => ({ pertanyaan: q }));
-      await api.post('/materi/latihan-pg', {
+      const soalList = questions.map((q) => ({
+        pertanyaan: q,
+      }));
+
+      await api.post("/materi/latihan-pg", {
         mataKuliahId: meeting.mataKuliahId,
         pertemuanId: meeting.id,
-        soalList
+        soalList,
       });
 
-      alert('Seluruh materi dan latihan soal berhasil disimpan!');
+      alert("Seluruh materi dan latihan soal berhasil disimpan!");
 
       if (goToNext) {
         const nextMeeting = allMeetings.find((p: any) => p.urutan === meeting.urutan + 1 && p.mataKuliahId === meeting.mataKuliahId);

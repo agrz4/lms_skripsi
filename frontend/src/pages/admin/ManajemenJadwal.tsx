@@ -207,7 +207,7 @@ const ManajemenJadwal: React.FC = () => {
     return hasDate || hasTime || hasInstructor || hasCustomTopic;
   });
 
-  const totalMeetings = selectedCourse?.jumlahPertemuan || jadwalList.length || 3;
+  const totalMeetings = selectedCourse?.jumlahPertemuan || jadwalList.length || 14;
   const lastActiveUrutan = lastActiveIndex !== -1 ? (totalMeetings - lastActiveIndex) : 0;
   const showUpToUrutan = Math.min(totalMeetings, lastActiveUrutan + 1);
 

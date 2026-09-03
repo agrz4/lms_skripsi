@@ -55,36 +55,36 @@ const getMockCourses = (path: string) => {
   const norm = path.toLowerCase();
   if (norm.includes('science')) {
     return [
-      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } }
+      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } }
     ];
   }
   if (norm.includes('security') || norm.includes('cyber')) {
     return [
-      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } }
+      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } }
     ];
   }
   if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
     return [
-      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } }
+      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } }
     ];
   }
   if (norm.includes('ai') || norm.includes('intelligence')) {
     return [
-      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } }
+      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } }
     ];
   }
   return [
-    { id: 'mock-wd-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-    { id: 'mock-wd-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-    { id: 'mock-wd-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } }
+    { id: 'mock-wd-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+    { id: 'mock-wd-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+    { id: 'mock-wd-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } }
   ];
 };
 

@@ -5,7 +5,6 @@ import {
   HiOutlineCheckBadge,
   HiOutlineEye,
   HiOutlineChatBubbleBottomCenterText,
-  HiOutlinePhoto,
   HiOutlineDocumentDuplicate
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";

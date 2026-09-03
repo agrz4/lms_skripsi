@@ -36,12 +36,31 @@ const AddMateriAdmin: React.FC = () => {
   const [pgQuestions, setPgQuestions] = useState<string>('');
   const [newQuestion, setNewQuestion] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
+
+  // Menandai apakah materi yang sudah ada selesai dimuat ke form.
+  //
+  // Penyimpanan bekerja dengan cara MENGHAPUS seluruh materi pertemuan
+  // lalu membuatnya kembali dari isi form. Bila tombol simpan ditekan
+  // sebelum pemuatan selesai, form masih kosong, sehingga penghapusan
+  // tetap berjalan tetapi tidak ada yang dibuat kembali. Materi yang
+  // sudah diunggah pengguna lain akan hilang.
+  const [materiDimuat, setMateriDimuat] = useState<boolean>(false);
+  const [gagalMemuat, setGagalMemuat] = useState<boolean>(false);
   const [uploadingZoomVideo, setUploadingZoomVideo] = useState<boolean>(false);
   const [uploadingMicroVideo, setUploadingMicroVideo] = useState<boolean>(false);
   const [uploadingPdf, setUploadingPdf] = useState<boolean>(false);
   const [tugasCoding, setTugasCoding] = useState<string>(
     'Buatlah program sesuai instruksi pada modul ajar, kemudian unggah screenshot hasil run dan file source code (.zip) sebagai bukti praktikum.'
   );
+
+  const getBaseTopik = (nama: string) => {
+  return nama
+    .replace(/(\s*\(Rekaman Zoom\))+$/i, "")
+    .replace(/(\s*\(Micro Learning\))+$/i, "")
+    .replace(/(\s*\(PDF\))+$/i, "")
+    .replace(/(\s*\(Zoom Video\))+$/i, "")
+    .trim();
+};
 
   useEffect(() => {
     if (pertemuanId) {
@@ -75,6 +94,9 @@ const AddMateriAdmin: React.FC = () => {
         .catch(err => console.error('Failed to fetch pg questions', err));
       
       // 4. Fetch existing materials and reconstruct split arrays
+      setMateriDimuat(false);
+      setGagalMemuat(false);
+
       api.get(`/materi?pertemuanId=${pertemuanId}`)
         .then(res => {
           const existingMateri = res.data || [];
@@ -86,10 +108,19 @@ const AddMateriAdmin: React.FC = () => {
             let mainTopik = '';
             let mainRefleksi = '';
 
-            existingMateri.forEach((m: any) => {
-              if (m.nama && !mainTopik) {
-                mainTopik = m.nama;
-              }
+            const getBaseTopik = (nama: string) => {
+            return nama
+              .replace(/(\s*\(Rekaman Zoom\))+$/i, "")
+              .replace(/(\s*\(Micro Learning\))+$/i, "")
+              .replace(/(\s*\(PDF\))+$/i, "")
+              .replace(/(\s*\(Zoom Video\))+$/i, "")
+              .trim();
+};
+
+              existingMateri.forEach((m: any) => {
+                if (m.nama && !mainTopik) {
+                  mainTopik = getBaseTopik(m.nama);
+                }
               if (m.refleksi && !mainRefleksi) {
                 mainRefleksi = m.refleksi;
               }
@@ -141,10 +172,36 @@ const AddMateriAdmin: React.FC = () => {
             setPdfItems([]);
             setJenisUtama('Micro Learning');
           }
+
+          setMateriDimuat(true);
         })
-        .catch(err => console.error('Failed to fetch materi', err));
+        .catch(err => {
+          console.error('Failed to fetch materi', err);
+
+          // Jangan izinkan penyimpanan bila data lama gagal dimuat.
+          // Menyimpan dalam keadaan ini akan menghapus materi yang ada.
+          setGagalMemuat(true);
+          setMateriDimuat(false);
+        });
     }
   }, [pertemuanId]);
+
+  /**
+   * Memuat ulang materi pertemuan ini dari server.
+   *
+   * Berguna bila pengguna lain (admin atau dosen) baru saja menambahkan
+   * materi setelah halaman ini dibuka. Tanpa memuat ulang, penyimpanan
+   * akan menghapus materi tersebut karena form belum mengetahuinya.
+   */
+  const muatUlangMateri = () => {
+    if (!pertemuanId) return;
+    setMateriDimuat(false);
+    setGagalMemuat(false);
+    // Memicu ulang useEffect di atas dengan cara paling sederhana:
+    // memuat ulang halaman. Aman dilakukan karena seluruh isi form
+    // memang berasal dari server.
+    window.location.reload();
+  };
 
   const handleZoomVideoUpload = async (file: File) => {
     setUploadingZoomVideo(true);
@@ -175,6 +232,7 @@ const AddMateriAdmin: React.FC = () => {
       });
       if (res.data && res.data.success) {
         setMicroLearningItems(prev => [...prev, { type: 'upload', url: res.data.fileUrl }]);
+        
       }
     } catch (error: any) {
       console.error(error);
@@ -204,6 +262,19 @@ const AddMateriAdmin: React.FC = () => {
   };
 
   const handleSave = async (goToNext: boolean = false) => {
+
+    // Penjaga terakhir. Tombol memang sudah dinonaktifkan, tetapi
+    // pemeriksaan di sini melindungi bila fungsi terpanggil lewat jalur
+    // lain (misalnya penekanan Enter pada form).
+    if (!materiDimuat) {
+      alert(
+        'Data materi belum selesai dimuat. ' +
+        'Menyimpan sekarang berisiko menghapus materi yang sudah ada. ' +
+        'Tunggu sebentar lalu coba lagi.'
+      );
+      return;
+    }
+
     if (!pertemuanId || !meeting) {
       alert('Data pertemuan belum dimuat.');
       return;
@@ -219,40 +290,41 @@ const AddMateriAdmin: React.FC = () => {
 
       // 2. Prepare new records list
       const payloads: any[] = [];
+      const cleanTopik = getBaseTopik(topik);
       
       // Add Zoom Link
       if (zoomLink.trim()) {
         payloads.push({
-          nama: topik || 'Zoom Meeting',
+          nama: cleanTopik || 'Zoom Meeting',
           videoUrl: zoomLink,
           fileUrl: null
         });
       }
-      
+
       // Add Zoom Videos
       zoomVideos.forEach((url) => {
         payloads.push({
-          nama: `${topik || 'Pertemuan'} (Rekaman Zoom)`,
+          nama: `${cleanTopik || 'Pertemuan'} (Rekaman Zoom)`,
           videoUrl: url,
           fileUrl: null
         });
       });
-      
+
       // Add Micro Learning items
       microLearningItems.forEach((item) => {
         if (item.url.trim()) {
           payloads.push({
-            nama: `${topik || 'Pertemuan'} (Micro Learning)`,
+            nama: `${cleanTopik || 'Pertemuan'} (Micro Learning)`,
             videoUrl: item.url,
             fileUrl: null
           });
         }
       });
-      
+
       // Add PDF items
       pdfItems.forEach((url) => {
         payloads.push({
-          nama: `${topik || 'Pertemuan'} (PDF)`,
+          nama: `${cleanTopik || 'Pertemuan'} (PDF)`,
           videoUrl: null,
           fileUrl: url
         });
@@ -261,7 +333,7 @@ const AddMateriAdmin: React.FC = () => {
       // If no assets were created, make a default record
       if (payloads.length === 0) {
         payloads.push({
-          nama: topik || 'Materi Baru',
+          nama: cleanTopik || 'Materi Baru',
           videoUrl: null,
           fileUrl: null
         });
@@ -271,9 +343,18 @@ const AddMateriAdmin: React.FC = () => {
       payloads[0].refleksi = refleksi || null;
 
       // 3. Post all new records to backend
+      console.log("========== HANDLE SAVE ==========");
+      console.log("Pertemuan ID:", pertemuanId);
+      console.log("Jenis Utama:", jenisUtama);
+      console.log("Payloads:", payloads);
+      console.log("================================");
+      
       for (const p of payloads) {
         p.pertemuanId = pertemuanId;
         p.mataKuliahId = meeting.mataKuliahId;
+
+        console.log("Payload yang dikirim:", p);
+
         await api.post('/materi', p);
       }
 
@@ -807,14 +888,44 @@ const AddMateriAdmin: React.FC = () => {
                 + Kembali
               </Button>
 
+              {gagalMemuat && (
+                <div className="w-full mb-3 p-4 bg-rose-50 border border-rose-200 rounded-xl">
+                  <p className="text-xs font-bold text-rose-900">
+                    Gagal memuat materi yang sudah ada. Penyimpanan dinonaktifkan
+                    untuk mencegah materi terhapus. Periksa koneksi lalu muat ulang.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={muatUlangMateri}
+                    className="mt-2 text-xs font-black text-rose-700 underline"
+                  >
+                    Muat ulang
+                  </button>
+                </div>
+              )}
+
+              {materiDimuat && (
+                <button
+                  type="button"
+                  onClick={muatUlangMateri}
+                  disabled={saving}
+                  className="text-[10px] font-bold text-gray-500 hover:text-gray-800 underline mr-3"
+                  title="Gunakan bila pengguna lain baru saja menambah materi pada pertemuan ini"
+                >
+                  Muat ulang data terbaru
+                </button>
+              )}
+
               <Button 
                 type="button"
                 onClick={() => handleSave(true)}
-                disabled={saving}
+                disabled={saving || !materiDimuat}
                 className="bg-[#047857] hover:bg-[#065F46] text-white font-black py-5 px-6 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition-all"
               >
                 {saving ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : !materiDimuat ? (
+                  <>Memuat data materi...</>
                 ) : (
                   <>
                     Simpan & Add Pertemuan Berikutnya +

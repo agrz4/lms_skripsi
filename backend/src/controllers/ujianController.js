@@ -1,9 +1,5 @@
 const prisma = require('../config/db');
-const { GoogleGenAI } = require('@google/genai');
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const { callOllama } = require('../services/ollamaService');
 
 /**
  * GET /api/ujian/soal
@@ -69,10 +65,10 @@ const getUjianSoal = async (req, res) => {
     let questionsToReturn = [];
 
     if (questionsFromDb.length === 0) {
-      // Fallback: Jika tidak ada soal di database, generate 10 soal dari RAG/AI berdasarkan materi
+      // Fallback: Jika tidak ada soal di database, generate 10 soal dari Ollama
       try {
         const prompt = `Buatlah 10 pertanyaan pilihan ganda (PG) yang menantang dan relevan untuk mata kuliah dengan ID "${mataKuliahId}".
-Format output wajib berupa JSON array of objects murni (tanpa tag markdown \`\`\`json) dengan struktur:
+Format output wajib berupa JSON array of objects murni dengan struktur:
 [
   {
     "id": "temp-1",
@@ -86,25 +82,23 @@ Format output wajib berupa JSON array of objects murni (tanpa tag markdown \`\`\
   }
 ]`;
 
-        const response = await ai.models.generateContent({
-          model: 'models/gemini-flash-latest',
-          contents: [{ parts: [{ text: prompt }] }],
-        });
-
-        const cleanJson = response.text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
-        questionsToReturn = JSON.parse(cleanJson);
+        const generated = await callOllama(prompt);
+        if (Array.isArray(generated)) {
+          questionsToReturn = generated;
+        } else {
+          questionsToReturn = getStaticMockupQuestions();
+        }
       } catch (genErr) {
-        console.error('Failed to generate mock questions via Gemini:', genErr);
-        // Static mockup fallback
+        console.error('Failed to generate mock questions via Ollama:', genErr);
         questionsToReturn = getStaticMockupQuestions();
       }
     } else {
-      // Acak soal dan ambil maksimal 15 soal agar pemrosesan Gemini cepat
+      // Acak soal dan ambil maksimal 15 soal agar pemrosesan cepat
       const shuffled = questionsFromDb.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, 15);
 
       const questionsToReturnList = [];
-      const questionsToProcessWithGemini = [];
+      const questionsToProcessWithOllama = [];
 
       for (const q of selected) {
         let isJson = false;
@@ -130,14 +124,14 @@ Format output wajib berupa JSON array of objects murni (tanpa tag markdown \`\`\
         }
 
         if (!isJson) {
-          questionsToProcessWithGemini.push(q);
+          questionsToProcessWithOllama.push(q);
         }
       }
 
-      if (questionsToProcessWithGemini.length > 0) {
-        // Gunakan Gemini untuk membuat 4 pilihan ganda (A, B, C, D) untuk soal-soal ini
+      if (questionsToProcessWithOllama.length > 0) {
+        // Gunakan Ollama untuk membuat 4 pilihan ganda (A, B, C, D) untuk soal-soal ini
         try {
-          const questionsPayload = questionsToProcessWithGemini.map((q) => ({
+          const questionsPayload = questionsToProcessWithOllama.map((q) => ({
             id: q.id,
             pertanyaan: q.pertanyaan
           }));
@@ -146,7 +140,7 @@ Format output wajib berupa JSON array of objects murni (tanpa tag markdown \`\`\
 Pertanyaan:
 ${JSON.stringify(questionsPayload, null, 2)}
 
-Format output wajib berupa JSON array murni (tanpa tag markdown \`\`\`json) dengan struktur:
+Format output wajib berupa JSON array murni dengan struktur:
 [
   {
     "id": "soal-id-dari-input",
@@ -160,18 +154,26 @@ Format output wajib berupa JSON array murni (tanpa tag markdown \`\`\`json) deng
   }
 ]`;
 
-          const response = await ai.models.generateContent({
-            model: 'models/gemini-flash-latest',
-            contents: [{ parts: [{ text: prompt }] }],
-          });
-
-          const cleanJson = response.text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
-          const geminiQuestions = JSON.parse(cleanJson);
-          questionsToReturnList.push(...geminiQuestions);
+          const ollamaQuestions = await callOllama(prompt);
+          if (Array.isArray(ollamaQuestions)) {
+            questionsToReturnList.push(...ollamaQuestions);
+          } else {
+            // Fallback: buat opsi dummy sederhana
+            const fallbackQuestions = questionsToProcessWithOllama.map((q) => ({
+              id: q.id,
+              pertanyaan: q.pertanyaan,
+              options: {
+                A: 'Opsi A untuk soal ini',
+                B: 'Opsi B untuk soal ini',
+                C: 'Opsi C untuk soal ini',
+                D: 'Opsi D untuk soal ini'
+              }
+            }));
+            questionsToReturnList.push(...fallbackQuestions);
+          }
         } catch (aiErr) {
-          console.error('Failed to generate options via Gemini:', aiErr);
-          // Fallback: buat opsi dummy sederhana
-          const fallbackQuestions = questionsToProcessWithGemini.map((q) => ({
+          console.error('Failed to generate options via Ollama:', aiErr);
+          const fallbackQuestions = questionsToProcessWithOllama.map((q) => ({
             id: q.id,
             pertanyaan: q.pertanyaan,
             options: {
@@ -203,7 +205,7 @@ Format output wajib berupa JSON array murni (tanpa tag markdown \`\`\`json) deng
 
 /**
  * POST /api/ujian/submit
- * Menerima jawaban mahasiswa, melakukan scoring menggunakan Gemini AI, dan menyimpan hasilnya.
+ * Menerima jawaban mahasiswa, melakukan scoring menggunakan Ollama, dan menyimpan hasilnya.
  */
 const submitUjian = async (req, res) => {
   const { ujianId, answers, refleksi } = req.body;
@@ -223,7 +225,7 @@ const submitUjian = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ujian tidak ditemukan' });
     }
 
-    // Ambil kunci jawaban asli dari database untuk akurasi penilaian AI
+    // Ambil kunci jawaban asli dari database untuk akurasi penilaian
     const soalIds = answers.map((ans) => ans.id);
     const questionsFromDb = await prisma.soal.findMany({
       where: { id: { in: soalIds } }
@@ -254,7 +256,7 @@ const submitUjian = async (req, res) => {
       optionsMap[q.id] = parsedOptions;
     });
 
-    // Gunakan Gemini untuk mengoreksi jawaban mahasiswa
+    // Gunakan Ollama untuk mengoreksi jawaban mahasiswa
     let score = 0;
     let feedbackDetails = {};
     let promptFeedback = '';
@@ -275,7 +277,7 @@ Lembar Jawaban dan Kunci Jawaban Mahasiswa:
 ${JSON.stringify(answersForPrompt, null, 2)}
 
 Evaluasi setiap pertanyaan: periksa apakah selectedAnswer cocok dengan correctAnswer. Hitung persentase total jawaban yang benar (0-100) dan berikan penjelasan singkat mengapa correctAnswer tersebut benar.
-Format output wajib berupa JSON murni (tanpa tag markdown \`\`\`json) dengan struktur:
+Format output wajib berupa JSON murni dengan struktur:
 {
   "score": 85,
   "details": {
@@ -290,22 +292,14 @@ Format output wajib berupa JSON murni (tanpa tag markdown \`\`\`json) dengan str
       "explanation": "Penjelasan mengapa opsi A benar..."
     }
   }
-}
-`;
+}`;
 
-      const response = await ai.models.generateContent({
-        model: 'models/gemini-flash-latest',
-        contents: [{ parts: [{ text: gradingPrompt }] }],
-      });
-
-      const cleanJson = response.text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
-      const gradingResult = JSON.parse(cleanJson);
-
+      const gradingResult = await callOllama(gradingPrompt);
       score = gradingResult.score || 0;
       feedbackDetails = gradingResult.details || {};
       promptFeedback = `Evaluasi AI selesai dengan nilai ${score}.`;
     } catch (aiErr) {
-      console.error('Failed to grade exam via Gemini:', aiErr);
+      console.error('Failed to grade exam via Ollama:', aiErr);
       // Fallback: hitung score secara deterministik sesuai database
       let correctCount = 0;
       const totalQuestions = answers.length;
@@ -396,6 +390,9 @@ Format output wajib berupa JSON murni (tanpa tag markdown \`\`\`json) dengan str
   }
 };
 
+/**
+ * Helper function: Static mockup questions jika Ollama gagal
+ */
 const getStaticMockupQuestions = () => [
   {
     id: 'mock-1',

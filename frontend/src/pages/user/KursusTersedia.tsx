@@ -23,7 +23,6 @@ import { usePaketStore } from '../../store/usePaketStore';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import api from '../../lib/api';
 
 // Helper to format course release dates
@@ -52,18 +51,6 @@ const getPriceDisplay = (warnaVal: string | undefined | null) => {
     current: `Rp ${num.toLocaleString('id-ID')}`,
     old: `Rp ${oldPrice.toLocaleString('id-ID')}`
   };
-};
-
-const getFormattedCurrentTime = () => {
-  const now = new Date();
-  const day = now.getDate();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-  const month = months[now.getMonth()];
-  const year = now.getFullYear();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  return `${day} ${month} ${year}, ${hours}.${minutes}.${seconds}`;
 };
 
 // Helper for dynamic developer card images matching topics
@@ -98,64 +85,55 @@ const getMockNodes = (path: string = 'Web Development') => {
   if (normPath.includes('science')) {
     // Data Science
     return [
-      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-4', kode: 'DS-04', nama: 'Analisis Data & Visualisasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-5', kode: 'DS-05', nama: 'Pengantar Machine Learning', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } },
-      { id: 'mock-ds-6', kode: 'DS-06', nama: 'Capstone Data Science', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 142 } }
+      { id: 'mock-ds-1', kode: 'DS-01', nama: 'Python untuk Data Science', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-2', kode: 'DS-02', nama: 'Statistika Deskriptif', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-3', kode: 'DS-03', nama: 'Data Wrangling & SQL', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-4', kode: 'DS-04', nama: 'Analisis Data & Visualisasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-5', kode: 'DS-05', nama: 'Pengantar Machine Learning', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } },
+      { id: 'mock-ds-6', kode: 'DS-06', nama: 'Capstone Data Science', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 142 } }
     ];
   } else if (normPath.includes('security') || normPath.includes('cyber')) {
     // Cyber Security
     return [
-      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-4', kode: 'CS-04', nama: 'Analisis Forensik Digital', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-5', kode: 'CS-05', nama: 'Audit Keamanan Informasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } },
-      { id: 'mock-cs-6', kode: 'CS-06', nama: 'Cyber Defense Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 98 } }
+      { id: 'mock-cs-1', kode: 'CS-01', nama: 'Keamanan Jaringan Komputer', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-2', kode: 'CS-02', nama: 'Pengantar Kriptografi', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-3', kode: 'CS-03', nama: 'Ethical Hacking & Pentesting', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-4', kode: 'CS-04', nama: 'Analisis Forensik Digital', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-5', kode: 'CS-05', nama: 'Audit Keamanan Informasi', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } },
+      { id: 'mock-cs-6', kode: 'CS-06', nama: 'Cyber Defense Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 98 } }
     ];
   } else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) {
     // UI/UX Design
     return [
-      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-4', kode: 'UI-04', nama: 'Wireframing & Prototyping', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-5', kode: 'UI-05', nama: 'Usability Testing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } },
-      { id: 'mock-ui-6', kode: 'UI-06', nama: 'UI/UX Capstone Portfolio', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 215 } }
+      { id: 'mock-ui-1', kode: 'UI-01', nama: 'Fundamental Desain Grafis', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-2', kode: 'UI-02', nama: 'Pengantar UI/UX & Figma', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-3', kode: 'UI-03', nama: 'Riset Pengguna & Persona', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-4', kode: 'UI-04', nama: 'Wireframing & Prototyping', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-5', kode: 'UI-05', nama: 'Usability Testing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } },
+      { id: 'mock-ui-6', kode: 'UI-06', nama: 'UI/UX Capstone Portfolio', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 215 } }
     ];
   } else if (normPath.includes('ai') || normPath.includes('intelligence')) {
     // AI Fundamentals
     return [
-      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-4', kode: 'AI-04', nama: 'Deep Learning Basics', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-5', kode: 'AI-05', nama: 'Natural Language Processing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } },
-      { id: 'mock-ai-6', kode: 'AI-06', nama: 'AI Capstone Project', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 180 } }
+      { id: 'mock-ai-1', kode: 'AI-01', nama: 'Pengantar Kecerdasan Buatan', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-2', kode: 'AI-02', nama: 'Aljabar Linier untuk AI', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-3', kode: 'AI-03', nama: 'Pemrograman Python & ML', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-4', kode: 'AI-04', nama: 'Deep Learning Basics', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-5', kode: 'AI-05', nama: 'Natural Language Processing', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } },
+      { id: 'mock-ai-6', kode: 'AI-06', nama: 'AI Capstone Project', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 180 } }
     ];
   } else {
     // Default Web Development
     return [
-      { id: 'mock-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-      { id: 'mock-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-      { id: 'mock-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-      { id: 'mock-4', kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-      { id: 'mock-5', kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } },
-      { id: 'mock-6', kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 3, _count: { pendaftaran: 248 } }
+      { id: 'mock-1', kode: 'WD-01', nama: 'HTML & CSS Dasar', level: 'Beginner', published: true, warna: '0', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+      { id: 'mock-2', kode: 'WD-02', nama: 'JavaScript Dasar', level: 'Beginner', published: true, warna: '299000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+      { id: 'mock-3', kode: 'WD-03', nama: 'React JS Fundamental', level: 'Intermediate', published: true, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+      { id: 'mock-4', kode: 'WD-04', nama: 'Node.js & API dev', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+      { id: 'mock-5', kode: 'WD-05', nama: 'Database & ORM', level: 'Intermediate', published: false, warna: '499000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } },
+      { id: 'mock-6', kode: 'WD-06', nama: 'Full Stack Capstone', level: 'Advanced', published: false, warna: '799000', jumlahPertemuan: 14, _count: { pendaftaran: 248 } }
     ];
   }
 };
-
-interface PathStep {
-  name: string;
-  exists: boolean;
-  enrolled: boolean;
-  active: boolean;
-  course?: any;
-  trophy?: boolean;
-}
 
 const KursusTersedia: React.FC = () => {
   const navigate = useNavigate();
@@ -169,19 +147,6 @@ const KursusTersedia: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'Semua' | 'Free' | 'Berbayar' | 'Course map' | 'Referall'>('Semua');
   const [courseMapMode, setCourseMapMode] = useState<'individual' | 'paket'>('individual');
   const [progressData, setProgressData] = useState<any[]>([]);
-  const [selectedPaketId, setSelectedPaketId] = useState<string>('');
-
-  useEffect(() => {
-    if (dbPaketList && dbPaketList.length > 0 && !selectedPaketId) {
-      setSelectedPaketId(dbPaketList[0].id);
-    }
-  }, [dbPaketList, selectedPaketId]);
-
-  // Enrollment & Payment Simulation Modal States
-  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
-  const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState<any | null>(null);
-  const [referralInput, setReferralInput] = useState("");
-  const [isEnrolling, setIsEnrolling] = useState(false);
 
   // Referral State Variables
   const [referralActiveTab, setReferralActiveTab] = useState<'referral' | 'pembayaran'>('referral');
@@ -222,21 +187,27 @@ const KursusTersedia: React.FC = () => {
     }
   }, [activeFilter, fetchMyReferrals, fetchMyPendaftaran]);
 
-  const handleEnroll = async (id: string, referralCode?: string, customPrice?: string) => {
+  const handleEnroll = async (id: string) => {
     const course = publishedMataKuliahList.find(c => c.id === id);
     const priceDisplay = course ? getPriceDisplay(course.warna).current : 'Gratis';
-    let cleanPrice = customPrice !== undefined ? customPrice : (priceDisplay === 'Gratis' ? '0' : priceDisplay.replace(/[^0-9]/g, ''));
+    let cleanPrice = priceDisplay === 'Gratis' ? '0' : priceDisplay.replace(/[^0-9]/g, '');
 
-    if (referralCode && cleanPrice !== '0' && customPrice === undefined) {
-      // Apply 10% discount
-      const discountAmount = Math.round(parseInt(cleanPrice, 10) * 0.1);
-      cleanPrice = (parseInt(cleanPrice, 10) - discountAmount).toString();
+    let referralCode: string | undefined = undefined;
+    if (cleanPrice !== '0') {
+      const inputRefCode = window.prompt('Masukkan kode referral jika ada (untuk mendapatkan diskon 10%):');
+      if (inputRefCode) {
+        referralCode = inputRefCode.trim() || undefined;
+        if (referralCode) {
+          // Apply 10% discount
+          const discountAmount = Math.round(parseInt(cleanPrice, 10) * 0.1);
+          cleanPrice = (parseInt(cleanPrice, 10) - discountAmount).toString();
+        }
+      }
     }
 
     try {
-      setIsEnrolling(true);
       await enrollKursus(id, {
-        referralCode: referralCode || undefined,
+        referralCode,
         harga: cleanPrice,
         invoiceNo: `INV/MK/${Date.now()}`,
         method: 'Mandiri Virtual Account',
@@ -252,8 +223,6 @@ const KursusTersedia: React.FC = () => {
     } catch (err) {
       console.error('Failed to enroll:', err);
       alert('Gagal mendaftar kelas.');
-    } finally {
-      setIsEnrolling(false);
     }
   };
 
@@ -366,7 +335,7 @@ const KursusTersedia: React.FC = () => {
     }
   };
 
-  const getDynamicPathSteps = (path: string): PathStep[] => {
+  const getDynamicPathSteps = (path: string) => {
     const norm = path.toLowerCase();
     if (norm.includes('science')) {
       return [
@@ -448,19 +417,8 @@ const KursusTersedia: React.FC = () => {
           isLocked ? 'opacity-90' : ''
         }`}
         onClick={() => {
-          if (isLocked) return;
-          if (isRegistered) {
+          if (!isLocked) {
             navigate(`/user/detail-kursus?id=${course.id}`);
-          } else {
-            const priceInfo = getPriceDisplay(course.warna);
-            const isPaid = priceInfo.current !== 'Gratis';
-            if (isPaid) {
-              setSelectedCourseToEnroll(course);
-              setReferralInput("");
-              setIsEnrollModalOpen(true);
-            } else {
-              handleEnroll(course.id);
-            }
           }
         }}
       >
@@ -513,7 +471,7 @@ const KursusTersedia: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
                 <HiOutlineBookOpen className="text-sm shrink-0" />
-                <span>{course.jumlahPertemuan || course._count?.pertemuan || 3} Sesi</span>
+                <span>{course.jumlahPertemuan || course._count?.pertemuan || 14} Sesi</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
                 <HiOutlineUsers className="text-sm shrink-0" />
@@ -531,10 +489,10 @@ const KursusTersedia: React.FC = () => {
               <div className="pt-2 border-t border-gray-50">
                 <div className="flex justify-between items-center text-[9px] font-black text-gray-400 uppercase mb-1">
                   <span>Progres belajar</span>
-                  <span>{getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 3)}%</span>
+                  <span>{getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 14)}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#10b981] rounded-full transition-all duration-500" style={{ width: `${getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 3)}%` }}></div>
+                  <div className="h-full bg-[#10b981] rounded-full transition-all duration-500" style={{ width: `${getCourseProgress(course.id, course.jumlahPertemuan || course._count?.pertemuan || 14)}%` }}></div>
                 </div>
               </div>
             )}
@@ -589,15 +547,7 @@ const KursusTersedia: React.FC = () => {
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      const priceInfo = getPriceDisplay(course.warna);
-                      const isPaid = priceInfo.current !== 'Gratis';
-                      if (isPaid) {
-                        setSelectedCourseToEnroll(course);
-                        setReferralInput("");
-                        setIsEnrollModalOpen(true);
-                      } else {
-                        handleEnroll(course.id);
-                      }
+                      handleEnroll(course.id);
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-[9px] h-8 px-4 shadow-sm uppercase tracking-wider flex items-center gap-1"
                   >
@@ -631,7 +581,7 @@ const KursusTersedia: React.FC = () => {
 
   // Mock nodes removed (defined in outer scope)
 
-  const renderUserCourseCard = (course: any) => {
+  const renderTimelineCard = (course: any) => {
     const isRegistered = course.id.startsWith('mock-') 
       ? (course.id.endsWith('1') || course.id.endsWith('2') || course.id.endsWith('3'))
       : pendaftaranList.some(p => p.mataKuliahId === course.id);
@@ -646,249 +596,204 @@ const KursusTersedia: React.FC = () => {
       : (!isPrereqsMet || !course.published);
 
     const priceInfo = getPriceDisplay(course.warna);
-    const meetingsText = `${course.jumlahPertemuan || 3} Sesi`;
+    const participantCount = course._count?.pendaftaran || 0;
 
-    // Footer bar styling based on status
-    let footerBg = 'bg-[#76b900] text-white'; // NVIDIA Green style by default
-    let footerText = `${meetingsText} | Enroll`;
-
-    if (isRegistered) {
-      footerBg = 'bg-[#10b981] text-white'; // Emerald Green for active
-      footerText = 'AKTIF / TERDAFTAR';
-    } else if (isLocked) {
-      footerBg = 'bg-gray-400 text-white'; // Grey for locked
-      footerText = 'TERKUNCI';
-    } else {
-      // Determine green or purple accent based on price/warna
-      const cleanPrice = (course.warna || '').replace(/[^0-9]/g, '');
-      const numPrice = parseInt(cleanPrice, 10);
-      if (!isNaN(numPrice) && numPrice >= 500000 || (course.warna || '').toLowerCase().includes('500')) {
-        footerBg = 'bg-[#7630a3] text-white'; // Purple style for expensive/adv
-      }
-      footerText = `Daftar | ${priceInfo.current}`;
-    }
+    const getLevelBadgeColor = (level: string) => {
+      const lvl = (level || '').toLowerCase();
+      if (lvl === 'beginner') return 'bg-blue-50 text-blue-600 border border-blue-200';
+      if (lvl === 'intermediate') return 'bg-amber-50 text-amber-600 border border-amber-200';
+      return 'bg-purple-50 text-purple-600 border border-purple-200';
+    };
 
     return (
-      <div
-        key={course.id}
+      <Card 
+        className={`bg-white p-5 rounded-2xl border border-gray-200 shadow-sm w-[290px] flex flex-col justify-between min-h-[140px] cursor-pointer hover:shadow-md transition-all duration-300 ${
+          isLocked ? 'opacity-90' : ''
+        }`}
         onClick={() => {
           if (course.id.startsWith('mock-')) {
             alert(`Kursus mockup "${course.nama}" belum dibuat di database oleh Admin.`);
             return;
           }
-          if (isLocked) return;
-          if (isRegistered) {
+          if (!isLocked) {
             navigate(`/user/detail-kursus?id=${course.id}`);
-          } else {
-            const isPaid = priceInfo.current !== 'Gratis';
-            if (isPaid) {
-              setSelectedCourseToEnroll(course);
-              setReferralInput("");
-              setIsEnrollModalOpen(true);
-            } else {
-              handleEnroll(course.id);
-            }
           }
         }}
-        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[260px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
-          isRegistered ? 'ring-4 ring-emerald-500/25 border-emerald-500' : ''
-        } ${isLocked ? 'opacity-85 cursor-not-allowed' : ''}`}
       >
-        {isRegistered && (
-          <div className="absolute top-2 right-2 w-4 h-4 bg-[#0fc26a] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">✓</div>
-        )}
-        {isLocked && (
-          <div className="absolute top-2 right-2 w-4 h-4 bg-gray-500 text-white rounded-full flex items-center justify-center text-[8px] shadow-sm font-bold">🔒</div>
-        )}
-        {!isRegistered && !isLocked && (
-          <div className="absolute top-2 right-2 w-4 h-4 bg-[#5850ec] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">⏳</div>
-        )}
+        {/* Top Header Row */}
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            {course.kode}
+          </span>
+          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${getLevelBadgeColor(course.level || 'Beginner')}`}>
+            {course.level || 'Beginner'}
+          </span>
+        </div>
 
-        {/* Card Body - Content */}
-        <div className="p-4 flex-1 flex flex-col justify-center min-h-[70px] bg-[#f3f4f6]">
-          <p className="text-[9px] font-bold text-gray-400 mb-1 text-center tracking-wider">{course.kode}</p>
-          <h3 className="text-[11px] font-black text-gray-800 leading-snug text-center line-clamp-2">
+        {/* Middle Title & Details */}
+        <div className="mb-4 text-left">
+          <h4 className="text-xs font-black text-gray-900 leading-snug mb-1">
             {course.nama}
-          </h3>
+          </h4>
+          <span className="text-[10px] font-bold text-gray-400">
+            {course.jumlahPertemuan || 14} modul · {participantCount} siswa
+          </span>
         </div>
 
-        {/* Card Footer - Solid Color Bar */}
-        <div className={`h-8 flex items-center justify-center font-extrabold text-[10px] tracking-wide ${footerBg}`}>
-          {footerText}
+        {/* Bottom Row */}
+        <div className="flex justify-between items-center pt-3 border-t border-gray-100 mt-auto">
+          {/* Price */}
+          <span className={`text-[10px] font-black ${
+            priceInfo.current === 'Gratis' ? 'text-[#10b981]' : 'text-blue-600'
+          }`}>
+            {priceInfo.current}
+          </span>
+
+          {/* Status Pill */}
+          {isRegistered ? (
+            <span className="bg-emerald-50 text-[#10b981] text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-emerald-200/50">
+              Active
+            </span>
+          ) : (
+            <span 
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (course.id.startsWith('mock-')) {
+                  alert(`Kursus mockup "${course.nama}" belum dibuat di database oleh Admin.`);
+                  return;
+                }
+                if (!isLocked) {
+                  await handleEnroll(course.id);
+                }
+              }}
+              className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                isLocked 
+                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                  : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer'
+              }`}
+            >
+              {isLocked ? 'Terkunci' : 'Enroll'}
+            </span>
+          )}
         </div>
-      </div>
+      </Card>
     );
   };
 
   const renderRoadmapTimeline = () => {
-    const selectedPaket = dbPaketList.find(p => p.id === selectedPaketId) || dbPaketList[0];
-
-    const displayCourses = (() => {
-      if (!selectedPaket || !selectedPaket.courses) {
-        return getMockNodes(activePath);
+    const pathPrefix = getPathPrefix(activePath);
+    const pathCourses = mataKuliahList.filter(c => {
+      if (c.kode?.toUpperCase().startsWith(pathPrefix)) return true;
+      if (c.kode?.toUpperCase().startsWith('MK')) {
+        const norm = activePath.toLowerCase();
+        if (norm.includes('science')) {
+          return c.kategori?.toLowerCase().includes('science') || c.nama?.toLowerCase().includes('data science') || c.nama?.toLowerCase().includes('statistik');
+        }
+        if (norm.includes('security') || norm.includes('cyber')) {
+          return c.kategori?.toLowerCase().includes('security') || c.kategori?.toLowerCase().includes('cyber') || c.nama?.toLowerCase().includes('keamanan') || c.nama?.toLowerCase().includes('cyber');
+        }
+        if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
+          return c.kategori?.toLowerCase().includes('design') || c.kategori?.toLowerCase().includes('ui') || c.nama?.toLowerCase().includes('ui/ux') || c.nama?.toLowerCase().includes('desain');
+        }
+        if (norm.includes('ai') || norm.includes('intelligence')) {
+          return c.kategori?.toLowerCase().includes('ai') || c.kategori?.toLowerCase().includes('intelligence') || c.nama?.toLowerCase().includes('kecerdasan') || c.nama?.toLowerCase().includes('artificial');
+        }
+        return c.kategori?.toLowerCase().includes('programming') || c.kategori?.toLowerCase().includes('web') || c.nama?.toLowerCase().includes('web') || c.nama?.toLowerCase().includes('pemrograman');
       }
-      
-      const courseIdsInPaket = new Set(selectedPaket.courses.map((c: any) => c.id));
-      const dbCourses = mataKuliahList.filter(c => courseIdsInPaket.has(c.id));
-      
-      return dbCourses.map(c => ({
-        ...c,
-        level: c.level || 'Beginner'
-      }));
-    })();
+      return false;
+    });
 
-    const categoriesWithCourses = (() => {
-      if (displayCourses.length === 0) return [];
+    const beginner = pathCourses.filter(c => c.level?.toLowerCase() === 'beginner');
+    const intermediate = pathCourses.filter(c => c.level?.toLowerCase() === 'intermediate');
+    const advanced = pathCourses.filter(c => c.level?.toLowerCase() === 'advanced' || c.level?.toLowerCase() === 'advance');
+    
+    const displayList = (beginner.length > 0 || intermediate.length > 0 || advanced.length > 0)
+      ? [...beginner, ...intermediate, ...advanced]
+      : getMockNodes(activePath);
 
-      const courseMap = new Map(displayCourses.map(c => [c.id, c]));
-      const depthMemo = new Map<string, number>();
-
-      const getDepth = (courseId: string, visited: Set<string> = new Set()): number => {
-        if (depthMemo.has(courseId)) return depthMemo.get(courseId)!;
-        if (visited.has(courseId)) return 0; // Avoid circular dependencies
-        
-        const course = courseMap.get(courseId) as any;
-        if (!course) return 0;
-        
-        visited.add(courseId);
-        
-        let maxPrereqDepth = -1;
-        const prereqs = course.prerequisites || [];
-        for (const p of prereqs) {
-          const prereqId = typeof p === 'object' ? p.id : p;
-          if (courseMap.has(prereqId)) {
-            maxPrereqDepth = Math.max(maxPrereqDepth, getDepth(prereqId, new Set(visited)));
-          }
-        }
-        
-        const depth = maxPrereqDepth + 1;
-        depthMemo.set(courseId, depth);
-        return depth;
-      };
-
-      // Annotate all courses with depth
-      const coursesWithDepth = displayCourses.map(c => ({
-        ...c,
-        depth: getDepth(c.id)
-      }));
-
-      // Group by c.kategori
-      const groups: { [key: string]: typeof coursesWithDepth } = {};
-      coursesWithDepth.forEach(c => {
-        const kat = c.kategori || selectedPaket?.nama || activePath || 'Umum';
-        if (!groups[kat]) {
-          groups[kat] = [];
-        }
-        groups[kat].push(c);
-      });
-
-      // For each group, structure the courses by depth to draw vertical flows
-      return Object.keys(groups).map(kategoriName => {
-        const categoryCourses = groups[kategoriName];
-        
-        // Group categoryCourses by depth
-        const depthGroups: { [key: number]: typeof coursesWithDepth } = {};
-        categoryCourses.forEach(c => {
-          const d = c.depth || 0;
-          if (!depthGroups[d]) {
-            depthGroups[d] = [];
-          }
-          depthGroups[d].push(c);
-        });
-
-        // Sort the depths inside this category
-        const sortedDepths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
-        
-        const flowColumns = sortedDepths.map(depth => ({
-          depth,
-          courses: depthGroups[depth]
-        }));
-
-        return {
-          kategoriName,
-          flowColumns
-        };
-      });
-    })();
+    const getPathDescription = (pathName: string) => {
+      const norm = pathName.toLowerCase();
+      if (norm.includes('science')) {
+        return 'Jalur belajar terstruktur dari fundamental data hingga machine learning expert.';
+      }
+      if (norm.includes('security') || norm.includes('cyber')) {
+        return 'Jalur belajar terstruktur untuk menjadi ahli keamanan siber dan informasi.';
+      }
+      if (norm.includes('ui') || norm.includes('ux') || norm.includes('design')) {
+        return 'Jalur belajar terstruktur untuk menguasai riset pengguna, wireframing, hingga desain UI/UX modern.';
+      }
+      if (norm.includes('ai') || norm.includes('intelligence')) {
+        return 'Jalur belajar terstruktur untuk menguasai dasar kecerdasan buatan dan generative AI.';
+      }
+      return 'Jalur belajar terstruktur dari fundamental hingga full-stack developer profesional.';
+    };
 
     return (
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-200 mt-2">
-        <div className="mb-8 text-left flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-black text-gray-900 mb-1">Learning Roadmap</h2>
-            <p className="text-xs text-gray-500 font-bold">
-              {selectedPaket?.deskripsi || 'Jalur belajar terstruktur untuk menguasai kompetensi secara terarah.'}
-            </p>
-          </div>
-          {dbPaketList && dbPaketList.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500">Pilih Paket:</span>
-              <select
-                value={selectedPaketId}
-                onChange={(e) => setSelectedPaketId(e.target.value)}
-                className="bg-[#f3f4f6] border border-gray-200 text-gray-700 font-black text-[11px] uppercase rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
-              >
-                {dbPaketList.map(paket => (
-                  <option key={paket.id} value={paket.id}>{paket.nama}</option>
-                ))}
-              </select>
-            </div>
-          )}
+        <div className="mb-10 text-left">
+          <h2 className="text-xl font-black text-gray-900 mb-1">Learning Roadmap</h2>
+          <p className="text-xs text-gray-500 font-bold">
+            {getPathDescription(activePath)}
+          </p>
         </div>
 
-        <div className="flex flex-col gap-12">
-          {categoriesWithCourses.map((cat) => (
-            <div key={cat.kategoriName} className="flex flex-col gap-4 border-b border-gray-100 pb-8 last:border-b-0 last:pb-0 text-left">
-              {/* Category Heading */}
-              <h3 className="text-sm font-black text-gray-800 tracking-wide uppercase border-b border-gray-100 pb-2">
-                {cat.kategoriName}
-              </h3>
+        {/* Vertical Timeline container */}
+        <div className="relative flex flex-col items-center">
+          {/* Central vertical line */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-10 bottom-10 w-[2px] bg-gray-300"></div>
 
-              {/* Vertical Flow Container */}
-              <div className="flex flex-col items-center py-4 gap-4">
-                {cat.flowColumns.map((column, colIdx) => (
-                  <React.Fragment key={column.depth}>
-                    {/* Row/stack containing courses at this depth */}
-                    <div className="flex flex-wrap gap-4 justify-center py-2">
-                      {column.courses.map((course) => renderUserCourseCard(course))}
-                    </div>
+          <div className="space-y-16 w-full max-w-[700px] relative">
+            {displayList.map((course, idx) => {
+              // Custom alternation matching your mockup:
+              // Index: 0 -> Left, 1 -> Right, 2 -> Left, 3 -> Right, 4 -> Right, 5 -> Left
+              const alignments = ['left', 'right', 'left', 'right', 'right', 'left'];
+              const align = alignments[idx % alignments.length];
+              const isLeft = align === 'left';
 
-                    {/* Connection Arrow between columns (vertical) */}
-                    {colIdx < cat.flowColumns.length - 1 && (
-                      <div className="flex items-center justify-center text-gray-400 font-black py-1 select-none">
-                        <svg className="w-5 h-5 stroke-current animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
-                        </svg>
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          ))}
+              const lvl = (course.level || '').toLowerCase();
+              let dotColor = 'bg-sky-500 ring-sky-200';
+              if (lvl === 'intermediate') {
+                dotColor = 'bg-amber-500 ring-amber-200';
+              } else if (lvl === 'advanced' || lvl === 'advance') {
+                dotColor = 'bg-red-500 ring-red-200';
+              }
 
-          {categoriesWithCourses.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
-              <p className="text-xs text-gray-400 font-semibold mt-1">Silakan pilih paket lain.</p>
-            </div>
-          )}
+              return (
+                <div key={course.id} className="relative flex items-center w-full justify-between">
+                  {/* Left Side Container */}
+                  <div className={`w-[45%] flex justify-end ${isLeft ? '' : 'invisible pointer-events-none'}`}>
+                    {renderTimelineCard(course)}
+                  </div>
 
-          {/* Legend */}
-          <div className="mt-6 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex flex-wrap items-center justify-center gap-6">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status Kelas:</span>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-              <span>Aktif / Terdaftar</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#76b900]"></span>
-              <span>Dapat Didaftar</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-              <span>Terkunci</span>
-            </div>
+                  {/* Central Node Dot */}
+                  <div className="absolute left-1/2 -translate-x-1/2 z-10">
+                    <div className={`w-3.5 h-3.5 rounded-full ${dotColor} ring-4`}></div>
+                  </div>
+
+                  {/* Right Side Container */}
+                  <div className={`w-[45%] flex justify-start ${!isLeft ? '' : 'invisible pointer-events-none'}`}>
+                    {renderTimelineCard(course)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="mt-16 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex items-center justify-center gap-6">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Keterangan:</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+            <span>Kursus aktif</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
+            <span className="w-2.5 h-2.5 rounded-full bg-gray-450"></span>
+            <span>Segera tersedia</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-700">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+            <span>Gratis</span>
           </div>
         </div>
       </div>
@@ -1426,108 +1331,6 @@ const KursusTersedia: React.FC = () => {
           </p>
         </div>
       )}
-
-      {/* Enroll & Payment Simulation Dialog Modal */}
-      <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-[1.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-          {/* Header Banner */}
-          <div className="bg-[#1d75d3] px-6 py-5 text-white">
-            <h2 className="text-lg font-black tracking-wide leading-none">Enroll Kursus</h2>
-            <p className="text-xs text-blue-100 font-bold mt-2 tracking-wide uppercase">
-              {selectedCourseToEnroll?.nama || 'Nama Kursus'}
-            </p>
-          </div>
-
-          {/* Form Content */}
-          <div className="p-6 space-y-6">
-            {/* Price box */}
-            {(() => {
-              if (!selectedCourseToEnroll) return null;
-              const priceInfo = getPriceDisplay(selectedCourseToEnroll.warna);
-              const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
-              
-              // Calculate discount if referral is entered
-              const hasReferral = referralInput.trim().length > 0;
-              const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
-              const finalPrice = priceNum - discountAmount;
-
-              return (
-                <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60">
-                  <div className="flex justify-between items-center px-5 py-4">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Harga kursus</span>
-                    <span className="text-sm font-black text-gray-800">
-                      {priceInfo.current}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center px-5 py-4 bg-gray-50/50">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total bayar</span>
-                    <span className="text-base font-black text-red-500">
-                      Rp {finalPrice.toLocaleString('id-ID')}
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Referral Code input */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
-                <HiOutlineTag className="text-sm text-gray-400 shrink-0" />
-                <span>Kode Referral</span>
-              </div>
-              <input 
-                type="text"
-                value={referralInput}
-                onChange={(e) => setReferralInput(e.target.value)}
-                placeholder="Masukkan kode referral jika ada"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-inner"
-              />
-              <p className="text-[10px] text-gray-400 font-bold">
-                * Gunakan kode referral untuk mendapatkan diskon 10%
-              </p>
-            </div>
-
-            {/* Info Waktu */}
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
-              <HiOutlineClock className="text-xs text-gray-400 shrink-0" />
-              <span>Waktu pendaftaran akan dicatat: {getFormattedCurrentTime()}</span>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex gap-4 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEnrollModalOpen(false)}
-                className="flex-1 py-6 bg-gray-100 hover:bg-gray-250 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
-              >
-                Lewati
-              </Button>
-              <Button
-                type="button"
-                disabled={isEnrolling}
-                onClick={async () => {
-                  if (!selectedCourseToEnroll) return;
-                  const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
-                  const hasReferral = referralInput.trim().length > 0;
-                  const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
-                  const finalPrice = priceNum - discountAmount;
-                  
-                  await handleEnroll(
-                    selectedCourseToEnroll.id, 
-                    referralInput.trim() || undefined, 
-                    finalPrice.toString()
-                  );
-                  setIsEnrollModalOpen(false);
-                }}
-                className="flex-1 py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
-              >
-                {isEnrolling ? 'Memproses...' : 'Konfirmasi Enroll'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

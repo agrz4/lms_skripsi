@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   HiOutlineArrowLeft, 
   HiOutlinePhoto,
-  HiOutlineDocumentArrowDown,
-  HiOutlineClipboardDocumentList
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -169,8 +167,22 @@ const KoreksiUploadDetail: React.FC = () => {
         }
       }
       const res = await api.get(`/koreksi/file-detail/${id}`);
+
       if (res.data && res.data.success) {
+        console.log("FETCH DETAIL DIPANGGIL");
+
+        console.log(res.data);
+
         const data = res.data.data;
+
+        console.log("===== ALL SUBMISSIONS =====");
+        console.table(
+    data.allSubmissions.map((s: any) => ({
+        type: s.type,
+        aiScore: s.aiScore,
+        aiRubrik: !!s.aiRubrik
+    }))
+);
         setSubmission(data);
         setScore(data.score || data.aiScore || 0);
         setFeedback(data.feedback || '');
@@ -257,6 +269,8 @@ const KoreksiUploadDetail: React.FC = () => {
   };
 
   const aiScore = isMockAni ? null : (refleksiSub?.aiScore ?? submission.aiScore);
+
+  const aiRubrik = refleksiSub?.aiRubrik ?? submission.aiRubrik;
 
   const resolveUrl = (url: string | null | undefined) => {
     if (!url) return '';
@@ -471,6 +485,97 @@ const KoreksiUploadDetail: React.FC = () => {
                      </p>
                   </div>
                 )}
+
+                {aiRubrik && (
+                <div className="bg-white border border-indigo-100 rounded-2xl p-6 shadow-sm space-y-5">
+
+                  <h3 className="text-sm font-black text-indigo-900 uppercase">
+                    Detail Penilaian AI
+                  </h3>
+
+                  {/*
+                    Mendukung DUA format rubrik.
+
+                    Format baru (cakupanPoin) menilai jawaban terhadap poin
+                    kunci yang diturunkan dari materi. Format lama (relevansi,
+                    pemahaman, analisis, bahasa) tetap dirender agar submission
+                    yang sudah terlanjur dinilai sebelum perubahan ini masih
+                    dapat dibuka.
+
+                    Semua akses memakai optional chaining. Tanpa itu, satu
+                    aspek yang tidak dikembalikan model membuat SELURUH halaman
+                    blank putih, bukan sekadar bagian itu yang kosong.
+                  */}
+
+                  {Array.isArray(aiRubrik?.cakupanPoin) ? (
+                    <>
+                      <div className="flex flex-wrap gap-4 text-xs font-bold">
+                        <span className="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-900">
+                          Poin kunci: {aiRubrik?.skorPoinKunci ?? '-'}/{aiRubrik?.bobotPoinKunci ?? 70}
+                        </span>
+                        <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-900">
+                          Kualitas refleksi: {aiRubrik?.kualitasRefleksi?.score ?? '-'}/{aiRubrik?.bobotKualitas ?? 30}
+                        </span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {aiRubrik.cakupanPoin.map((item: any, idx: number) => {
+
+                          const status = String(item?.status || 'TIDAK').toUpperCase();
+
+                          const warna =
+                            status === 'TERPENUHI' ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                            : status === 'SEBAGIAN' ? 'bg-amber-50 border-amber-200 text-amber-900'
+                            : 'bg-rose-50 border-rose-200 text-rose-900';
+
+                          return (
+                            <div key={idx} className={`border rounded-xl p-4 ${warna}`}>
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="font-bold text-sm">{item?.poin ?? '-'}</p>
+                                <span className="text-[10px] font-black uppercase tracking-widest shrink-0">
+                                  {status}
+                                </span>
+                              </div>
+                              {item?.alasan && (
+                                <p className="text-xs mt-2 opacity-80">{item.alasan}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {aiRubrik?.kualitasRefleksi?.reason && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-black text-gray-800">Catatan kualitas: </span>
+                          {aiRubrik.kualitasRefleksi.reason}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    [
+                      { kunci: 'relevansi', label: 'Relevansi', maks: 40 },
+                      { kunci: 'pemahaman', label: 'Pemahaman', maks: 30 },
+                      { kunci: 'analisis',  label: 'Analisis',  maks: 20 },
+                      { kunci: 'bahasa',    label: 'Bahasa',    maks: 10 },
+                    ].map(({ kunci, label, maks }) => {
+
+                      const aspek = aiRubrik?.[kunci];
+
+                      return (
+                        <div key={kunci}>
+                          <p className="font-bold text-sm">
+                            {label} ({aspek?.score ?? '-'}/{maks})
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {aspek?.reason ?? 'Aspek ini tidak dinilai oleh AI.'}
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+
+                </div>
+              )}
 
                 {/* Score Section */}
                 <div className="space-y-4">

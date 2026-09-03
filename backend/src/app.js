@@ -48,4 +48,29 @@ app.get('/', (req, res) => {
   res.json({ message: 'LMS Hybrid API is running' });
 });
 
+// Status antrian AI, berguna untuk memantau saat banyak mahasiswa
+// mengirim jawaban bersamaan.
+app.get('/api/antrian/status', (req, res) => {
+  const { statusAntrian } = require('./services/antrianAI');
+  res.json(statusAntrian());
+});
+
+// ==========================================================
+// PEMULIHAN ANTRIAN SAAT SERVER MENYALA
+//
+// Antrian AI hanya hidup di memori. Bila server restart di tengah
+// antrean, penilaian yang belum sempat jalan akan hilang dan
+// submission tertinggal selamanya dengan status "sedang diproses".
+//
+// Dijalankan sekali di sini, setelah aplikasi siap.
+// ==========================================================
+setImmediate(async () => {
+  try {
+    const { pulihkanPenilaianTertinggal } = require('./services/pemulihanAntrian');
+    await pulihkanPenilaianTertinggal();
+  } catch (err) {
+    console.error('Gagal menjalankan pemulihan antrian:', err.message);
+  }
+});
+
 module.exports = app;

@@ -162,6 +162,14 @@ const MateriSesi: React.FC = () => {
   const [aiScoreRef, setAiScoreRef] = useState<number | null>(null);
   const [aiFeedbackRef, setAiFeedbackRef] = useState<string>('');
 
+  // Menandai bahwa refleksi sudah terkirim tetapi penilaian AI masih berjalan
+  // di latar belakang pada server. Dipakai untuk menyalakan polling di bawah.
+  const [menungguPenilaian, setMenungguPenilaian] = useState(false);
+
+  // Teks posisi antrean dari server, misalnya
+  // "Sedang diproses oleh AI... (antrean ke-37, perkiraan 27 menit)"
+  const [statusAntrean, setStatusAntrean] = useState<string>('');
+
   // State variables for Screenshot Upload
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
@@ -263,18 +271,34 @@ const MateriSesi: React.FC = () => {
           const programSub = subs.find((s: any) => s.type === 'FILE_UPLOAD');
 
           if (reflectionSub) {
-            setRefleksi(reflectionSub.content || '');
-            if (reflectionSub.aiScore) {
-              setAiScoreRef(reflectionSub.aiScore);
-            }
-            if (reflectionSub.feedback) {
-              setAiFeedbackRef(reflectionSub.feedback);
-            }
+              setRefleksi(reflectionSub.content || '');
+
+              if (reflectionSub.score !== null && reflectionSub.score !== undefined) {
+                  setAiScoreRef(reflectionSub.score);
+              } else if (reflectionSub.aiScore !== null && reflectionSub.aiScore !== undefined) {
+                  setAiScoreRef(reflectionSub.aiScore);
+              }
+              if (reflectionSub.feedback) {
+                  setAiFeedbackRef(reflectionSub.feedback);
+              }
           }
           if (screenshotSub) setScreenshotUrl(screenshotSub.fileUrl || '');
           if (programSub) setProgramUrl(programSub.fileUrl || '');
         })
         .catch(err => console.error('Gagal mengambil data submission sebelumnya', err));
+
+      // Bila penilaian sebelumnya belum selesai (misalnya halaman dibuka
+      // ulang saat AI masih berjalan), nyalakan kembali penantian.
+      api.get(`/student/submissions?pertemuanId=${pertemuanId}`)
+        .then(response => {
+          const subs = response.data.data || [];
+          const reflectionSub = subs.find((s: any) => s.type === 'REFLEKSI');
+
+          if (reflectionSub && reflectionSub.aiScore === null && reflectionSub.score === null) {
+            setMenungguPenilaian(true);
+          }
+        })
+        .catch(() => { /* diabaikan, hanya pemeriksaan tambahan */ });
 
       // Fetch Latihan PG
       api.get(`/materi/latihan-pg?pertemuanId=${pertemuanId}`)
@@ -403,6 +427,102 @@ const MateriSesi: React.FC = () => {
     }
   };
 
+  // ==================================================================
+  // POLLING HASIL PENILAIAN AI
+  //
+  // Server membalas permintaan submit dengan cepat lalu menjalankan
+  // penilaian di latar belakang, sehingga skornya belum ada saat itu.
+  // Tanpa polling, mahasiswa harus me-refresh halaman sendiri untuk
+  // melihat nilainya.
+  //
+  // Berhenti otomatis ketika skor sudah didapat, atau setelah batas
+  // percobaan tercapai, agar tidak memanggil server selamanya.
+  // ==================================================================
+  useEffect(() => {
+
+    if (!menungguPenilaian || !pertemuanId) return;
+    if (aiScoreRef !== null) {
+      setMenungguPenilaian(false);
+      return;
+    }
+
+    // Penilaian berjalan dalam satu antrian di server. Bila banyak
+    // mahasiswa mengirim bersamaan, giliran terakhir bisa menunggu
+    // lebih dari satu jam. Karena itu batasnya panjang, tetapi jeda
+    // pemeriksaan melebar setelah beberapa menit agar tidak membanjiri
+    // server dengan permintaan yang belum tentu ada hasilnya.
+    const BATAS_MENIT = 90;
+
+    let percobaan = 0;
+    let dibatalkan = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const jedaBerikutnya = () => {
+      const menitBerjalan = (percobaan * 5) / 60;
+      if (menitBerjalan < 2) return 5000;      // 2 menit pertama: tiap 5 detik
+      if (menitBerjalan < 10) return 15000;    // sampai menit 10: tiap 15 detik
+      return 30000;                            // setelahnya: tiap 30 detik
+    };
+
+    const periksa = async () => {
+
+      percobaan += 1;
+
+      if (percobaan * 5 > BATAS_MENIT * 60) {
+        setMenungguPenilaian(false);
+        return;
+      }
+
+      try {
+
+        const response = await api.get(
+          `/student/submissions?pertemuanId=${pertemuanId}`
+        );
+
+        if (dibatalkan) return;
+
+        const subs = response.data.data || [];
+        const reflectionSub = subs.find((s: any) => s.type === 'REFLEKSI');
+
+        if (!reflectionSub) return;
+
+        const skor = reflectionSub.score ?? reflectionSub.aiScore;
+
+        if (skor !== null && skor !== undefined) {
+
+          setAiScoreRef(skor);
+
+          if (reflectionSub.feedback) {
+            setAiFeedbackRef(reflectionSub.feedback);
+          }
+
+          setMenungguPenilaian(false);
+          return;
+        }
+
+        // Selama menunggu, tampilkan posisi antrean yang dikirim server.
+        if (reflectionSub.feedback && reflectionSub.feedback.includes('antrean')) {
+          setStatusAntrean(reflectionSub.feedback);
+        }
+
+      } catch (err) {
+        console.error('Gagal memeriksa hasil penilaian AI', err);
+      }
+
+      if (!dibatalkan) {
+        timer = setTimeout(periksa, jedaBerikutnya());
+      }
+    };
+
+    timer = setTimeout(periksa, 5000);
+
+    return () => {
+      dibatalkan = true;
+      clearTimeout(timer);
+    };
+
+  }, [menungguPenilaian, pertemuanId, aiScoreRef]);
+
   // Handler for submitting Reflection
   const handleRefleksiSubmit = async () => {
     if (!refleksi.trim()) {
@@ -417,12 +537,22 @@ const MateriSesi: React.FC = () => {
         content: refleksi
       });
 
-      const score = response.data.data.aiScore;
-      setAiScoreRef(score);
+      // Penilaian AI berjalan di latar belakang pada server, sehingga
+      // response ini SELALU mengembalikan aiScore bernilai null.
+      //
+      // Versi sebelumnya membaca skor dari sini, jadi nilainya tidak pernah
+      // muncul dan mahasiswa harus me-refresh halaman secara manual.
+      // Sekarang polling di bawah yang mengambil hasilnya begitu siap.
       if (response.data.data.feedback) {
         setAiFeedbackRef(response.data.data.feedback);
       }
-      showBanner('success', `Refleksi berhasil dikirim! AI menilai: ${score}/100.`);
+
+      setMenungguPenilaian(true);
+
+      showBanner(
+          'success',
+          'Refleksi berhasil dikirim. Penilaian AI sedang diproses.'
+      );
       
       // Update progress pertemuan ke completed secara otomatis
       await api.post('/student/status/progres', {
@@ -486,7 +616,9 @@ const MateriSesi: React.FC = () => {
 
   const isCompleted = progressDetail?.isCompleted || (aiScoreRef !== null && pgSubmitted);
 
-  const activePdfUrl = selectedPdfUrl || (pdfs.length > 0 ? pdfs[0].fileUrl : '');
+  const activePdfUrl =
+    selectedPdfUrl ||
+    (pdfs.length > 0 ? (pdfs[0].fileUrl ?? '') : '');
   const activePdfName = selectedPdfName || (pdfs.length > 0 ? pdfs[0].nama : 'Materi Sesi.pdf');
 
   // Check if current tab is full width (requires hiding the sidebar)
@@ -710,7 +842,11 @@ const MateriSesi: React.FC = () => {
                      <HiOutlineVideoCamera className="text-base" /> {rec.nama || `Rekaman Zoom (Video ${index + 1})`}
                   </h3>
                   <div 
-                    onClick={() => window.open(rec.videoUrl, '_blank')}
+                    onClick={() => {
+                        if (rec.videoUrl) {
+                            window.open(rec.videoUrl, '_blank');
+                        }
+                    }}
                     className="aspect-video w-full bg-[#182C44] rounded-[2rem] flex flex-col items-center justify-center border border-gray-50 relative group overflow-hidden shadow-sm cursor-pointer"
                   >
                     <div className="w-20 h-20 bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-all shadow-2xl border border-white/10">
@@ -718,7 +854,9 @@ const MateriSesi: React.FC = () => {
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white/90">
                       <span className="text-xs font-bold tracking-wide font-mono truncate max-w-[80%]">
-                        {rec.videoUrl.substring(rec.videoUrl.lastIndexOf('/') + 1)}
+                        {rec.videoUrl
+                              ? rec.videoUrl.substring(rec.videoUrl.lastIndexOf('/') + 1)
+                              : '-'}
                       </span>
                       <span className="text-xs font-bold font-mono">Klik untuk putar</span>
                     </div>
@@ -743,7 +881,11 @@ const MateriSesi: React.FC = () => {
                   <div key={v.id} className="space-y-6">
                     <h3 className="text-sm font-black text-gray-700 text-left">Video {i + 1} — {v.nama}</h3>
                     <div 
-                      onClick={() => window.open(v.videoUrl, '_blank')}
+                      onClick={() => {
+                          if (v.videoUrl) {
+                              window.open(v.videoUrl, '_blank');
+                          }
+                      }}
                       className="aspect-video w-full bg-gray-100 rounded-[2rem] flex items-center justify-center border border-gray-50 overflow-hidden relative group shadow-inner cursor-pointer"
                     >
                       <HiOutlinePlayCircle className="text-8xl text-gray-300 group-hover:text-blue-500 transition-all animate-pulse" />
@@ -764,7 +906,9 @@ const MateriSesi: React.FC = () => {
                         <div className="flex flex-col items-center gap-3 text-center">
                            <HiOutlinePlayCircle className="text-6xl text-gray-300 group-hover:text-indigo-500 transition-all" />
                            <div>
-                              <p className="text-xs font-black text-gray-500">{v.videoUrl.replace('https://', '').replace('http://', '')}</p>
+                              <p className="text-xs font-black text-gray-500">
+                                {(v.videoUrl ?? '').replace('https://', '').replace('http://', '')}
+                              </p>
                               <p className="text-[10px] font-bold text-gray-400">Klik untuk buka di TikTok</p>
                            </div>
                         </div>
@@ -786,7 +930,7 @@ const MateriSesi: React.FC = () => {
                        <div 
                          key={p.id} 
                          onClick={() => {
-                           setSelectedPdfUrl(p.fileUrl);
+                           setSelectedPdfUrl(p.fileUrl ?? '');
                            setSelectedPdfName(p.nama);
                            handleTabChange('pdf');
                          }}
@@ -960,7 +1104,9 @@ const MateriSesi: React.FC = () => {
                                   }`}>
                                     {key}
                                   </div>
-                                  <span className="text-xs font-bold">{optText}</span>
+                                  <span className="text-xs font-bold">
+                                      {String(optText)}
+                                  </span>
                                 </button>
                               );
                             })}
@@ -1237,6 +1383,17 @@ const MateriSesi: React.FC = () => {
                      Skor AI: {aiScoreRef}/100
                   </Badge>
                 )}
+
+                {/* Penanda bahwa penilaian masih berjalan di latar belakang.
+                    Tanpa ini, mahasiswa melihat layar yang tampak diam dan
+                    mengira pengirimannya gagal. */}
+                {aiScoreRef === null && menungguPenilaian && (
+                  <Badge className="bg-amber-500 text-white border-none font-black text-xs px-4 py-1.5 uppercase tracking-widest shadow-lg rounded-full">
+                     {statusAntrean
+                       ? statusAntrean.replace('Sedang diproses oleh AI...', 'Menunggu giliran')
+                       : 'Penilaian AI sedang diproses...'}
+                  </Badge>
+                )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -1424,69 +1581,68 @@ const MateriSesi: React.FC = () => {
                </div>
                <div className="divide-y divide-gray-100">
                   
-                  {/* Status item 1: Link Zoom */}
-                  <div className="p-5 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">Link Zoom</span>
-                     <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                        ✓ Hadir
-                     </Badge>
-                  </div>
+                  {/*
+                    Panel status ini sebelumnya berisi data contoh yang
+                    tertanam di kode: "Hadir", "Selesai", "60% ditonton",
+                    "9/10", dan "Nilai: 80" selalu muncul apa pun keadaan
+                    sebenarnya. Beberapa percabangan bahkan menampilkan teks
+                    yang sama pada kedua cabangnya, sehingga mahasiswa yang
+                    belum mengerjakan apa pun tetap melihat seluruh baris
+                    bercentang hijau.
 
-                  {/* Status item 2: Rekaman Video 1 */}
-                  <div className="p-5 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">Rekaman Video 1</span>
-                     <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                        ✓ Selesai
-                     </Badge>
-                  </div>
+                    Sekarang setiap baris dibaca dari data nyata. Baris yang
+                    datanya memang belum dilacak sistem (kehadiran Zoom dan
+                    persentase menonton video) dihilangkan, karena
+                    menampilkannya berarti mengarang.
+                  */}
 
-                  {/* Status item 3: Rekaman Video 2 */}
-                  <div className="p-5 flex justify-between items-center">
-                     <span className="text-xs font-bold text-gray-500">Rekaman Video 2</span>
-                     <Badge className="bg-amber-100 text-amber-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                        60% ditonton
-                     </Badge>
-                  </div>
-
-                  {/* Status item 4: Latihan PG */}
+                  {/* Latihan PG */}
                   <div className="p-5 flex justify-between items-center">
                      <span className="text-xs font-bold text-gray-500">Latihan PG</span>
                      {pgSubmitted ? (
                        <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                          ✓ {pgScore ? `${Math.round(pgScore/10)}/10` : '9/10'}
+                          ✓ Nilai: {pgScore !== null ? pgScore : '-'}
                        </Badge>
                      ) : (
-                       <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                          ✓ 9/10
+                       <Badge className="bg-gray-100 text-gray-500 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
+                          Belum dikerjakan
                        </Badge>
                      )}
                   </div>
 
-                  {/* Status item 5: Upload Tugas */}
+                  {/* Upload Tugas */}
                   <div className="p-5 flex justify-between items-center">
                      <span className="text-xs font-bold text-gray-500">Upload Tugas</span>
                      {hasUploadedFiles ? (
                        <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                          ✓ Submitted
+                          ✓ Terkirim
                        </Badge>
                      ) : (
-                       <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                          ✓ Submitted
+                       <Badge className="bg-gray-100 text-gray-500 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
+                          Belum diunggah
                        </Badge>
                      )}
                   </div>
 
-                  {/* Status item 6: Refleksi */}
+                  {/* Refleksi */}
                   <div className="p-5 flex justify-between items-center">
                      <span className="text-xs font-bold text-gray-500">Refleksi</span>
                      {aiScoreRef !== null ? (
                        <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
                           ✓ Nilai: {aiScoreRef}
                        </Badge>
+                     ) : menungguPenilaian ? (
+                       <Badge className="bg-amber-100 text-amber-700 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
+                          Sedang dinilai
+                       </Badge>
+                     ) : refleksi && refleksi.trim() ? (
+                       <Badge className="bg-blue-100 text-blue-700 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
+                          Terkirim
+                       </Badge>
                      ) : (
-                       <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
-                          ✓ Nilai: 80
-                     </Badge>
+                       <Badge className="bg-gray-100 text-gray-500 border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-wider">
+                          Belum diisi
+                       </Badge>
                      )}
                   </div>
                </div>

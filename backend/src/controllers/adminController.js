@@ -1,5 +1,5 @@
 const prisma = require('../config/db');
-const { generateEmbedding } = require('../services/embeddingService');
+const { indexMateri } = require("../services/materiRagService");
 
 /**
  * POST /api/admin/assign-pengajar
@@ -120,71 +120,77 @@ const aiSync = async (req, res) => {
       });
     }
 
+
+    setImmediate(async () => {
+
     const logs = [];
     let successCount = 0;
 
     for (const materi of daftarMateri) {
-      // Set status to PROCESSING in database (try-catch for safety if db push is pending)
-      try {
-        await prisma.materi.update({
-          where: { id: materi.id },
-          data: { embeddingStatus: 'PROCESSING' }
-        });
-      } catch (err) {
-        // Ignore column error if db push hasn't been run yet
-      }
 
-      const textToEmbed = `Mata Kuliah: ${materi.mataKuliah.nama}. Pertemuan ke-${materi.pertemuan.urutan} Topik: ${materi.nama}. Detail Refleksi: ${materi.refleksi || ''}`;
-      
-      try {
-        // Panggil gemini embedding api untuk memvalidasi/membuat vector
-        const vector = await generateEmbedding(textToEmbed.substring(0, 1000));
-        
         try {
-          await prisma.materi.update({
-            where: { id: materi.id },
-            data: { embeddingStatus: 'SUCCESS' }
-          });
-        } catch (dbErr) {
-          // Ignore
+
+            await prisma.materi.update({
+                where: { id: materi.id },
+                data: {
+                    embeddingStatus: "PROCESSING"
+                }
+            });
+
+        } catch (err) {
+
+            // Abaikan jika kolom belum ada
+
         }
 
-        logs.push({
-          materiId: materi.id,
-          nama: materi.nama,
-          status: 'SUCCESS',
-          vectorDimension: vector.length,
-          snippet: textToEmbed.substring(0, 60) + '...'
-        });
-        successCount++;
-      } catch (embErr) {
-        console.error(`Gagal membuat embedding untuk materi ${materi.id}:`, embErr);
-        
         try {
-          await prisma.materi.update({
-            where: { id: materi.id },
-            data: { embeddingStatus: 'FAILED' }
-          });
-        } catch (dbErr) {
-          // Ignore
+
+            const totalChunk = await indexMateri(materi);
+
+            logs.push({
+                materiId: materi.id,
+                nama: materi.nama,
+                status: "SUCCESS",
+                totalChunk
+            });
+
+            successCount++;
+
+        } catch (err) {
+
+            console.error(
+                `Gagal mengindex materi ${materi.id}:`,
+                err
+            );
+
+            logs.push({
+                materiId: materi.id,
+                nama: materi.nama,
+                status: "FAILED",
+                error: err.message
+            });
+
         }
 
-        logs.push({
-          materiId: materi.id,
-          nama: materi.nama,
-          status: 'FAILED',
-          error: embErr.message
-        });
-      }
     }
 
-    return res.status(200).json({
-      success: true,
-      message: `Sinkronisasi AI selesai. Berhasil menyelaraskan ${successCount} dari ${daftarMateri.length} materi ke Vector DB.`,
-      syncedCount: successCount,
-      totalCount: daftarMateri.length,
-      logs
-    });
+    console.log("========== AI SYNC ==========");
+    console.log("Total :", daftarMateri.length);
+    console.log("Success :", successCount);
+    console.log("Logs :", logs);
+
+});
+
+    
+return res.status(200).json({
+
+    success: true,
+
+    message: "Sinkronisasi AI sedang diproses di background.",
+
+    totalCount: daftarMateri.length
+
+});
 
   } catch (error) {
     console.error('Error in aiSync:', error);
@@ -493,78 +499,16 @@ const downloadSertifikat = async (req, res) => {
   
   <text x="400" y="420" font-family="'Inter', sans-serif" font-size="14" font-weight="700" fill="#a7f3d0" text-anchor="middle">Dengan Predikat Nilai Kumulatif: ${sertifikat.nilai} / 100</text>
 
-  <!-- Left Side: Digital Signature of Kepala Akademik -->
-  <g transform="translate(130, 480)">
-    <!-- Real-looking digital ink signature stroke -->
-    <path d="M 20 -25 C 35 -45, 50 -5, 65 -35 C 80 -55, 85 -20, 100 -25 C 115 -30, 120 -10, 135 -20 M 50 -35 L 110 -15" 
-          fill="none" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
-    <path d="M 35 -30 Q 55 -5 70 -35 T 100 -20" 
-          fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" />
-    <circle cx="75" cy="-20" r="22" fill="none" stroke="#0284c7" stroke-width="1" stroke-dasharray="1,4" opacity="0.4" />
-    
-    <!-- Stamp/Seal overlay on signature -->
-    <g transform="translate(30, -20)" opacity="0.25">
-      <circle cx="0" cy="0" r="25" fill="none" stroke="#38bdf8" stroke-width="1.5" />
-      <circle cx="0" cy="0" r="21" fill="none" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="2,2" />
-      <path d="M-5,-5 L5,5 M-5,5 L5,-5" stroke="#38bdf8" stroke-width="1" />
-      <text x="0" y="3" font-family="'Inter', sans-serif" font-size="5" font-weight="bold" fill="#38bdf8" text-anchor="middle">LMS SEAL</text>
-    </g>
-
-    <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1.5" />
-    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#e2e8f0" text-anchor="middle">Admin LMS Hybrid</text>
-    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">Kepala Akademik</text>
+  <g transform="translate(150, 480)">
+    <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1" />
+    <text x="75" y="20" font-family="'Inter', sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Kepala Akademik</text>
+    <text x="75" y="-15" font-family="'Brush Script MT', cursive, sans-serif" font-size="18" fill="#fbbf24" text-anchor="middle">Admin LMS Hybrid</text>
   </g>
 
-  <!-- Center: Cryptographic Seal & Verification QR Code -->
-  <g transform="translate(370, 455)">
-    <!-- QR Code border & box -->
-    <rect x="-5" y="-5" width="70" height="70" fill="#1e293b" stroke="#334155" stroke-width="1.5" rx="6" filter="url(#shadow)" />
-    
-    <!-- QR Code Position Detection Patterns -->
-    <g fill="#fbbf24">
-      <!-- Top-Left -->
-      <rect x="5" y="5" width="16" height="16" rx="1.5" />
-      <rect x="8" y="8" width="10" height="10" fill="#1e293b" />
-      <rect x="10" y="10" width="6" height="6" />
-      
-      <!-- Top-Right -->
-      <rect x="39" y="5" width="16" height="16" rx="1.5" />
-      <rect x="42" y="8" width="10" height="10" fill="#1e293b" />
-      <rect x="44" y="10" width="6" height="6" />
-      
-      <!-- Bottom-Left -->
-      <rect x="5" y="39" width="16" height="16" rx="1.5" />
-      <rect x="8" y="42" width="10" height="10" fill="#1e293b" />
-      <rect x="10" y="44" width="6" height="6" />
-    </g>
-    
-    <!-- QR Data Patterns -->
-    <g fill="#38bdf8">
-      <rect x="25" y="5" width="4" height="4" rx="0.5" />
-      <rect x="31" y="9" width="4" height="4" rx="0.5" fill="#34d399" />
-      <rect x="25" y="17" width="8" height="8" rx="1" fill="#34d399" />
-      <rect x="39" y="25" width="4" height="4" rx="0.5" />
-      <rect x="25" y="39" width="4" height="4" rx="0.5" fill="#fbbf24" />
-      <rect x="31" y="45" width="6" height="6" rx="1" />
-      <rect x="45" y="39" width="4" height="4" rx="0.5" />
-      <rect x="51" y="45" width="4" height="4" rx="0.5" fill="#fbbf24" />
-    </g>
-    
-    <!-- Digital Verification Label -->
-    <rect x="-15" y="78" width="90" height="14" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="4" />
-    <text x="30" y="87" font-family="'Inter', sans-serif" font-size="7" font-weight="900" fill="#34d399" letter-spacing="0.5" text-anchor="middle">✓ VERIFIED SIGNATURE</text>
-  </g>
-
-  <!-- Right Side: Date of Issuance -->
-  <g transform="translate(520, 480)">
-    <!-- Security fingerprint waves -->
-    <path d="M 40 -35 A 15 15 0 0 1 110 -35" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.4" />
-    <path d="M 45 -30 A 10 10 0 0 1 105 -30" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.3" />
-    <path d="M 50 -25 A 5 5 0 0 1 100 -25" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.2" />
-    
-    <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1.5" />
-    <text x="75" y="18" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">${formattedDate}</text>
-    <text x="75" y="32" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#64748b" text-anchor="middle">Tanggal Penerbitan</text>
+  <g transform="translate(500, 480)">
+    <line x1="0" y1="0" x2="150" y2="0" stroke="#475569" stroke-width="1" />
+    <text x="75" y="20" font-family="'Inter', sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Tanggal Penerbitan</text>
+    <text x="75" y="-15" font-family="'Inter', sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">${formattedDate}</text>
   </g>
 
   <text x="400" y="550" font-family="'Courier New', monospace" font-size="10" fill="#475569" text-anchor="middle">No: ${sertifikat.noSertifikat}</text>
