@@ -3,6 +3,7 @@ const prisma = require('../config/db');
 const getAllMataKuliah = async (req, res) => {
   try {
     const mataKuliah = await prisma.mataKuliah.findMany({
+      orderBy: { createdAt: 'desc' },
       include: {
         _count: {
           select: {
@@ -215,6 +216,7 @@ const getPublishedMataKuliah = async (req, res) => {
   try {
     const mataKuliah = await prisma.mataKuliah.findMany({
       where: { published: true },
+      orderBy: { createdAt: 'desc' },
       include: {
         _count: {
           select: {

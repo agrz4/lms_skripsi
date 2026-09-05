@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { usePengajarStore } from '../../store/usePengajarStore';
 import { useJadwalStore, type Pertemuan } from '../../store/useJadwalStore';
 import { 
   HiOutlinePlus, 
   HiOutlinePencilSquare,
-  HiOutlineCalendar,
-  HiOutlineClock,
-  HiOutlineAcademicCap
+  HiOutlineMagnifyingGlass,
+  HiOutlineXMark
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +32,8 @@ const ManajemenJadwal: React.FC = () => {
   const { jadwalList, fetchJadwal, updatePertemuan, isLoading: isJadwalLoading } = useJadwalStore();
 
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [courseSearch, setCourseSearch] = useState('');
+  const [courseStatusFilter, setCourseStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingSession, setEditingSession] = useState<Pertemuan | null>(null);
@@ -81,7 +82,8 @@ const ManajemenJadwal: React.FC = () => {
     });
   };
 
-  const handleHariChange = (val: string) => {
+  const handleHariChange = (val: string | null) => {
+    if (!val) return;
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const targetDayIndex = days.indexOf(val);
     if (targetDayIndex === -1) return;
@@ -225,7 +227,24 @@ const ManajemenJadwal: React.FC = () => {
     ? ''
     : (pengajarList.find(p => p.id === formData.asistenId)?.nama || editingSession?.asisten?.nama || formData.asistenId);
 
+  // Filtered courses for search & status filter
+  const filteredMataKuliahList = useMemo(() => {
+    return mataKuliahList.filter((mk) => {
+      const q = courseSearch.trim().toLowerCase();
+      const matchesSearch = !q || 
+        mk.nama.toLowerCase().includes(q) || 
+        (mk.kode && mk.kode.toLowerCase().includes(q));
 
+      const matchesStatus = courseStatusFilter === 'all'
+        ? true
+        : courseStatusFilter === 'published' ? mk.published : !mk.published;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [mataKuliahList, courseSearch, courseStatusFilter]);
+
+  const publishedCount = useMemo(() => mataKuliahList.filter(m => m.published).length, [mataKuliahList]);
+  const draftCount = useMemo(() => mataKuliahList.filter(m => !m.published).length, [mataKuliahList]);
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
@@ -235,28 +254,147 @@ const ManajemenJadwal: React.FC = () => {
       </div>
 
       {/* Pilih Kursus Section */}
-      <Card className="rounded-[2rem] border-none shadow-sm bg-white mb-8">
+      <Card className="rounded-[2rem] border-none shadow-sm bg-white mb-8 overflow-hidden">
         <CardContent className="p-8">
-          <h2 className="text-[15px] font-extrabold text-gray-800 mb-4">Pilih Kursus</h2>
-          <div className="flex flex-wrap gap-3">
-            {mataKuliahList.map((mk) => {
-              const isSelected = selectedCourseId === mk.id;
-              return (
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-[16px] font-black text-gray-800">Pilih Kursus</h2>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                  {filteredMataKuliahList.length} dari {mataKuliahList.length} kursus
+                </span>
+              </div>
+              {selectedCourse && (
+                <p className="text-xs text-gray-500 mt-1.5 font-medium">
+                  Kursus aktif: <span className="font-bold text-[#5D5FEF]">{selectedCourse.nama}</span>
+                  {selectedCourse.published ? (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                      Published
+                    </span>
+                  ) : (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
+                      Draft
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {/* Search & Filter Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-64 md:w-72">
+                <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                <Input
+                  placeholder="Cari nama atau kode kursus..."
+                  value={courseSearch}
+                  onChange={(e) => setCourseSearch(e.target.value)}
+                  className="pl-9 pr-8 h-9 rounded-xl border-gray-200 bg-gray-50/80 text-xs font-medium text-gray-800 placeholder:text-gray-400 focus:bg-white focus-visible:ring-[#5D5FEF] focus-visible:border-[#5D5FEF] transition-all"
+                />
+                {courseSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCourseSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/60 transition-all"
+                    title="Hapus pencarian"
+                  >
+                    <HiOutlineXMark className="text-sm" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center bg-gray-100/90 p-1 rounded-xl gap-1">
                 <button
-                  key={mk.id}
-                  onClick={() => setSelectedCourseId(mk.id)}
-                  className={`px-5 py-3.5 rounded-2xl transition-all border font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
-                    isSelected 
-                      ? "bg-[#ECEEFE] border-[#5D5FEF] text-[#5D5FEF] shadow-sm font-extrabold" 
-                      : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
+                  type="button"
+                  onClick={() => setCourseStatusFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    courseStatusFilter === 'all'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  {mk.nama}
-                  {isSelected && <span>✓</span>}
+                  Semua ({mataKuliahList.length})
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => setCourseStatusFilter('published')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    courseStatusFilter === 'published'
+                      ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-emerald-700'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Published ({publishedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCourseStatusFilter('draft')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    courseStatusFilter === 'draft'
+                      ? 'bg-white text-amber-700 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-amber-700'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  Draft ({draftCount})
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Alert if active course is hidden by filter */}
+          {selectedCourse && !filteredMataKuliahList.some(mk => mk.id === selectedCourseId) && (
+            <div className="mb-4 text-xs bg-amber-50/90 border border-amber-200 text-amber-900 px-4 py-2 rounded-xl flex items-center justify-between">
+              <span>
+                Kursus terpilih saat ini <strong>{selectedCourse.nama}</strong> disembunyikan oleh filter/pencarian aktif.
+              </span>
+              <button
+                type="button"
+                onClick={() => { setCourseSearch(''); setCourseStatusFilter('all'); }}
+                className="text-[11px] font-bold text-amber-900 underline hover:no-underline ml-2 cursor-pointer"
+              >
+                Reset Filter & Tampilkan
+              </button>
+            </div>
+          )}
+
+          {/* Course Pills Container */}
+          {filteredMataKuliahList.length === 0 ? (
+            <div className="py-8 text-center bg-gray-50/70 rounded-2xl border border-dashed border-gray-200">
+              <p className="text-xs font-medium text-gray-500">
+                Tidak ditemukan kursus yang cocok dengan pencarian <span className="font-bold text-gray-700">"{courseSearch}"</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => { setCourseSearch(''); setCourseStatusFilter('all'); }}
+                className="mt-2 text-xs font-bold text-[#5D5FEF] hover:underline cursor-pointer"
+              >
+                Reset Filter & Pencarian
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2.5 max-h-56 overflow-y-auto pr-1">
+              {filteredMataKuliahList.map((mk) => {
+                const isSelected = selectedCourseId === mk.id;
+                return (
+                  <button
+                    key={mk.id}
+                    onClick={() => setSelectedCourseId(mk.id)}
+                    className={`px-4 py-2.5 rounded-xl transition-all border font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
+                      isSelected 
+                        ? "bg-[#ECEEFE] border-[#5D5FEF] text-[#5D5FEF] shadow-sm font-extrabold" 
+                        : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+                    }`}
+                  >
+                    <span>{mk.nama}</span>
+                    {isSelected && <span>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -473,34 +611,34 @@ const ManajemenJadwal: React.FC = () => {
                <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
                  Assign Pengajar
                </label>
-               <Select 
-                 value={formData.dosenId} 
-                 onValueChange={(val) => setFormData({...formData, dosenId: val})}
-               >
-                 <SelectTrigger className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white">
-                    <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-800">
-                      {selectedDosenName || "Pilih pengajar"}
-                    </span>
-                 </SelectTrigger>
-                 <SelectContent className="rounded-xl border-gray-200 animate-none">
-                   <SelectItem value="unassigned" className="font-semibold text-xs py-2 text-gray-400">Belum diassign / Pilih pengajar</SelectItem>
-                   {pengajarList.filter(p => p.role?.toUpperCase() === 'DOSEN' || p.role?.toUpperCase() === 'ADMIN').map(p => (
-                     <SelectItem key={p.id} value={p.id} className="font-semibold text-xs py-2">
-                        {p.nama} ({p.role})
-                     </SelectItem>
-                   ))}
-                   {/* Fallback to show the name from editingSession or full list if not found in filtered list */}
-                   {formData.dosenId && formData.dosenId !== 'unassigned' && !pengajarList.filter(p => p.role?.toUpperCase() === 'DOSEN' || p.role?.toUpperCase() === 'ADMIN').some(p => p.id === formData.dosenId) && (() => {
-                     const foundUser = pengajarList.find(p => p.id === formData.dosenId);
-                     const labelText = foundUser ? `${foundUser.nama} (${foundUser.role})` : (editingSession?.dosen?.nama || 'Dosen');
-                     return (
-                       <SelectItem key={formData.dosenId} value={formData.dosenId} className="font-semibold text-xs py-2">
-                         {labelText}
-                       </SelectItem>
-                     );
-                   })()}
-                 </SelectContent>
-               </Select>
+                <Select 
+                  value={formData.dosenId} 
+                  onValueChange={(val) => setFormData({...formData, dosenId: val || ''})}
+                >
+                  <SelectTrigger className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white">
+                     <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-800">
+                       {selectedDosenName || "Pilih pengajar"}
+                     </span>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-gray-200 animate-none">
+                    <SelectItem value="unassigned" className="font-semibold text-xs py-2 text-gray-400">Belum diassign / Pilih pengajar</SelectItem>
+                    {pengajarList.filter(p => p.role?.toUpperCase() === 'DOSEN' || p.role?.toUpperCase() === 'ADMIN').map(p => (
+                      <SelectItem key={p.id} value={p.id} className="font-semibold text-xs py-2">
+                         {p.nama} ({p.role})
+                      </SelectItem>
+                    ))}
+                    {/* Fallback to show the name from editingSession or full list if not found in filtered list */}
+                    {formData.dosenId && formData.dosenId !== 'unassigned' && !pengajarList.filter(p => p.role?.toUpperCase() === 'DOSEN' || p.role?.toUpperCase() === 'ADMIN').some(p => p.id === formData.dosenId) && (() => {
+                      const foundUser = pengajarList.find(p => p.id === formData.dosenId);
+                      const labelText = foundUser ? `${foundUser.nama} (${foundUser.role})` : (editingSession?.dosen?.nama || 'Dosen');
+                      return (
+                        <SelectItem key={formData.dosenId} value={formData.dosenId} className="font-semibold text-xs py-2">
+                          {labelText}
+                        </SelectItem>
+                      );
+                    })()}
+                  </SelectContent>
+                </Select>
             </div>
 
             {/* Assign Asisten */}
@@ -510,7 +648,7 @@ const ManajemenJadwal: React.FC = () => {
                </label>
                <Select 
                  value={formData.asistenId} 
-                 onValueChange={(val) => setFormData({...formData, asistenId: val})}
+                 onValueChange={(val) => setFormData({...formData, asistenId: val || ''})}
                >
                  <SelectTrigger className="h-11 rounded-xl border-gray-300 font-semibold text-xs text-gray-700 bg-white">
                     <span className="line-clamp-1 flex flex-1 items-center gap-1.5 text-left text-gray-800">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   HiOutlineClock, 
@@ -14,7 +14,8 @@ import {
   HiOutlineTrash,
   HiOutlineClipboard,
   HiOutlineCreditCard,
-  HiOutlineDocumentText
+  HiOutlineDocumentText,
+  HiOutlineAcademicCap
 } from 'react-icons/hi2';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { usePendaftaranStore } from '../../store/usePendaftaranStore';
@@ -160,6 +161,7 @@ const getMockNodes = (path: string = 'Web Development') => {
 };
 
 interface PathStep {
+  id?: string;
   name: string;
   exists: boolean;
   enrolled: boolean;
@@ -182,11 +184,58 @@ const KursusTersedia: React.FC = () => {
   const [progressData, setProgressData] = useState<any[]>([]);
   const [selectedPaketId, setSelectedPaketId] = useState<string>('');
 
+  // Set of all course IDs the user has actively enrolled in
+  const userEnrolledCourseIds = useMemo(() => {
+    return new Set(pendaftaranList.map(p => p.mataKuliahId));
+  }, [pendaftaranList]);
+
+  // Packages that contain at least one course the user has enrolled in
+  const userPaketList = useMemo(() => {
+    if (!dbPaketList || dbPaketList.length === 0) return [];
+
+    // Filter packages that contain at least one enrolled course
+    const matchingPakets = dbPaketList.filter(paket => {
+      if (!paket.courses || !Array.isArray(paket.courses)) return false;
+      return paket.courses.some((c: any) => userEnrolledCourseIds.has(c.id));
+    });
+
+    // Also check for enrolled courses that might not be in any paket yet
+    const coursesInAnyMatchingPaket = new Set<string>();
+    matchingPakets.forEach(p => {
+      p.courses?.forEach((c: any) => coursesInAnyMatchingPaket.add(c.id));
+    });
+
+    const standaloneEnrolledCourses = pendaftaranList
+      .filter(p => !coursesInAnyMatchingPaket.has(p.mataKuliahId))
+      .map(p => {
+        const mk = mataKuliahList.find(m => m.id === p.mataKuliahId) || p.mataKuliah;
+        return mk;
+      })
+      .filter(Boolean);
+
+    const standaloneOptions = standaloneEnrolledCourses.map(c => ({
+      id: `course-${c.id}`,
+      nama: c.nama,
+      deskripsi: c.deskripsi || `Alur belajar untuk kursus ${c.nama}`,
+      hargaPaket: '0',
+      hargaAsli: '0',
+      createdAt: c.createdAt || new Date().toISOString(),
+      courses: [c],
+      isStandalone: true
+    }));
+
+    return [...matchingPakets, ...standaloneOptions];
+  }, [dbPaketList, userEnrolledCourseIds, pendaftaranList, mataKuliahList]);
+
   useEffect(() => {
-    if (dbPaketList && dbPaketList.length > 0 && !selectedPaketId) {
-      setSelectedPaketId(dbPaketList[0].id);
+    if (userPaketList.length > 0) {
+      if (!selectedPaketId || !userPaketList.some(p => p.id === selectedPaketId)) {
+        setSelectedPaketId(userPaketList[0].id);
+      }
+    } else {
+      setSelectedPaketId('');
     }
-  }, [dbPaketList, selectedPaketId]);
+  }, [userPaketList, selectedPaketId]);
 
   // Enrollment & Payment Simulation Modal States
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
@@ -338,13 +387,6 @@ const KursusTersedia: React.FC = () => {
     return true;
   });
 
-  // Group by level with fallback to Beginner for anything that is not intermediate or advanced
-  const beginnerCourses = filteredCourses.filter(c => {
-    const lvl = (c.level || '').toLowerCase();
-    return lvl === 'beginner' || (lvl !== 'intermediate' && lvl !== 'advanced' && lvl !== 'advance');
-  });
-  const intermediateCourses = filteredCourses.filter(c => c.level?.toLowerCase() === 'intermediate');
-  const advancedCourses = filteredCourses.filter(c => c.level?.toLowerCase() === 'advanced' || c.level?.toLowerCase() === 'advance');
 
   // Dynamic mapping of top path steps using real database courses or mock fallback
   const getPathStepStatus = (keywords: string[], codePatterns: string[], pathName: string) => {
@@ -432,7 +474,87 @@ const KursusTersedia: React.FC = () => {
     ];
   };
 
-  const pathSteps = getDynamicPathSteps(activePath);
+  // Active package for the banner & roadmap
+  const activePaket = useMemo(() => {
+    const listToSearch = userPaketList.length > 0 ? userPaketList : (dbPaketList || []);
+    if (selectedPaketId) {
+      const found = listToSearch.find(p => p.id === selectedPaketId);
+      if (found) return found;
+    }
+    if (listToSearch.length > 0) {
+      const userPelatihan = user?.pelatihan;
+      if (userPelatihan) {
+        const match = listToSearch.find(p => 
+          p.nama?.toLowerCase().includes(userPelatihan.toLowerCase()) ||
+          userPelatihan.toLowerCase().includes(p.nama?.toLowerCase())
+        );
+        if (match) return match;
+      }
+      return listToSearch[0];
+    }
+    return null;
+  }, [selectedPaketId, userPaketList, dbPaketList, user?.pelatihan]);
+
+  const displayPathName = useMemo(() => {
+    if (activePaket?.nama) {
+      return activePaket.nama.toLowerCase().includes('path')
+        ? activePaket.nama
+        : `${activePaket.nama} Path`;
+    }
+    return `${activePath} Path`;
+  }, [activePaket, activePath]);
+
+  const availablePaketOptions = useMemo(() => {
+    return userPaketList.length > 0 ? userPaketList : (dbPaketList || []);
+  }, [userPaketList, dbPaketList]);
+
+  // Dynamic banner steps derived from active package courses, with fallback
+  const dynamicBannerSteps = useMemo(() => {
+    if (activePaket && activePaket.courses && activePaket.courses.length > 0) {
+      const courseMap = new Map(mataKuliahList.map(c => [c.id, c]));
+
+      const levelWeight: Record<string, number> = {
+        'beginner': 1,
+        'dasar': 1,
+        'intermediate': 2,
+        'menengah': 2,
+        'advanced': 3,
+        'advance': 3,
+        'mahir': 3
+      };
+
+      const sortedCourses = [...activePaket.courses].sort((a: any, b: any) => {
+        const fullA = courseMap.get(a.id) || a;
+        const fullB = courseMap.get(b.id) || b;
+        const weightA = levelWeight[(fullA.level || '').toLowerCase()] || 2;
+        const weightB = levelWeight[(fullB.level || '').toLowerCase()] || 2;
+        return weightA - weightB;
+      });
+
+      return sortedCourses.map((c: any, idx: number) => {
+        const fullCourse = courseMap.get(c.id) || c;
+        const isEnrolled = userEnrolledCourseIds.has(c.id);
+
+        const prereqsMet = idx === 0 || (fullCourse.prerequisites?.every((pr: any) => 
+          userEnrolledCourseIds.has(typeof pr === 'object' ? pr.id : pr)
+        ) ?? true);
+
+        const isLast = idx === sortedCourses.length - 1 && sortedCourses.length > 1;
+
+        return {
+          id: c.id,
+          name: fullCourse.nama || c.nama,
+          exists: true,
+          enrolled: isEnrolled,
+          active: isEnrolled || prereqsMet,
+          trophy: isLast,
+          course: fullCourse
+        };
+      });
+    }
+
+    return getDynamicPathSteps(activePath);
+  }, [activePaket, mataKuliahList, userEnrolledCourseIds, activePath]);
 
   const getCourseProgress = (courseId: string, totalPertemuan: number) => {
     const completedSessions = progressData.filter(
@@ -623,22 +745,7 @@ const KursusTersedia: React.FC = () => {
     );
   };
 
-  const renderLevelSection = (levelTitle: string, courses: any[], textColorClass: string) => {
-    if (courses.length === 0) return null;
-    return (
-      <div className="mb-10 text-left">
-        <div className="flex items-center gap-2 mb-6 border-b border-gray-200 pb-2">
-          <HiOutlineSparkles className={`text-base shrink-0 ${textColorClass}`} />
-          <h2 className={`text-xs font-black uppercase tracking-wider ${textColorClass}`}>
-            {levelTitle}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          {courses.map(course => renderCourseCard(course))}
-        </div>
-      </div>
-    );
-  };
+
 
   // Mock nodes removed (defined in outer scope)
 
@@ -725,17 +832,18 @@ const KursusTersedia: React.FC = () => {
   };
 
   const renderRoadmapTimeline = () => {
-    const selectedPaket = dbPaketList.find(p => p.id === selectedPaketId) || dbPaketList[0];
+    const selectedPaket = userPaketList.find(p => p.id === selectedPaketId) || userPaketList[0];
 
     const displayCourses = (() => {
       if (!selectedPaket || !selectedPaket.courses) {
-        return getMockNodes(activePath);
+        return [];
       }
       
       const courseIdsInPaket = new Set(selectedPaket.courses.map((c: any) => c.id));
       const dbCourses = mataKuliahList.filter(c => courseIdsInPaket.has(c.id));
+      const targetCourses = dbCourses.length > 0 ? dbCourses : selectedPaket.courses;
       
-      return dbCourses.map(c => ({
+      return targetCourses.map((c: any) => ({
         ...c,
         level: c.level || 'Beginner'
       }));
@@ -824,7 +932,7 @@ const KursusTersedia: React.FC = () => {
               {selectedPaket?.deskripsi || 'Jalur belajar terstruktur untuk menguasai kompetensi secara terarah.'}
             </p>
           </div>
-          {dbPaketList && dbPaketList.length > 0 && (
+          {userPaketList && userPaketList.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-gray-500">Pilih Paket:</span>
               <select
@@ -832,7 +940,7 @@ const KursusTersedia: React.FC = () => {
                 onChange={(e) => setSelectedPaketId(e.target.value)}
                 className="bg-[#f3f4f6] border border-gray-200 text-gray-700 font-black text-[11px] uppercase rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
-                {dbPaketList.map(paket => (
+                {userPaketList.map(paket => (
                   <option key={paket.id} value={paket.id}>{paket.nama}</option>
                 ))}
               </select>
@@ -840,34 +948,58 @@ const KursusTersedia: React.FC = () => {
           )}
         </div>
 
-        <div className="flex flex-col gap-12">
-          {categoriesWithCourses.map((cat) => (
-            <div key={cat.kategoriName} className="flex flex-col gap-4 border-b border-gray-100 pb-8 last:border-b-0 last:pb-0 text-left">
-              {/* Category Heading */}
-              <h3 className="text-sm font-black text-gray-800 tracking-wide uppercase border-b border-gray-100 pb-2">
-                {cat.kategoriName}
-              </h3>
-
-              {/* Wrapping Horizontal Flow Container (No Scroll) */}
-              <div className="flex flex-row flex-wrap py-6 gap-y-8 gap-x-6 w-full justify-center items-center">
-                {cat.flowColumns.map((column) => (
-                  <React.Fragment key={column.depth}>
-                    {/* Column containing courses at this depth (vertical stack if multiple) */}
-                    <div className="flex flex-col gap-4 justify-center items-center min-w-[215px]">
-                      {column.courses.map((course) => renderUserCourseCard(course))}
-                    </div>
-                  </React.Fragment>
-                ))}
+        {userPaketList.length === 0 ? (
+          <div className="text-center py-16 bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 my-4">
+            <div className="max-w-md mx-auto space-y-3">
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-2xl mx-auto">
+                <HiOutlineAcademicCap />
+              </div>
+              <h3 className="text-sm font-black text-gray-800">Belum Ada Roadmap Kursus yang Diikuti</h3>
+              <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                Anda belum terdaftar pada kursus manapun. Roadmap hanya menampilkan alur belajar dari kursus yang Anda ikuti.
+              </p>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter('Semua')}
+                  className="px-4 py-2 bg-[#5850ec] hover:bg-[#4f46e5] text-white text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  Lihat Kursus Tersedia
+                </button>
               </div>
             </div>
-          ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-12">
+            {categoriesWithCourses.map((cat) => (
+              <div key={cat.kategoriName} className="flex flex-col gap-4 border-b border-gray-100 pb-8 last:border-b-0 last:pb-0 text-left">
+                {/* Category Heading */}
+                <h3 className="text-sm font-black text-gray-800 tracking-wide uppercase border-b border-gray-100 pb-2">
+                  {cat.kategoriName}
+                </h3>
 
-          {categoriesWithCourses.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
-              <p className="text-xs text-gray-400 font-semibold mt-1">Silakan pilih paket lain.</p>
-            </div>
-          )}
+                {/* Wrapping Horizontal Flow Container (No Scroll) */}
+                <div className="flex flex-row flex-wrap py-6 gap-y-8 gap-x-6 w-full justify-center items-center">
+                  {cat.flowColumns.map((column) => (
+                    <React.Fragment key={column.depth}>
+                      {/* Column containing courses at this depth (vertical stack if multiple) */}
+                      <div className="flex flex-col gap-4 justify-center items-center min-w-[215px]">
+                        {column.courses.map((course) => renderUserCourseCard(course))}
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {categoriesWithCourses.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
+                <p className="text-xs text-gray-400 font-semibold mt-1">Silakan pilih paket lain.</p>
+              </div>
+            )}
+          </div>
+        )}
 
           {/* Legend */}
           <div className="mt-6 bg-white py-3.5 px-6 rounded-2xl border border-gray-150 shadow-sm max-w-lg mx-auto flex flex-wrap items-center justify-center gap-6">
@@ -886,7 +1018,6 @@ const KursusTersedia: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
     );
   };
 
@@ -1312,33 +1443,63 @@ const KursusTersedia: React.FC = () => {
     <div className="p-8 bg-[#E5E7EB] min-h-screen pb-20">
       {/* Title Header */}
       <div className="mb-6 text-left">
-        <span className="text-xs text-blue-600 font-extrabold tracking-wider block mb-0.5">
-          {activePath} Path
+        <span className="text-xs text-blue-600 font-extrabold tracking-wider block mb-0.5 uppercase">
+          {displayPathName}
         </span>
         <h1 className="text-3xl font-black text-gray-900 leading-none">Kursus Tersedia</h1>
       </div>
 
       {/* Top Navy Blue Path Progress Container */}
       <div className="bg-[#0b2e44] p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 mb-6 shadow-md border border-sky-950">
-        <div className="flex items-center gap-2">
-          <HiOutlineTrophy className="text-yellow-400 text-lg shrink-0" />
-          <span className="text-xs font-black text-white uppercase tracking-wider">{activePath} Path:</span>
+        <div className="flex items-center gap-2.5">
+          <HiOutlineTrophy className="text-yellow-400 text-xl shrink-0" />
+          {availablePaketOptions.length > 1 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-white/90 uppercase tracking-wider hidden sm:inline">PATH:</span>
+              <select
+                value={activePaket?.id || ''}
+                onChange={(e) => setSelectedPaketId(e.target.value)}
+                className="bg-[#082233] text-white text-xs font-black uppercase tracking-wider py-1 px-2.5 rounded-lg border border-sky-800/80 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer shadow-sm hover:border-sky-600 transition-colors"
+              >
+                {availablePaketOptions.map((pkt) => (
+                  <option key={pkt.id} value={pkt.id} className="bg-slate-900 text-white">
+                    {pkt.nama.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <span className="text-xs font-black text-white uppercase tracking-wider">
+              {displayPathName}:
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2.5 items-center">
-          {pathSteps.map((step, idx) => {
-            const showStep = step.exists;
+          {dynamicBannerSteps.map((step, idx) => {
             const isDone = step.enrolled;
             return (
               <div 
-                key={idx}
+                key={step.id || idx}
+                onClick={() => {
+                  if (step.course?.id) {
+                    if (step.enrolled) {
+                      navigate(`/user/detail-kursus?id=${step.course.id}`);
+                    } else {
+                      navigate(`/user/enrolment-options?id=${step.course.id}`);
+                    }
+                  }
+                }}
                 className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-[9px] font-black uppercase transition-all shadow-sm ${
+                  step.course?.id ? 'cursor-pointer hover:scale-105 active:scale-95' : ''
+                } ${
                   isDone 
-                    ? 'bg-white text-gray-900' 
+                    ? 'bg-white text-gray-900 hover:bg-emerald-50' 
                     : step.active 
-                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/20' 
-                    : 'bg-white/5 text-white/40'
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/20 hover:bg-sky-500/30' 
+                    : 'bg-white/5 text-white/40 hover:bg-white/10'
                 }`}
+                title={step.course?.nama ? (step.enrolled ? `Sudah terdaftar: ${step.name}` : step.active ? `Siap diambil: ${step.name}` : `Belum diambil: ${step.name}`) : undefined}
               >
                 {isDone ? (
                   <span className="w-3.5 h-3.5 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold">✓</span>

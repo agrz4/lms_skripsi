@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   HiOutlineArrowLeft, 
@@ -9,13 +9,126 @@ import {
   HiOutlinePlayCircle,
   HiOutlineDocumentText,
   HiOutlineLink,
-  HiOutlineArrowUpTray
+  HiOutlineArrowUpTray,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+  HiOutlineArrowTopRightOnSquare
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BulkImportSoalModal } from '@/components/BulkImportSoalModal';
 import api from '../../lib/api';
+
+export interface ZoomValidationResult {
+  isValid: boolean;
+  message: string;
+  meetingId?: string;
+  type?: 'zoom' | 'meet';
+}
+
+export const validateZoomUrl = (url: string): ZoomValidationResult => {
+  if (!url || !url.trim()) {
+    return { isValid: false, message: 'Link Zoom tidak boleh kosong.' };
+  }
+
+  let cleanUrl = url.trim();
+  // Strip trailing punctuation like dot or slash that might be copied accidentally
+  if (cleanUrl.endsWith('.')) {
+    cleanUrl = cleanUrl.slice(0, -1).trim();
+  }
+
+  // Prepend https:// if protocol is omitted
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    cleanUrl = 'https://' + cleanUrl;
+  }
+
+  try {
+    const parsed = new URL(cleanUrl);
+    const host = parsed.hostname.toLowerCase();
+
+    // 1. Zoom Domain Validation (*.zoom.us, zoom.us, *.zoomgov.com)
+    if (host === 'zoom.us' || host.endsWith('.zoom.us') || host === 'zoomgov.com' || host.endsWith('.zoomgov.com')) {
+      const pathname = parsed.pathname;
+
+      // Check standard meeting link: /j/<meeting_id>
+      const jMatch = pathname.match(/^\/j\/([0-9\s-]+)/i);
+      if (jMatch) {
+        const rawId = jMatch[1].replace(/[\s-]/g, '');
+        if (rawId.length >= 9 && rawId.length <= 11) {
+          const formattedId = rawId.replace(/(\d{3,4})(?=\d)/g, '$1 ');
+          return {
+            isValid: true,
+            message: `Tautan Zoom valid (Meeting ID: ${formattedId})`,
+            meetingId: rawId,
+            type: 'zoom'
+          };
+        }
+        return {
+          isValid: false,
+          message: `Meeting ID Zoom harus terdiri dari 9–11 digit angka (saat ini ${rawId.length} digit).`
+        };
+      }
+
+      // Check vanity / personal meeting room: /my/<vanity>
+      const myMatch = pathname.match(/^\/my\/([a-zA-Z0-9._-]+)/i);
+      if (myMatch && myMatch[1].length >= 2) {
+        return {
+          isValid: true,
+          message: `Tautan Zoom Personal Room valid (@${myMatch[1]})`,
+          meetingId: myMatch[1],
+          type: 'zoom'
+        };
+      }
+
+      // Check webinar link: /w/<webinar_id>
+      const wMatch = pathname.match(/^\/w\/([0-9\s-]+)/i);
+      if (wMatch) {
+        const rawId = wMatch[1].replace(/[\s-]/g, '');
+        if (rawId.length >= 9 && rawId.length <= 11) {
+          return {
+            isValid: true,
+            message: `Tautan Zoom Webinar valid (ID: ${rawId})`,
+            meetingId: rawId,
+            type: 'zoom'
+          };
+        }
+      }
+
+      return {
+        isValid: false,
+        message: 'Format tautan Zoom tidak sesuai. Gunakan format https://zoom.us/j/[MeetingID] atau https://[subdomain].zoom.us/j/[MeetingID]'
+      };
+    }
+
+    // 2. Google Meet Validation (meet.google.com) as alternate support for "Zoom/Meet"
+    if (host === 'meet.google.com') {
+      const meetCodeMatch = parsed.pathname.match(/^\/([a-z0-9-]+)/i);
+      if (meetCodeMatch && meetCodeMatch[1].length >= 5) {
+        return {
+          isValid: true,
+          message: `Tautan Google Meet valid (${meetCodeMatch[1]})`,
+          meetingId: meetCodeMatch[1],
+          type: 'meet'
+        };
+      }
+      return {
+        isValid: false,
+        message: 'Format tautan Google Meet tidak sesuai. Gunakan format https://meet.google.com/abc-defg-hij'
+      };
+    }
+
+    return {
+      isValid: false,
+      message: `Domain '${host}' bukan tautan resmi Zoom (harus berakhiran zoom.us).`
+    };
+  } catch {
+    return {
+      isValid: false,
+      message: 'Format URL tidak valid. Pastikan tautan diawali https://'
+    };
+  }
+};
 
 const AddMateriAdmin: React.FC = () => {
   const navigate = useNavigate();
@@ -45,6 +158,12 @@ const AddMateriAdmin: React.FC = () => {
   const [tugasCoding, setTugasCoding] = useState<string>(
     'Buatlah program sesuai instruksi pada modul ajar, kemudian unggah screenshot hasil run dan file source code (.zip) sebagai bukti praktikum.'
   );
+
+  // Real-time Zoom link validation
+  const zoomValidation = useMemo(() => {
+    if (!zoomLink.trim()) return null;
+    return validateZoomUrl(zoomLink);
+  }, [zoomLink]);
 
   const handleBulkImport = (newQuestions: string[], mode: 'append' | 'replace') => {
     if (mode === 'replace') {
@@ -156,16 +275,16 @@ const AddMateriAdmin: React.FC = () => {
             setJenisUtama('Micro Learning');
           }
         })
-        .catch(err => console.error('Failed to fetch materi', err));
+        .catch(err => console.error('Failed to fetch existing materi', err));
     }
   }, [pertemuanId]);
 
   const handleZoomVideoUpload = async (file: File) => {
     setUploadingZoomVideo(true);
     const formData = new FormData();
-    formData.append('video', file);
+    formData.append('file', file);
     try {
-      const res = await api.post('/materi/upload-video', formData, {
+      const res = await api.post('/materi/upload-submateri', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data && res.data.success) {
@@ -182,9 +301,9 @@ const AddMateriAdmin: React.FC = () => {
   const handleMicroVideoUpload = async (file: File) => {
     setUploadingMicroVideo(true);
     const formData = new FormData();
-    formData.append('video', file);
+    formData.append('file', file);
     try {
-      const res = await api.post('/materi/upload-video', formData, {
+      const res = await api.post('/materi/upload-submateri', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data && res.data.success) {
@@ -192,7 +311,7 @@ const AddMateriAdmin: React.FC = () => {
       }
     } catch (error: any) {
       console.error(error);
-      alert('Gagal upload video micro: ' + (error.response?.data?.message || error.message));
+      alert('Gagal upload video micro learning: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploadingMicroVideo(false);
     }
@@ -222,6 +341,16 @@ const AddMateriAdmin: React.FC = () => {
       alert('Data pertemuan belum dimuat.');
       return;
     }
+
+    // Validate Zoom Link if provided and jenisUtama is Zoom/Meet
+    if (jenisUtama === 'Zoom/Meet' && zoomLink.trim()) {
+      const zoomVal = validateZoomUrl(zoomLink);
+      if (!zoomVal.isValid) {
+        alert(`Link Zoom tidak valid!\n\n${zoomVal.message}\n\nSilakan perbaiki tautan Zoom sebelum menyimpan.`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       // 1. Fetch existing materi for this meeting to delete them first
@@ -231,46 +360,49 @@ const AddMateriAdmin: React.FC = () => {
         await api.delete(`/materi/${m.id}`);
       }
 
-      // 2. Prepare new records list
+      // 2. Prepare new records list based on selected jenisUtama
       const payloads: any[] = [];
       
-      // Add Zoom Link
-      if (zoomLink.trim()) {
-        payloads.push({
-          nama: topik || 'Zoom Meeting',
-          videoUrl: zoomLink,
-          fileUrl: null
-        });
-      }
-      
-      // Add Zoom Videos
-      zoomVideos.forEach((url) => {
-        payloads.push({
-          nama: `${topik || 'Pertemuan'} (Rekaman Zoom)`,
-          videoUrl: url,
-          fileUrl: null
-        });
-      });
-      
-      // Add Micro Learning items
-      microLearningItems.forEach((item) => {
-        if (item.url.trim()) {
+      if (jenisUtama === 'Zoom/Meet') {
+        // Add Zoom Link
+        if (zoomLink.trim()) {
+          const cleanZoom = zoomLink.trim().replace(/\.+$/, '');
           payloads.push({
-            nama: `${topik || 'Pertemuan'} (Micro Learning)`,
-            videoUrl: item.url,
+            nama: topik || 'Zoom Meeting',
+            videoUrl: cleanZoom,
             fileUrl: null
           });
         }
-      });
-      
-      // Add PDF items
-      pdfItems.forEach((url) => {
-        payloads.push({
-          nama: `${topik || 'Pertemuan'} (PDF)`,
-          videoUrl: null,
-          fileUrl: url
+        
+        // Add Zoom Videos
+        zoomVideos.forEach((url) => {
+          payloads.push({
+            nama: `${topik || 'Pertemuan'} (Rekaman Zoom)`,
+            videoUrl: url,
+            fileUrl: null
+          });
         });
-      });
+      } else if (jenisUtama === 'Micro Learning') {
+        // Add Micro Learning items
+        microLearningItems.forEach((item) => {
+          if (item.url.trim()) {
+            payloads.push({
+              nama: `${topik || 'Pertemuan'} (Micro Learning)`,
+              videoUrl: item.url,
+              fileUrl: null
+            });
+          }
+        });
+      } else if (jenisUtama === 'General PDF') {
+        // Add PDF items
+        pdfItems.forEach((url) => {
+          payloads.push({
+            nama: `${topik || 'Pertemuan'} (PDF)`,
+            videoUrl: null,
+            fileUrl: url
+          });
+        });
+      }
 
       // If no assets were created, make a default record
       if (payloads.length === 0) {
@@ -469,58 +601,276 @@ const AddMateriAdmin: React.FC = () => {
                 </div>
               </div>
 
-              {/* Dashed zoom meeting container */}
-              <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 space-y-4">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight italic">Jika Zoom/Meet:</p>
-                
-                {/* Link Zoom Input */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Link Zoom</label>
-                  <Input 
-                    value={zoomLink}
-                    onChange={(e) => setZoomLink(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg py-4 px-3 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                    placeholder="https://zoom.us/j/..."
-                  />
-                </div>
-
-                {/* Upload Rekaman */}
-                <div className="space-y-3">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase block">Upload Rekaman</label>
+              {/* Dynamic Content Based on Jenis Utama */}
+              {jenisUtama === 'Zoom/Meet' && (
+                /* Dashed zoom meeting container */
+                <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 space-y-4 animate-in fade-in duration-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight italic">Menu Zoom / Meet:</p>
                   
-                  {zoomVideos.map((url, idx) => (
+                  {/* Link Zoom Input */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Link Zoom</label>
+                      {zoomValidation && zoomLink.trim() && (
+                        <span className={`text-[10px] font-bold flex items-center gap-1 ${
+                          zoomValidation.isValid ? 'text-emerald-600' : 'text-rose-600'
+                        }`}>
+                          {zoomValidation.isValid ? (
+                            <>
+                              <HiOutlineCheckCircle className="text-xs" /> Link Valid
+                            </>
+                          ) : (
+                            <>
+                              <HiOutlineXCircle className="text-xs" /> Link Tidak Valid
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <Input 
+                        value={zoomLink}
+                        onChange={(e) => setZoomLink(e.target.value)}
+                        className={`bg-white border rounded-lg py-4 pl-3 pr-24 text-xs font-semibold text-gray-800 placeholder:text-gray-400 transition-all ${
+                          !zoomLink.trim()
+                            ? 'border-gray-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500'
+                            : zoomValidation?.isValid
+                              ? 'border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-emerald-50/10'
+                              : 'border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 bg-rose-50/10'
+                        }`}
+                        placeholder="https://zoom.us/j/... atau https://us04web.zoom.us/j/..."
+                      />
+
+                      {zoomLink.trim() && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          <a
+                            href={zoomLink.startsWith('http') ? zoomLink : `https://${zoomLink}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-md transition-all shadow-xs ${
+                              zoomValidation?.isValid
+                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                            }`}
+                            title="Buka tautan di tab baru untuk menguji link"
+                          >
+                            <HiOutlineArrowTopRightOnSquare className="text-xs" /> Buka
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {zoomLink.trim() && zoomValidation && (
+                      <div className={`text-[11px] font-semibold flex items-start gap-1.5 p-2.5 rounded-lg ${
+                        zoomValidation.isValid 
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                      }`}>
+                        {zoomValidation.isValid ? (
+                          <HiOutlineCheckCircle className="text-sm shrink-0 mt-0.5" />
+                        ) : (
+                          <HiOutlineXCircle className="text-sm shrink-0 mt-0.5" />
+                        )}
+                        <span>{zoomValidation.message}</span>
+                      </div>
+                    )}
+
+                    {!zoomLink.trim() && (
+                      <p className="text-[10px] text-gray-400 font-medium">
+                        Contoh: https://zoom.us/j/79694359048?pwd=... (Meeting ID 9–11 digit angka)
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Upload Rekaman */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase block">Upload Rekaman</label>
+                    
+                    {zoomVideos.map((url, idx) => (
+                      <div key={idx} className="h-14 bg-white border border-slate-200 rounded-xl flex items-center justify-between px-4 shadow-sm">
+                        <div className="flex items-center gap-2.5 truncate pr-2">
+                          <HiOutlineFolder className="text-yellow-500 text-xl shrink-0" />
+                          <span className="text-xs font-semibold text-gray-700 truncate">
+                            {url.substring(url.lastIndexOf('/') + 1) || 'Video Uploaded'}
+                          </span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => setZoomVideos(zoomVideos.filter((_, i) => i !== idx))}
+                          className="text-red-500 hover:text-red-750 text-[10px] font-bold uppercase shrink-0 cursor-pointer"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add Video Slot Button */}
+                    <div className="relative h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/30 transition-colors cursor-pointer">
+                      <input 
+                        type="file" 
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleZoomVideoUpload(file);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                      <div className="flex items-center gap-2.5">
+                        <HiOutlineFolder className="text-gray-300 text-xl" />
+                        <span className="text-xs font-semibold text-gray-400">
+                          {uploadingZoomVideo ? 'Mengunggah...' : `Upload Video ${zoomVideos.length + 1} (.mp4)`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      <button 
+                        type="button"
+                        className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer"
+                      >
+                        <HiOutlinePlus className="text-sm" /> Tambah video
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {jenisUtama === 'Micro Learning' && (
+                /* Micro Learning container */
+                <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 space-y-4 animate-in fade-in duration-200">
+                  <div className="pb-1 border-b border-slate-200/60">
+                    <h3 className="text-sm font-black text-gray-950">Micro Learning</h3>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Video / Link (TikTok, Reels, YouTube Shorts, atau Video Lokal)</p>
+                  </div>
+                  
+                  {microLearningItems.map((item, idx) => (
+                    <div key={idx} className="space-y-2">
+                      {item.type === 'link' ? (
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                            <HiOutlineLink className="text-gray-600 text-lg" />
+                          </div>
+                          <Input
+                            value={item.url}
+                            onChange={(e) => {
+                              const updated = [...microLearningItems];
+                              updated[idx].url = e.target.value;
+                              setMicroLearningItems(updated);
+                            }}
+                            className="bg-white border border-gray-300 rounded-xl py-3 px-3.5 text-xs font-semibold text-gray-850 placeholder:text-gray-400 flex-1 focus:ring-2 focus:ring-purple-500/20"
+                            placeholder="Masukkan link video TikTok / Reels / YouTube Shorts..."
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setMicroLearningItems(microLearningItems.filter((_, i) => i !== idx))}
+                            className="text-red-500 hover:text-red-750 text-xs font-bold shrink-0 px-2 cursor-pointer"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-14 bg-white border border-slate-200 rounded-xl flex items-center justify-between px-4 shadow-sm">
+                          <div className="flex items-center gap-2.5 truncate pr-2">
+                            <HiOutlinePlayCircle className="text-purple-600 text-xl shrink-0" />
+                            <span className="text-xs font-semibold text-gray-700 truncate">
+                              {item.url.substring(item.url.lastIndexOf('/') + 1) || 'Local Video Uploaded'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setMicroLearningItems(microLearningItems.filter((_, i) => i !== idx))}
+                            className="text-red-500 hover:text-red-750 text-[10px] font-bold uppercase shrink-0 cursor-pointer"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Default display showing empty state slot matching mockup if empty */}
+                  {microLearningItems.length === 0 && (
+                    <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4">
+                      <div className="flex items-center gap-2.5">
+                        <HiOutlinePlayCircle className="text-gray-300 text-xl" />
+                        <span className="text-xs font-semibold text-gray-400">Belum ada video / link ditambahkan</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Adding options */}
+                  <div className="flex flex-wrap gap-4 pt-2 border-t border-slate-200/60 mt-4">
+                    <button 
+                      type="button"
+                      onClick={() => setMicroLearningItems(prev => [...prev, { type: 'link', url: 'https://www.tiktok.com/' }])}
+                      className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer"
+                    >
+                      <HiOutlinePlus className="text-sm" /> Tambah link TikTok/Reels
+                    </button>
+
+                    <div className="relative">
+                      <input 
+                        type="file" 
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleMicroVideoUpload(file);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                      <button 
+                        type="button"
+                        className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer"
+                      >
+                        <HiOutlinePlus className="text-sm" /> {uploadingMicroVideo ? 'Uploading...' : 'Tambah video/link'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {jenisUtama === 'General PDF' && (
+                /* PDF container */
+                <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 space-y-4 animate-in fade-in duration-200">
+                  <div className="pb-1 border-b border-slate-200/60">
+                    <h3 className="text-sm font-black text-gray-950">Dokumen Materi (PDF)</h3>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Upload Dokumen PDF (bisa lebih dari 1)</p>
+                  </div>
+
+                  {pdfItems.map((url, idx) => (
                     <div key={idx} className="h-14 bg-white border border-slate-200 rounded-xl flex items-center justify-between px-4 shadow-sm">
                       <div className="flex items-center gap-2.5 truncate pr-2">
-                        <HiOutlineFolder className="text-yellow-500 text-xl shrink-0" />
+                        <HiOutlineDocumentText className="text-blue-500 text-xl shrink-0" />
                         <span className="text-xs font-semibold text-gray-700 truncate">
-                          {url.substring(url.lastIndexOf('/') + 1) || 'Video Uploaded'}
+                          {url.substring(url.lastIndexOf('/') + 1) || `PDF Document ${idx + 1}`}
                         </span>
                       </div>
                       <button 
                         type="button"
-                        onClick={() => setZoomVideos(zoomVideos.filter((_, i) => i !== idx))}
-                        className="text-red-500 hover:text-red-750 text-[10px] font-bold uppercase shrink-0"
+                        onClick={() => setPdfItems(pdfItems.filter((_, i) => i !== idx))}
+                        className="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase shrink-0 cursor-pointer"
                       >
                         Hapus
                       </button>
                     </div>
                   ))}
 
-                  {/* Add Video Slot Button */}
+                  {/* File selector input */}
                   <div className="relative h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/30 transition-colors cursor-pointer">
                     <input 
                       type="file" 
-                      accept="video/*"
+                      accept=".pdf,.doc,.docx"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleZoomVideoUpload(file);
+                        if (file) handlePdfUpload(file);
                       }}
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
                     <div className="flex items-center gap-2.5">
-                      <HiOutlineFolder className="text-gray-300 text-xl" />
+                      <HiOutlineDocumentText className="text-gray-300 text-xl" />
                       <span className="text-xs font-semibold text-gray-400">
-                        {uploadingZoomVideo ? 'Mengunggah...' : `Upload Video ${zoomVideos.length + 1} (.mp4)`}
+                        {uploadingPdf ? 'Mengunggah...' : `Upload PDF ${pdfItems.length + 1}`}
                       </span>
                     </div>
                   </div>
@@ -528,168 +878,14 @@ const AddMateriAdmin: React.FC = () => {
                   <div className="pt-1">
                     <button 
                       type="button"
-                      className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors"
+                      className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer"
                     >
-                      <HiOutlinePlus className="text-sm" /> Tambah video
+                      <HiOutlinePlus className="text-sm" /> Tambah PDF
                     </button>
                   </div>
                 </div>
-              </div>
+              )}
 
-            </Card>
-
-            {/* Micro Learning Card */}
-            <Card className="rounded-2xl border border-slate-250/60 shadow-sm bg-white p-8 space-y-4">
-              <div>
-                <h2 className="text-base font-black text-gray-950">Micro Learning (aktif):</h2>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Video/Link</p>
-              </div>
-
-              <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 space-y-4">
-                
-                {microLearningItems.map((item, idx) => (
-                  <div key={idx} className="space-y-2">
-                    {item.type === 'link' ? (
-                      <div className="flex items-center gap-3 w-full">
-                        <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                          <HiOutlineLink className="text-gray-600 text-lg" />
-                        </div>
-                        <Input
-                          value={item.url}
-                          onChange={(e) => {
-                            const updated = [...microLearningItems];
-                            updated[idx].url = e.target.value;
-                            setMicroLearningItems(updated);
-                          }}
-                          className="bg-white border border-gray-300 rounded-xl py-3 px-3.5 text-xs font-semibold text-gray-850 placeholder:text-gray-400 flex-1 focus:ring-2 focus:ring-purple-500/20"
-                          placeholder="Masukkan link video TikTok / Reels / YouTube Shorts..."
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setMicroLearningItems(microLearningItems.filter((_, i) => i !== idx))}
-                          className="text-red-500 hover:text-red-750 text-xs font-bold shrink-0 px-2"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="h-14 bg-white border border-slate-200 rounded-xl flex items-center justify-between px-4 shadow-sm">
-                        <div className="flex items-center gap-2.5 truncate pr-2">
-                          <HiOutlinePlayCircle className="text-purple-600 text-xl shrink-0" />
-                          <span className="text-xs font-semibold text-gray-700 truncate">
-                            {item.url.substring(item.url.lastIndexOf('/') + 1) || 'Local Video Uploaded'}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setMicroLearningItems(microLearningItems.filter((_, i) => i !== idx))}
-                          className="text-red-500 hover:text-red-750 text-[10px] font-bold uppercase shrink-0"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Default display showing empty state slot matching mockup if empty */}
-                {microLearningItems.length === 0 && (
-                  <div className="h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4">
-                    <div className="flex items-center gap-2.5">
-                      <HiOutlinePlayCircle className="text-gray-300 text-xl" />
-                      <span className="text-xs font-semibold text-gray-400">Belum ada video / link ditambahkan</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Adding options */}
-                <div className="flex flex-wrap gap-4 pt-2 border-t border-slate-200/60 mt-4">
-                  <button 
-                    type="button"
-                    onClick={() => setMicroLearningItems(prev => [...prev, { type: 'link', url: 'https://www.tiktok.com/' }])}
-                    className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors"
-                  >
-                    <HiOutlinePlus className="text-sm" /> Tambah link TikTok/Reels
-                  </button>
-
-                  <div className="relative">
-                    <input 
-                      type="file" 
-                      accept="video/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleMicroVideoUpload(file);
-                      }}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    />
-                    <button 
-                      type="button"
-                      className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors"
-                    >
-                      <HiOutlinePlus className="text-sm" /> {uploadingMicroVideo ? 'Uploading...' : 'Tambah video/link'}
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            </Card>
-
-            {/* PDF Card */}
-            <Card className="rounded-2xl border border-slate-250/60 shadow-sm bg-white p-8 space-y-4">
-              <div>
-                <h2 className="text-base font-black text-gray-950">PDF:</h2>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Upload PDF (bisa lebih dari 1)</p>
-              </div>
-
-              <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 space-y-4">
-                
-                {pdfItems.map((url, idx) => (
-                  <div key={idx} className="h-14 bg-white border border-slate-200 rounded-xl flex items-center justify-between px-4 shadow-sm">
-                    <div className="flex items-center gap-2.5 truncate pr-2">
-                      <HiOutlineDocumentText className="text-blue-500 text-xl shrink-0" />
-                      <span className="text-xs font-semibold text-gray-700 truncate">
-                        {url.substring(url.lastIndexOf('/') + 1) || `PDF Document ${idx + 1}`}
-                      </span>
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={() => setPdfItems(pdfItems.filter((_, i) => i !== idx))}
-                      className="text-red-500 hover:text-red-750 text-[10px] font-bold uppercase shrink-0"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                ))}
-
-                {/* File selector input */}
-                <div className="relative h-14 bg-white border border-slate-200 border-dashed rounded-xl flex items-center px-4 hover:bg-slate-100/30 transition-colors cursor-pointer">
-                  <input 
-                    type="file" 
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handlePdfUpload(file);
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
-                  <div className="flex items-center gap-2.5">
-                    <HiOutlineDocumentText className="text-gray-300 text-xl" />
-                    <span className="text-xs font-semibold text-gray-400">
-                      {uploadingPdf ? 'Mengunggah...' : `Upload PDF ${pdfItems.length + 1}`}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-1">
-                  <button 
-                    type="button"
-                    className="text-xs font-bold text-gray-500 flex items-center gap-1.5 hover:text-gray-800 transition-colors"
-                  >
-                    <HiOutlinePlus className="text-sm" /> Tambah PDF
-                  </button>
-                </div>
-
-              </div>
             </Card>
 
           </div>

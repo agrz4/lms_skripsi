@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useMataKuliahStore, type MataKuliah } from '../../store/useMataKuliahStore';
 import { usePaketStore } from '../../store/usePaketStore';
 import {
-  HiOutlineClock,
-  HiOutlineTrophy
+  HiOutlineTrophy,
+  HiOutlineTrash,
+  HiOutlinePlus,
+  HiOutlineMagnifyingGlass
 } from 'react-icons/hi2';
 
 // Helper to format course prices
@@ -19,66 +21,6 @@ const formatHarga = (hargaStr: string | undefined | null) => {
   return `RP.${num}`;
 };
 
-// Colors mapping matching the mockup screenshot
-const getCourseCardStyles = (level: string, index: number) => {
-  const lvl = (level || '').toLowerCase();
-  if (lvl === 'beginner' || lvl === 'dasar') {
-    const beginnerThemes = [
-      {
-        bg: 'bg-[#adcbe3]',
-        border: 'border-[#5850ec]',
-        titleColor: 'text-[#1e40af]',
-        badgeBg: 'bg-[#bfdbfe]/80',
-        badgeText: 'text-[#1e40af]'
-      },
-      {
-        bg: 'bg-[#f5f7ff]',
-        border: 'border-[#5850ec]/40',
-        titleColor: 'text-[#6b21a8]',
-        badgeBg: 'bg-[#f3e8ff]/80',
-        badgeText: 'text-[#6b21a8]'
-      }
-    ];
-    return beginnerThemes[index % beginnerThemes.length];
-  } else if (lvl === 'intermediate' || lvl === 'lanjutan') {
-    const intermediateThemes = [
-      {
-        bg: 'bg-[#dce3a4]',
-        border: 'border-yellow-500',
-        titleColor: 'text-[#854d0e]',
-        badgeBg: 'bg-[#fefce8]/80',
-        badgeText: 'text-[#854d0e]'
-      },
-      {
-        bg: 'bg-[#dcfce7]',
-        border: 'border-[#16a34a]',
-        titleColor: 'text-[#15803d]',
-        badgeBg: 'bg-[#f0fdf4]/80',
-        badgeText: 'text-[#166534]'
-      },
-      {
-        bg: 'bg-[#ccfbf1]',
-        border: 'border-[#0d9488]',
-        titleColor: 'text-[#0f766e]',
-        badgeBg: 'bg-[#f0fdfa]/80',
-        badgeText: 'text-[#115e59]'
-      }
-    ];
-    return intermediateThemes[index % intermediateThemes.length];
-  } else {
-    // Advanced
-    return {
-      bg: 'bg-[#d7d8dc]',
-      border: 'border-gray-400',
-      titleColor: 'text-[#475569]',
-      badgeBg: 'bg-[#f8fafc]/80',
-      badgeText: 'text-[#475569]'
-    };
-  }
-};
-
-// Mockup nodes helper removed to display only database entries
-
 interface MapCourse extends Partial<MataKuliah> {
   exists: boolean;
   id: string;
@@ -92,13 +34,21 @@ interface MapCourse extends Partial<MataKuliah> {
 
 const CourseMap: React.FC = () => {
   const { mataKuliahList, isLoading, fetchMataKuliah, updateMataKuliah, addMataKuliah } = useMataKuliahStore();
-  const { paketList, fetchPaket, addPaket, removePaket } = usePaketStore();
+  const {
+    paketList,
+    fetchPaket,
+    addPaket,
+    removePaket,
+    addCourseToPaket,
+    addCoursesToPaket,
+    removeCourseFromPaket
+  } = usePaketStore();
   const selectRef = useRef<HTMLSelectElement>(null);
 
   // Package selection state
   const [selectedPaketId, setSelectedPaketId] = useState<string>('');
 
-  // Form states
+  // Form states for node
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [newCourseName, setNewCourseName] = useState<string>('');
   const [newCourseCode, setNewCourseCode] = useState<string>('');
@@ -109,7 +59,13 @@ const CourseMap: React.FC = () => {
   const [selectedPrerequisites, setSelectedPrerequisites] = useState<string[]>([]);
 
   // Sidebar dynamic control state
-  const [activeSidebarForm, setActiveSidebarForm] = useState<'stats' | 'node' | 'bundling'>('stats');
+  const [activeSidebarForm, setActiveSidebarForm] = useState<'stats' | 'node' | 'bundling' | 'add_to_paket'>('stats');
+
+  // Add course to package states
+  const [addModeTab, setAddModeTab] = useState<'existing' | 'new'>('existing');
+  const [selectedCoursesToAdd, setSelectedCoursesToAdd] = useState<string[]>([]);
+  const [searchCourseQuery, setSearchCourseQuery] = useState<string>('');
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   // Bundling form states
   const [namaPaket, setNamaPaket] = useState<string>('');
@@ -129,6 +85,29 @@ const CourseMap: React.FC = () => {
     }
   }, [paketList, selectedPaketId]);
 
+  const selectedPaket = useMemo(() => {
+    return paketList.find(p => p.id === selectedPaketId) || paketList[0];
+  }, [paketList, selectedPaketId]);
+
+  // Existing course IDs currently in the selected package
+  const existingCourseIdsInPaket = useMemo(() => {
+    if (!selectedPaket || !selectedPaket.courses) return new Set<string>();
+    return new Set<string>(selectedPaket.courses.map((c: any) => c.id));
+  }, [selectedPaket]);
+
+  // Courses available in DB that are not yet in this package
+  const availableCoursesToAdd = useMemo(() => {
+    return mataKuliahList.filter(mk => !existingCourseIdsInPaket.has(mk.id));
+  }, [mataKuliahList, existingCourseIdsInPaket]);
+
+  // Filtered available courses by search query
+  const filteredAvailableCourses = useMemo(() => {
+    if (!searchCourseQuery.trim()) return availableCoursesToAdd;
+    const q = searchCourseQuery.toLowerCase();
+    return availableCoursesToAdd.filter(
+      mk => mk.nama.toLowerCase().includes(q) || mk.kode.toLowerCase().includes(q)
+    );
+  }, [availableCoursesToAdd, searchCourseQuery]);
 
   const handleCourseSelect = (id: string) => {
     setSelectedCourseId(id);
@@ -148,42 +127,115 @@ const CourseMap: React.FC = () => {
     }
   };
 
+  const handleOpenAddCourse = () => {
+    setSelectedCourseId('');
+    setNewCourseName('');
+    setNewCourseCode('');
+    setHarga('0');
+    setPublished(false);
+    setJumlahPertemuan(3);
+    setSelectedPrerequisites([]);
+    setSelectedCoursesToAdd([]);
+    setSearchCourseQuery('');
+    setAddModeTab(availableCoursesToAdd.length > 0 ? 'existing' : 'new');
+    setActiveSidebarForm('add_to_paket');
+  };
+
+  // Add single existing course to current package
+  const handleAddSingleCourse = async (courseId: string) => {
+    if (!selectedPaket) {
+      alert('Pilih paket terlebih dahulu.');
+      return;
+    }
+    setIsActionLoading(true);
+    try {
+      await addCourseToPaket(selectedPaket.id, courseId);
+      await fetchPaket();
+    } catch (error: any) {
+      console.error('Error adding course to paket:', error);
+      alert(`Gagal menambahkan kursus ke paket: ${error?.response?.data?.message || error.message}`);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Batch add selected courses to current package
+  const handleBatchAddCourses = async () => {
+    if (!selectedPaket) {
+      alert('Pilih paket terlebih dahulu.');
+      return;
+    }
+    if (selectedCoursesToAdd.length === 0) {
+      alert('Pilih setidaknya satu kursus.');
+      return;
+    }
+    setIsActionLoading(true);
+    try {
+      await addCoursesToPaket(selectedPaket.id, selectedCoursesToAdd);
+      await fetchPaket();
+      setSelectedCoursesToAdd([]);
+      setActiveSidebarForm('stats');
+    } catch (error: any) {
+      console.error('Error batch adding courses to paket:', error);
+      alert(`Gagal menambahkan kursus ke paket: ${error?.response?.data?.message || error.message}`);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Remove a course from current package
+  const handleRemoveCourseFromPaket = async (courseId: string, courseName?: string) => {
+    if (!selectedPaket) return;
+    const name = courseName || mataKuliahList.find(c => c.id === courseId)?.nama || 'Kursus';
+    if (confirm(`Keluarkan kursus "${name}" dari paket "${selectedPaket.nama}"?\n\n(Kursus tetap tersimpan di sistem, hanya dikeluarkan dari paket ini)`)) {
+      setIsActionLoading(true);
+      try {
+        await removeCourseFromPaket(selectedPaket.id, courseId);
+        await fetchPaket();
+        if (selectedCourseId === courseId) {
+          handleCancel();
+        }
+      } catch (error: any) {
+        console.error('Error removing course from paket:', error);
+        alert(`Gagal mengeluarkan kursus dari paket: ${error?.response?.data?.message || error.message}`);
+      } finally {
+        setIsActionLoading(false);
+      }
+    }
+  };
+
   const handleSaveNode = async () => {
     if (!selectedCourseId) {
-      // Trying to create a brand new course!
+      // Creating a brand new course and adding to current package
       if (!newCourseName.trim() || !newCourseCode.trim()) {
         alert('Untuk membuat kursus baru, silakan isi Nama Kursus Baru dan Kode Kursus Baru.');
         return;
       }
 
+      setIsActionLoading(true);
       try {
-        const selectedPaket = paketList.find(p => p.id === selectedPaketId);
-        const normPath = selectedPaket ? selectedPaket.nama.toLowerCase() : '';
-        let kategori = 'Programming';
-        if (normPath.includes('science')) kategori = 'Data Science';
-        else if (normPath.includes('security') || normPath.includes('cyber')) kategori = 'Cyber Security';
-        else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) kategori = 'Design';
-        else if (normPath.includes('ai') || normPath.includes('intelligence')) kategori = 'AI';
-
-        await addMataKuliah({
+        const newCourse = await addMataKuliah({
           nama: newCourseName.trim(),
           kode: newCourseCode.trim(),
-          level: selectedLevel,
           warna: harga, // Storing price in warna field
           published,
           jumlahPertemuan,
-          kategori,
           statusPendaftaran: 'Aktif',
           tipeKursus: 'ONLINE'
         });
 
-        alert('Kursus baru berhasil dibuat dan ditambahkan ke map!');
+        // Link new course to the selected package
+        if (selectedPaket && newCourse?.id) {
+          await addCourseToPaket(selectedPaket.id, newCourse.id);
+          await fetchPaket();
+        }
+
+        alert(`Kursus baru "${newCourseName}" berhasil dibuat dan ditambahkan ke paket "${selectedPaket?.nama || 'Roadmap'}"!`);
 
         // Reset states
         setSelectedCourseId('');
         setNewCourseName('');
         setNewCourseCode('');
-        setSelectedLevel('Dasar');
         setHarga('0');
         setPublished(false);
         setJumlahPertemuan(3);
@@ -201,27 +253,27 @@ const CourseMap: React.FC = () => {
           errorMsg = responseData.message;
         }
         alert(`Gagal membuat kursus baru: ${errorMsg}`);
+      } finally {
+        setIsActionLoading(false);
       }
       return;
     }
 
+    // Updating existing course node
+    setIsActionLoading(true);
     try {
-      const selectedPaket = paketList.find(p => p.id === selectedPaketId);
-      const normPath = selectedPaket ? selectedPaket.nama.toLowerCase() : '';
-      let kategori = 'Programming';
-      if (normPath.includes('science')) kategori = 'Data Science';
-      else if (normPath.includes('security') || normPath.includes('cyber')) kategori = 'Cyber Security';
-      else if (normPath.includes('ui') || normPath.includes('ux') || normPath.includes('design')) kategori = 'Design';
-      else if (normPath.includes('ai') || normPath.includes('intelligence')) kategori = 'AI';
-
       await updateMataKuliah(selectedCourseId, {
-        level: selectedLevel,
         warna: harga, // Storing price in warna field
         published,
         jumlahPertemuan,
-        prerequisites: selectedPrerequisites,
-        kategori
+        prerequisites: selectedPrerequisites
       });
+
+      // If for any reason the course is not yet in the active package, connect it
+      if (selectedPaket && !existingCourseIdsInPaket.has(selectedCourseId)) {
+        await addCourseToPaket(selectedPaket.id, selectedCourseId);
+        await fetchPaket();
+      }
 
       alert('Node peta kursus berhasil disimpan!');
       // Reset states
@@ -233,7 +285,7 @@ const CourseMap: React.FC = () => {
       setPublished(false);
       setJumlahPertemuan(3);
       setSelectedPrerequisites([]);
-      setActiveSidebarForm('stats'); // Close to stats
+      setActiveSidebarForm('stats');
       await fetchMataKuliah();
     } catch (error: unknown) {
       console.error('Error saving course node:', error);
@@ -246,48 +298,8 @@ const CourseMap: React.FC = () => {
         errorMsg = responseData.message;
       }
       alert(`Gagal menyimpan konfigurasi node: ${errorMsg}`);
-    }
-  };
-
-  const handleRemoveNode = async () => {
-    if (!selectedCourseId) {
-      alert('Pilih node kursus yang ingin dihapus terlebih dahulu.');
-      return;
-    }
-
-    const course = mataKuliahList.find(mk => mk.id === selectedCourseId);
-    if (!course) return;
-
-    if (confirm(`Apakah Anda yakin ingin menghapus "${course.nama}" dari Course Map? (Data kursus tidak akan dihapus, hanya konfigurasinya di map yang direset)`)) {
-      try {
-        await updateMataKuliah(selectedCourseId, {
-          level: '',
-          warna: '',
-          prerequisites: []
-        });
-        alert('Node berhasil dihapus dari map!');
-        setSelectedCourseId('');
-        setNewCourseName('');
-        setNewCourseCode('');
-        setSelectedLevel('Beginner');
-        setHarga('0');
-        setPublished(false);
-        setJumlahPertemuan(3);
-        setSelectedPrerequisites([]);
-        setActiveSidebarForm('stats'); // Close to stats
-        await fetchMataKuliah();
-      } catch (error: unknown) {
-        console.error('Error removing node:', error);
-        let errorMsg = 'Gagal menghapus node.';
-        if (error instanceof Error) {
-          errorMsg = error.message;
-        }
-        const responseData = (error as { response?: { data?: { message?: string } } })?.response?.data;
-        if (responseData?.message) {
-          errorMsg = responseData.message;
-        }
-        alert(`Gagal menghapus node: ${errorMsg}`);
-      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -300,22 +312,7 @@ const CourseMap: React.FC = () => {
     setPublished(false);
     setJumlahPertemuan(3);
     setSelectedPrerequisites([]);
-    setActiveSidebarForm('stats'); // Close to stats
-  };
-
-  const handleAddNodeClick = (level: string) => {
-    setSelectedLevel(level);
-    setSelectedCourseId('');
-    setNewCourseName('');
-    setNewCourseCode('');
-    setHarga('0');
-    setPublished(false);
-    setJumlahPertemuan(3);
-    setSelectedPrerequisites([]);
-    setActiveSidebarForm('node'); // Open node form
-    if (selectRef.current) {
-      selectRef.current.focus();
-    }
+    setActiveSidebarForm('stats');
   };
 
   const handleSavePaket = async () => {
@@ -361,10 +358,6 @@ const CourseMap: React.FC = () => {
 
 
 
-  const selectedPaket = useMemo(() => {
-    return paketList.find(p => p.id === selectedPaketId) || paketList[0];
-  }, [paketList, selectedPaketId]);
-
   const displayCourses = useMemo((): MapCourse[] => {
     if (!selectedPaket || !selectedPaket.courses) return [];
     const courseIdsInPaket = new Set(selectedPaket.courses.map((c: any) => c.id));
@@ -379,8 +372,8 @@ const CourseMap: React.FC = () => {
     }));
   }, [mataKuliahList, selectedPaket]);
 
-  // Group displayCourses by kategori and compute depth within each category
-  const categoriesWithCourses = useMemo(() => {
+  // Compute flow columns directly based on prerequisite depth (no category or level separation)
+  const flowColumns = useMemo(() => {
     if (displayCourses.length === 0) return [];
 
     const courseMap = new Map(displayCourses.map(c => [c.id, c]));
@@ -415,43 +408,23 @@ const CourseMap: React.FC = () => {
       depth: getDepth(c.id)
     }));
 
-    // Group by c.kategori
-    const groups: { [key: string]: typeof coursesWithDepth } = {};
+    // Group courses by depth
+    const depthGroups: { [key: number]: typeof coursesWithDepth } = {};
     coursesWithDepth.forEach(c => {
-      const kat = c.kategori || 'Umum';
-      if (!groups[kat]) {
-        groups[kat] = [];
+      const d = c.depth || 0;
+      if (!depthGroups[d]) {
+        depthGroups[d] = [];
       }
-      groups[kat].push(c);
+      depthGroups[d].push(c);
     });
 
-    // For each group, structure the courses by depth to draw horizontal flows
-    return Object.keys(groups).map(kategoriName => {
-      const categoryCourses = groups[kategoriName];
-      
-      // Group categoryCourses by depth
-      const depthGroups: { [key: number]: typeof coursesWithDepth } = {};
-      categoryCourses.forEach(c => {
-        const d = c.depth || 0;
-        if (!depthGroups[d]) {
-          depthGroups[d] = [];
-        }
-        depthGroups[d].push(c);
-      });
-
-      // Sort the depths inside this category
-      const sortedDepths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
-      
-      const flowColumns = sortedDepths.map(depth => ({
-        depth,
-        courses: depthGroups[depth]
-      }));
-
-      return {
-        kategoriName,
-        flowColumns
-      };
-    });
+    // Sort the depths inside this map
+    const sortedDepths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+    
+    return sortedDepths.map(depth => ({
+      depth,
+      courses: depthGroups[depth]
+    }));
   }, [displayCourses]);
 
   // Calculate Harga Asli of bundled courses directly during render
@@ -473,7 +446,7 @@ const CourseMap: React.FC = () => {
   const draftCount = displayCourses.filter(c => c.exists && !c.published).length;
   const lockedCount = displayCourses.filter(c => !c.exists).length;
 
-  const renderCourseCard = (course: MapCourse, index: number) => {
+  const renderCourseCard = (course: MapCourse) => {
     const isSelected = course.exists && selectedCourseId === course.id;
     const isPublished = course.exists && course.published;
 
@@ -494,28 +467,30 @@ const CourseMap: React.FC = () => {
         key={course.id}
         onClick={() => {
           if (!course.exists) {
-            if (confirm(`Kursus "${course.nama}" (${course.kode}) belum dibuat di database. Apakah Anda ingin membuatnya sekarang?`)) {
-              setSelectedLevel(course.level || 'Dasar');
-              setSelectedCourseId('');
-              setNewCourseName(course.nama);
-              setNewCourseCode(course.kode);
-              setHarga(course.warna || '0');
-              setPublished(false);
-              setJumlahPertemuan(course.jumlahPertemuan || 3);
-              setSelectedPrerequisites([]);
-              setActiveSidebarForm('node');
-              if (selectRef.current) {
-                selectRef.current.focus();
-              }
-            }
+            handleOpenAddCourse();
           } else {
             handleCourseSelect(course.id);
           }
         }}
-        className={`cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[215px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
+        className={`group cursor-pointer rounded-xl border border-gray-300 relative transition-all duration-200 hover:scale-[1.02] w-[215px] text-left flex flex-col justify-between overflow-hidden shadow-sm bg-white shrink-0 ${
           isSelected ? 'ring-4 ring-indigo-500/25 scale-[1.02] border-indigo-500' : ''
         } ${!course.exists ? 'opacity-70 hover:opacity-100 border-dashed' : ''}`}
       >
+        {/* Remove from package quick button on card hover */}
+        {selectedPaket && course.exists && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveCourseFromPaket(course.id, course.nama);
+            }}
+            className="absolute top-2 left-2 z-10 w-5 h-5 rounded-full bg-white/95 hover:bg-red-500 text-gray-400 hover:text-white flex items-center justify-center text-[10px] font-black shadow-sm transition-all duration-150 border border-gray-200 opacity-0 group-hover:opacity-100 hover:scale-110 cursor-pointer"
+            title={`Keluarkan "${course.nama}" dari paket "${selectedPaket.nama}"`}
+          >
+            ✕
+          </button>
+        )}
+
         {isPublished && course.exists && (
           <div className="absolute top-2 right-2 w-4 h-4 bg-[#0fc26a] text-white rounded-full flex items-center justify-center text-[9px] shadow-sm font-bold">✓</div>
         )}
@@ -582,10 +557,11 @@ const CourseMap: React.FC = () => {
             + Buat Paket
           </button>
           <button
-            onClick={() => handleAddNodeClick('Dasar')}
-            className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-extrabold rounded-full text-xs px-4 py-2.5 transition-all shadow-sm border-none cursor-pointer"
+            onClick={handleOpenAddCourse}
+            className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-extrabold rounded-full text-xs px-4 py-2.5 transition-all shadow-sm border-none cursor-pointer flex items-center gap-1.5"
           >
-            + Tambah Kursus
+            <HiOutlinePlus className="w-3.5 h-3.5" />
+            <span>Tambah Kursus</span>
           </button>
         </div>
       </div>
@@ -604,45 +580,47 @@ const CourseMap: React.FC = () => {
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Memuat Peta Kurikulum...</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-12">
-              {categoriesWithCourses.map((cat) => (
-                <div key={cat.kategoriName} className="flex flex-col gap-4 border-b border-gray-100 pb-8 last:border-b-0 last:pb-0">
-                  {/* Category Heading */}
-                  <h3 className="text-sm font-black text-gray-800 tracking-wide uppercase">
-                    {cat.kategoriName}
-                  </h3>
+            <div className="flex flex-col gap-8">
+              {flowColumns.length > 0 ? (
+                <div className="flex flex-row flex-wrap py-6 gap-y-8 gap-x-6 w-full justify-center items-center">
+                  {flowColumns.map((column) => (
+                    <React.Fragment key={column.depth}>
+                      {/* Column containing courses at this depth (vertical stack if multiple) */}
+                      <div className="flex flex-col gap-4 justify-center items-center min-w-[215px]">
+                        {column.courses.map((course) => renderCourseCard(course))}
+                      </div>
+                    </React.Fragment>
+                  ))}
 
-                  {/* Wrapping Horizontal Flow Container (No Scroll) */}
-                  <div className="flex flex-row flex-wrap py-6 gap-y-8 gap-x-6 w-full justify-center items-center">
-                    {cat.flowColumns.map((column) => (
-                      <React.Fragment key={column.depth}>
-                        {/* Column containing courses at this depth (vertical stack if multiple) */}
-                        <div className="flex flex-col gap-4 justify-center items-center min-w-[215px]">
-                          {column.courses.map((course, idx) => renderCourseCard(course, idx))}
-                        </div>
-                      </React.Fragment>
-                    ))}
-
-                    <div
-                      onClick={() => handleAddNodeClick('Dasar')}
-                      className="w-[215px] h-[80px] rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-[#5850ec]/5 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group shrink-0"
-                    >
-                      <span className="text-lg text-gray-400 group-hover:text-indigo-600 font-black">+</span>
-                      <span className="text-[9px] font-black text-gray-400 group-hover:text-indigo-600 uppercase tracking-wider">Tambah Node</span>
-                    </div>
+                  <div
+                    onClick={handleOpenAddCourse}
+                    className="w-[215px] h-[80px] rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-[#5850ec]/5 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group shrink-0"
+                  >
+                    <span className="text-lg text-gray-400 group-hover:text-indigo-600 font-black">+</span>
+                    <span className="text-[9px] font-black text-gray-400 group-hover:text-indigo-600 uppercase tracking-wider">Tambah Node</span>
                   </div>
                 </div>
-              ))}
-
-              {categoriesWithCourses.length === 0 && (
-                <div className="text-center py-16">
-                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
-                  <p className="text-xs text-gray-400 font-semibold mt-1">Silakan buat paket baru atau tambahkan kursus di database.</p>
+              ) : (
+                <div className="text-center py-16 flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-black mb-3">
+                    📚
+                  </div>
+                  <p className="text-sm font-black text-gray-700 uppercase tracking-widest">Tidak ada kursus dalam paket ini</p>
+                  <p className="text-xs text-gray-400 font-semibold mt-1 mb-5 max-w-sm">
+                    Paket "{selectedPaket?.nama || ''}" belum memiliki kursus. Tambahkan kursus yang sudah ada atau buat kursus baru.
+                  </p>
+                  <button
+                    onClick={handleOpenAddCourse}
+                    className="bg-[#5850ec] hover:bg-[#4f46e5] text-white font-extrabold rounded-xl text-xs px-5 py-2.5 transition-all shadow-sm border-none cursor-pointer flex items-center gap-1.5"
+                  >
+                    <HiOutlinePlus className="w-4 h-4" />
+                    <span>Tambah Kursus ke Paket</span>
+                  </button>
                 </div>
               )}
 
               {/* Bottom Milestone Badge Card */}
-              {selectedPaket && categoriesWithCourses.length > 0 && (
+              {selectedPaket && flowColumns.length > 0 && (
                 <div className="w-full max-w-[700px] mx-auto bg-[#c7d2fe]/30 text-[#4f46e5] border border-[#5850ec]/30 p-4 rounded-[1.5rem] flex items-center gap-4 shadow-sm hover:scale-[1.01] transition-transform mt-2">
                   <div className="w-12 h-12 bg-[#5850ec] rounded-full flex items-center justify-center text-white shadow-md shrink-0">
                     <HiOutlineTrophy className="w-6 h-6" />
@@ -661,10 +639,228 @@ const CourseMap: React.FC = () => {
 
         {/* Right Sidebar - Inputs & Stats */}
         <div className="xl:col-span-3 flex flex-col gap-6">
+          {activeSidebarForm === 'add_to_paket' && (
+            /* Tambah Kursus ke Paket Card */
+            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-sm font-black text-gray-900">Tambah Kursus ke Paket</h2>
+                  <p className="text-[11px] font-bold text-indigo-600 mt-0.5 truncate max-w-[200px]">
+                    {selectedPaket?.nama || 'Roadmap'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveSidebarForm('stats')}
+                  className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center text-xs font-bold border-none cursor-pointer transition-colors"
+                  title="Tutup form"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Mode Tabs */}
+              <div className="flex bg-gray-100 p-1 rounded-xl mb-4 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setAddModeTab('existing')}
+                  className={`flex-1 py-1.5 rounded-lg text-center transition-all border-none cursor-pointer text-[11px] ${
+                    addModeTab === 'existing'
+                      ? 'bg-white text-indigo-600 shadow-sm font-black'
+                      : 'text-gray-500 hover:text-gray-700 bg-transparent'
+                  }`}
+                >
+                  Pilih Kursus ({availableCoursesToAdd.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModeTab('new')}
+                  className={`flex-1 py-1.5 rounded-lg text-center transition-all border-none cursor-pointer text-[11px] ${
+                    addModeTab === 'new'
+                      ? 'bg-white text-indigo-600 shadow-sm font-black'
+                      : 'text-gray-500 hover:text-gray-700 bg-transparent'
+                  }`}
+                >
+                  + Buat Baru
+                </button>
+              </div>
+
+              {addModeTab === 'existing' ? (
+                <div className="space-y-3">
+                  {/* Search bar */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchCourseQuery}
+                      onChange={(e) => setSearchCourseQuery(e.target.value)}
+                      placeholder="Cari nama atau kode kursus..."
+                      className="w-full pl-8 pr-3 h-9 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 font-bold shadow-inner"
+                    />
+                    <HiOutlineMagnifyingGlass className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+                  </div>
+
+                  {/* Course List */}
+                  <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-xl p-2.5 bg-gray-50/50 shadow-inner">
+                    {filteredAvailableCourses.length === 0 ? (
+                      <div className="py-8 text-center text-gray-400 text-xs font-semibold">
+                        {availableCoursesToAdd.length === 0 ? (
+                          <>
+                            <p className="font-bold text-gray-500">Semua kursus sudah dimasukkan!</p>
+                            <p className="text-[10px] mt-1">Gunakan tab "+ Buat Baru" jika ingin menambah kursus lainnya.</p>
+                          </>
+                        ) : (
+                          'Tidak ada kursus yang cocok dengan pencarian.'
+                        )}
+                      </div>
+                    ) : (
+                      filteredAvailableCourses.map((mk) => {
+                        const isChecked = selectedCoursesToAdd.includes(mk.id);
+                        return (
+                          <div
+                            key={mk.id}
+                            className={`flex items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
+                              isChecked
+                                ? 'bg-indigo-50/70 border-indigo-300'
+                                : 'bg-white border-gray-200/80 hover:border-gray-300'
+                            }`}
+                          >
+                            <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0 text-xs font-bold text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedCoursesToAdd(selectedCoursesToAdd.filter(id => id !== mk.id));
+                                  } else {
+                                    setSelectedCoursesToAdd([...selectedCoursesToAdd, mk.id]);
+                                  }
+                                }}
+                                className="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 shrink-0 cursor-pointer"
+                              />
+                              <div className="truncate">
+                                <span className="text-[10px] font-black text-gray-400 mr-1.5">{mk.kode}</span>
+                                <span className="font-bold text-gray-800">{mk.nama}</span>
+                              </div>
+                            </label>
+                            <button
+                              type="button"
+                              disabled={isActionLoading}
+                              onClick={() => handleAddSingleCourse(mk.id)}
+                              className="shrink-0 text-[10px] font-black bg-[#e0e7ff] text-[#4338ca] hover:bg-[#5850ec] hover:text-white px-2.5 py-1 rounded-lg transition-colors border-none cursor-pointer disabled:opacity-50"
+                              title={`Tambahkan "${mk.nama}" ke paket ini`}
+                            >
+                              + Tambah
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  {selectedCoursesToAdd.length > 0 && (
+                    <button
+                      type="button"
+                      disabled={isActionLoading}
+                      onClick={handleBatchAddCourses}
+                      className="w-full h-10 bg-[#5850ec] hover:bg-[#4f46e5] text-white font-black rounded-xl text-xs shadow-sm transition-all border-none cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      <HiOutlinePlus className="w-4 h-4" />
+                      <span>Tambahkan {selectedCoursesToAdd.length} Kursus Terpilih</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSidebarForm('stats')}
+                    className="w-full h-9 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs transition-all border-none cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              ) : (
+                /* Tab: Buat Kursus Baru & Tambahkan ke Paket */
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 block mb-1">Nama Kursus Baru</label>
+                    <input
+                      type="text"
+                      value={newCourseName}
+                      onChange={(e) => setNewCourseName(e.target.value)}
+                      placeholder="Contoh: CSS Grid & Flexbox"
+                      className="w-full px-3 h-9 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 font-bold shadow-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 block mb-1">Kode Kursus Baru</label>
+                    <input
+                      type="text"
+                      value={newCourseCode}
+                      onChange={(e) => setNewCourseCode(e.target.value)}
+                      placeholder="Contoh: WD-07"
+                      className="w-full px-3 h-9 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 font-bold shadow-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 block mb-1">Status</label>
+                      <select
+                        value={published ? 'true' : 'false'}
+                        onChange={(e) => setPublished(e.target.value === 'true')}
+                        className="w-full px-2.5 h-9 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 font-bold shadow-sm"
+                      >
+                        <option value="true">Published</option>
+                        <option value="false">Draft</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 block mb-1">Pertemuan</label>
+                      <input
+                        type="number"
+                        value={jumlahPertemuan}
+                        onChange={(e) => setJumlahPertemuan(parseInt(e.target.value) || 0)}
+                        className="w-full px-2.5 h-9 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 font-bold shadow-sm"
+                        min="1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 block mb-1">Harga (0 = Gratis)</label>
+                    <input
+                      type="text"
+                      value={harga}
+                      onChange={(e) => setHarga(e.target.value)}
+                      placeholder="Contoh: 499000 atau 0"
+                      className="w-full px-3 h-9 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 font-bold shadow-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={isActionLoading}
+                      onClick={handleSaveNode}
+                      className="flex-1 h-10 bg-[#0fc26a] hover:bg-[#0db05f] text-white font-black rounded-xl text-xs shadow-sm transition-all border-none cursor-pointer disabled:opacity-50"
+                    >
+                      Buat & Masukkan ke Paket
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSidebarForm('stats')}
+                      className="h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-xl text-xs px-3.5 border-none cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeSidebarForm === 'node' && (
             /* Input Form Card */
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200">
-              <h2 className="text-sm font-black text-gray-900 mb-5">Input Node Kursus</h2>
+            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200 animate-in fade-in duration-200">
+              <h2 className="text-sm font-black text-gray-900 mb-5">Edit Node Kursus</h2>
 
               <div className="space-y-4">
                 <div>
@@ -675,37 +871,12 @@ const CourseMap: React.FC = () => {
                     onChange={(e) => handleCourseSelect(e.target.value)}
                     className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
                   >
-                    <option value="">Nama Kursus Baru....</option>
+                    <option value="">Pilih Kursus....</option>
                     {mataKuliahList.map(mk => (
                       <option key={mk.id} value={mk.id}>{mk.kode} - {mk.nama}</option>
                     ))}
                   </select>
                 </div>
-
-                {selectedCourseId === "" && (
-                  <div className="space-y-4 pt-2 border-t border-gray-100 mt-2 animate-in fade-in duration-300">
-                    <div>
-                      <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Nama Kursus Baru</label>
-                      <input
-                        type="text"
-                        value={newCourseName}
-                        onChange={(e) => setNewCourseName(e.target.value)}
-                        placeholder="Contoh: CSS Grid & Flexbox"
-                        className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Kode Kursus Baru</label>
-                      <input
-                        type="text"
-                        value={newCourseCode}
-                        onChange={(e) => setNewCourseCode(e.target.value)}
-                        placeholder="Contoh: WD-07"
-                        className="w-full px-3 h-10 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-700 font-bold shadow-sm"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 <div>
                   <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Status</label>
@@ -731,7 +902,7 @@ const CourseMap: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Harga(0=Gratis)</label>
+                  <label className="text-[11px] font-bold text-gray-500 block mb-1.5">Harga (0=Gratis)</label>
                   <input
                     type="text"
                     value={harga}
@@ -775,27 +946,38 @@ const CourseMap: React.FC = () => {
                 </div>
 
                 {/* Action Buttons Row */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-col gap-2 pt-2">
                   <button
                     onClick={handleSaveNode}
-                    className="flex-1 h-10 bg-[#5850ec] hover:bg-[#4f46e5] text-white font-black rounded-xl text-[10px] shadow-sm transition-all border-none animate-pulse-subtle"
+                    disabled={isActionLoading}
+                    className="w-full h-10 bg-[#5850ec] hover:bg-[#4f46e5] text-white font-black rounded-xl text-xs shadow-sm transition-all border-none cursor-pointer disabled:opacity-50"
                   >
-                    Simpan Node
+                    Simpan Perubahan
                   </button>
-                  {selectedCourseId && (
+                  <div className="flex gap-2">
+                    {selectedCourseId && (
+                      <button
+                        type="button"
+                        disabled={isActionLoading}
+                        onClick={() => {
+                          const c = mataKuliahList.find(m => m.id === selectedCourseId);
+                          handleRemoveCourseFromPaket(selectedCourseId, c?.nama);
+                        }}
+                        className="flex-1 h-9 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-[11px] shadow-sm transition-all border-none cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1"
+                        title="Keluarkan kursus ini dari paket"
+                      >
+                        <HiOutlineTrash className="w-3.5 h-3.5" />
+                        <span>Keluarkan dari Paket</span>
+                      </button>
+                    )}
                     <button
-                      onClick={handleRemoveNode}
-                      className="h-10 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-[10px] px-3.5 shadow-sm transition-all border-none"
+                      type="button"
+                      onClick={handleCancel}
+                      className="flex-1 h-9 bg-gray-200 hover:bg-gray-300 text-gray-700 font-black rounded-xl text-[11px] shadow-sm transition-all border-none cursor-pointer"
                     >
-                      Hapus Node
+                      Batal
                     </button>
-                  )}
-                  <button
-                    onClick={handleCancel}
-                    className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-[10px] px-3.5 shadow-sm transition-all border-none"
-                  >
-                    Batal
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -803,7 +985,7 @@ const CourseMap: React.FC = () => {
 
           {activeSidebarForm === 'bundling' && (
             /* Buat Paket Bundling Card */
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200">
+            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-200 animate-in fade-in duration-200">
               <h2 className="text-sm font-black text-gray-900 mb-5">Buat Paket Bundling</h2>
 
               <div className="space-y-4">
@@ -929,35 +1111,62 @@ const CourseMap: React.FC = () => {
                 </div>
 
                 <div className="space-y-3.5 max-h-80 overflow-y-auto">
-                  {paketList.map((paket) => (
-                    <div key={paket.id} className="p-3 border border-gray-150 rounded-xl bg-gray-50 relative group">
-                      <button
-                        onClick={() => {
-                          if (confirm(`Hapus paket bundling "${paket.nama}"?`)) {
-                            removePaket(paket.id).catch(err => {
-                              console.error(err);
-                              alert('Gagal menghapus paket dari database.');
-                            });
-                          }
-                        }}
-                        className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-[10px] font-black border-none bg-transparent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Hapus Paket"
+                  {paketList.map((paket) => {
+                    const isCurrent = paket.id === selectedPaketId;
+                    return (
+                      <div
+                        key={paket.id}
+                        onClick={() => setSelectedPaketId(paket.id)}
+                        className={`p-3 border rounded-xl relative group cursor-pointer transition-all ${
+                          isCurrent
+                            ? 'bg-indigo-50/50 border-indigo-300 ring-2 ring-indigo-500/20 shadow-sm'
+                            : 'bg-gray-50 border-gray-150 hover:bg-gray-100/70 hover:border-gray-200'
+                        }`}
                       >
-                        ✕
-                      </button>
-                      <h4 className="text-[11px] font-black text-gray-800 leading-snug">{paket.nama}</h4>
-                      <p className="text-[9px] text-gray-400 font-bold mt-0.5 leading-snug">{paket.deskripsi}</p>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Hapus paket bundling "${paket.nama}"?`)) {
+                              removePaket(paket.id).catch(err => {
+                                console.error(err);
+                                alert('Gagal menghapus paket dari database.');
+                              });
+                            }
+                          }}
+                          className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-[10px] font-black border-none bg-transparent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Hapus Paket"
+                        >
+                          ✕
+                        </button>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <h4 className={`text-[11px] font-black leading-snug ${isCurrent ? 'text-indigo-700' : 'text-gray-800'}`}>
+                            {paket.nama}
+                          </h4>
+                          {isCurrent && (
+                            <span className="text-[9px] font-extrabold text-indigo-600 bg-white px-1.5 py-0.2 rounded border border-indigo-200">
+                              Aktif
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[9px] text-gray-400 font-bold mt-0.5 leading-snug line-clamp-1">{paket.deskripsi || 'Tidak ada deskripsi'}</p>
 
-                      <div className="mt-2.5 flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold text-[#15803d] bg-[#dcfce7] px-2 py-0.5 rounded-md">
-                          {formatHarga(paket.hargaPaket)}
-                        </span>
-                        <span className="text-[9px] font-bold text-gray-400 line-through">
-                          {formatHarga(paket.hargaAsli)}
-                        </span>
+                        <div className="mt-2.5 flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold text-[#15803d] bg-[#dcfce7] px-2 py-0.5 rounded-md">
+                            {formatHarga(paket.hargaPaket)}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-bold text-gray-500">
+                              {paket.courses?.length || 0} kursus
+                            </span>
+                            <span className="text-[9px] font-bold text-gray-400 line-through">
+                              {formatHarga(paket.hargaAsli)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {paketList.length === 0 && (
                     <p className="text-xs text-gray-400 italic font-bold text-center py-4">Belum ada paket bundling</p>
                   )}

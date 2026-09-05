@@ -31,8 +31,6 @@ const BuatKursus: React.FC = () => {
     pengajarId: '',
     kapasitas: 29,
     deskripsi: '',
-    kategori: '',
-    level: '',
     statusPendaftaran: 'Aktif',
     tipeKursus: 'Online'
   });
@@ -86,28 +84,14 @@ const BuatKursus: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kategori / Level</label>
-                <Select onValueChange={(val: string) => setFormData(prev => ({ ...prev, kategori: val, level: val }))}>
-                  <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/50 py-7">
-                    <SelectValue placeholder="Pilih Kategori / Level" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    <SelectItem value="Dasar">Dasar</SelectItem>
-                    <SelectItem value="Lanjutan">Lanjutan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kapasitas</label>
-                <Input 
-                  type="number"
-                  value={formData.kapasitas}
-                  onChange={(e) => setFormData(prev => ({ ...prev, kapasitas: parseInt(e.target.value) }))}
-                  className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all text-sm font-bold"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Kapasitas</label>
+              <Input 
+                type="number"
+                value={formData.kapasitas}
+                onChange={(e) => setFormData(prev => ({ ...prev, kapasitas: parseInt(e.target.value) || 0 }))}
+                className="rounded-2xl border-gray-100 bg-gray-50/50 py-7 focus:bg-white transition-all text-sm font-bold"
+              />
             </div>
 
             <div className="space-y-2">

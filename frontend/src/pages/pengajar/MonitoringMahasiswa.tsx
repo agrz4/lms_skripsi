@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   HiOutlineChartBar, 
@@ -6,11 +6,14 @@ import {
   HiOutlineBookOpen,
   HiOutlineChevronDown,
   HiOutlineChevronUp,
+  HiOutlineMagnifyingGlass,
+  HiOutlineXMark
 } from 'react-icons/hi2';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import api from '../../lib/api';
 
 const MonitoringMahasiswa: React.FC = () => {
@@ -18,6 +21,7 @@ const MonitoringMahasiswa: React.FC = () => {
   const [expandedMaterial, setExpandedMaterial] = useState<string | null>(null);
   const [statsData, setStatsData] = useState<{ avgScore: number; totalStudents: number; completionRate: number } | null>(null);
   const [materialData, setMaterialData] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -159,6 +163,16 @@ const MonitoringMahasiswa: React.FC = () => {
     },
   ];
 
+  const filteredMaterialData = useMemo(() => {
+    if (!searchQuery.trim()) return materialData;
+    const q = searchQuery.toLowerCase();
+    return materialData.filter(m => 
+      (m.mataKuliahNama && m.mataKuliahNama.toLowerCase().includes(q)) ||
+      (m.topik && m.topik.toLowerCase().includes(q)) ||
+      `Pertemuan ${m.urutan}`.toLowerCase().includes(q)
+    );
+  }, [materialData, searchQuery]);
+
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20">
       {/* Header */}
@@ -195,7 +209,35 @@ const MonitoringMahasiswa: React.FC = () => {
 
       {/* Materials Table */}
       <Card className="rounded-[2.5rem] border-none shadow-sm bg-white overflow-hidden mb-12">
-         <div className="grid grid-cols-12 px-10 py-6 bg-white text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+         {/* Table Header with Search */}
+         <div className="px-10 py-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+               <h2 className="text-base font-black text-gray-900">Daftar Kursus & Sesi Pertemuan</h2>
+               <p className="text-xs text-gray-400 font-medium mt-0.5">
+                  Menampilkan {filteredMaterialData.length} dari {materialData.length} sesi pertemuan
+               </p>
+            </div>
+            <div className="relative w-full sm:w-80">
+               <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+               <Input
+                  placeholder="Cari nama kursus atau topik..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-8 h-9 rounded-xl border-gray-200 bg-gray-50/80 text-xs font-medium text-gray-800 placeholder:text-gray-400 focus:bg-white focus-visible:ring-[#1E3A5F] transition-all"
+               />
+               {searchQuery && (
+                  <button
+                     type="button"
+                     onClick={() => setSearchQuery('')}
+                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/50"
+                  >
+                     <HiOutlineXMark className="text-sm" />
+                  </button>
+               )}
+            </div>
+         </div>
+
+         <div className="grid grid-cols-12 px-10 py-4 bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
             <div className="col-span-3">Nama Pertemuan</div>
             <div className="col-span-2">Mata Kuliah</div>
             <div className="col-span-1 text-center">Jumlah Mhs</div>
@@ -206,38 +248,53 @@ const MonitoringMahasiswa: React.FC = () => {
          </div>
 
          <div className="divide-y divide-gray-50">
-            {materialData.map((m) => (
-              <div key={m.id} className="grid grid-cols-12 px-10 py-8 items-center hover:bg-gray-50/50 transition-all">
-                 <div className="col-span-3 text-sm font-black text-gray-800">Pertemuan {m.urutan} - {m.topik}</div>
-                 <div className="col-span-2 text-xs font-bold text-gray-400">{m.mataKuliahNama}</div>
-                 <div className="col-span-1 text-center text-sm font-black text-gray-800">{m.studentsCount}</div>
-                 <div className="col-span-2 px-6">
-                    <div className="flex justify-between mb-1"><span className="text-[10px] font-black text-emerald-500">{m.score}</span></div>
-                    <Progress value={m.score} className="h-1.5 bg-gray-100" />
+            {filteredMaterialData.length === 0 ? (
+               <div className="py-12 text-center">
+                  <p className="text-xs font-bold text-gray-400">
+                     Tidak ditemukan pertemuan yang cocok dengan pencarian "{searchQuery}"
+                  </p>
+                  <button
+                     type="button"
+                     onClick={() => setSearchQuery('')}
+                     className="mt-2 text-xs font-black text-indigo-600 hover:underline"
+                  >
+                     Reset Pencarian
+                  </button>
+               </div>
+            ) : (
+               filteredMaterialData.map((m) => (
+                 <div key={m.id} className="grid grid-cols-12 px-10 py-8 items-center hover:bg-gray-50/50 transition-all">
+                    <div className="col-span-3 text-sm font-black text-gray-800">Pertemuan {m.urutan} - {m.topik}</div>
+                    <div className="col-span-2 text-xs font-bold text-gray-400">{m.mataKuliahNama}</div>
+                    <div className="col-span-1 text-center text-sm font-black text-gray-800">{m.studentsCount}</div>
+                    <div className="col-span-2 px-6">
+                       <div className="flex justify-between mb-1"><span className="text-[10px] font-black text-emerald-500">{m.score}</span></div>
+                       <Progress value={m.score} className="h-1.5 bg-gray-100" />
+                    </div>
+                    <div className="col-span-2 px-6">
+                       <div className="flex justify-between mb-1"><span className="text-[10px] font-black text-indigo-500">{m.reflection}</span></div>
+                       <Progress value={m.reflection} className="h-1.5 bg-gray-100" />
+                    </div>
+                    <div className="col-span-1 text-center text-sm font-black text-gray-800">{m.upload}</div>
+                    <div className="col-span-1 text-right flex flex-col gap-2">
+                       <Button 
+                         variant="ghost" 
+                         onClick={() => setExpandedMaterial(expandedMaterial === m.id ? null : m.id)}
+                         className="bg-amber-50 hover:bg-amber-100 text-amber-600 font-black text-[9px] px-4 py-1 rounded-lg h-7"
+                       >
+                          Expand {expandedMaterial === m.id ? <HiOutlineChevronUp className="ml-1" /> : <HiOutlineChevronDown className="ml-1" />}
+                       </Button>
+                       <Button 
+                         variant="ghost" 
+                         onClick={() => navigate(`/pengajar/add-materi?pertemuanId=${m.id}`)}
+                         className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-black text-[9px] px-4 py-1 rounded-lg h-7"
+                       >
+                          Edit Materi
+                       </Button>
+                    </div>
                  </div>
-                 <div className="col-span-2 px-6">
-                    <div className="flex justify-between mb-1"><span className="text-[10px] font-black text-indigo-500">{m.reflection}</span></div>
-                    <Progress value={m.reflection} className="h-1.5 bg-gray-100" />
-                 </div>
-                 <div className="col-span-1 text-center text-sm font-black text-gray-800">{m.upload}</div>
-                 <div className="col-span-1 text-right flex flex-col gap-2">
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setExpandedMaterial(expandedMaterial === m.id ? null : m.id)}
-                      className="bg-amber-50 hover:bg-amber-100 text-amber-600 font-black text-[9px] px-4 py-1 rounded-lg h-7"
-                    >
-                       Expand {expandedMaterial === m.id ? <HiOutlineChevronUp className="ml-1" /> : <HiOutlineChevronDown className="ml-1" />}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => navigate(`/pengajar/add-materi?pertemuanId=${m.id}`)}
-                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-black text-[9px] px-4 py-1 rounded-lg h-7"
-                    >
-                       Edit Materi
-                    </Button>
-                 </div>
-              </div>
-            ))}
+               ))
+            )}
          </div>
       </Card>
 

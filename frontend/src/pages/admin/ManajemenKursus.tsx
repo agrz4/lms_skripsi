@@ -8,7 +8,9 @@ import {
   HiOutlinePencilSquare,
   HiOutlineComputerDesktop,
   HiOutlineUserGroup,
-  HiOutlineArrowPathRoundedSquare
+  HiOutlineArrowPathRoundedSquare,
+  HiOutlineCalendar,
+  HiOutlineXMark
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +48,8 @@ const dummyCourses = [
     materiText: '8/14',
     pesertaCount: 32,
     aiStatus: 'Siap',
-    published: true
+    published: true,
+    createdAt: '2025-01-10T08:00:00.000Z'
   },
   {
     id: 'dummy-2',
@@ -58,7 +61,8 @@ const dummyCourses = [
     materiText: '',
     pesertaCount: 0,
     aiStatus: 'Proses',
-    published: false
+    published: false,
+    createdAt: '2025-02-15T09:30:00.000Z'
   },
   {
     id: 'dummy-3',
@@ -70,7 +74,8 @@ const dummyCourses = [
     materiText: '0/14',
     pesertaCount: 0,
     aiStatus: 'Belum',
-    published: false
+    published: false,
+    createdAt: '2025-03-01T10:00:00.000Z'
   }
 ];
 
@@ -81,6 +86,8 @@ const ManajemenKursus: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('terbaru'); // 'terbaru' | 'terlama' | 'today' | 'week' | 'month' | 'custom'
+  const [selectedDate, setSelectedDate] = useState(''); // YYYY-MM-DD
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   // Pagination State
@@ -89,7 +96,7 @@ const ManajemenKursus: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, dateFilter, selectedDate]);
 
   // Modal Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,8 +107,6 @@ const ManajemenKursus: React.FC = () => {
     pengajarId: '',
     kapasitas: 29,
     deskripsi: '',
-    kategori: 'Beginner',
-    level: 'Beginner',
     statusPendaftaran: 'Aktif',
     tipeKursus: 'Online',
     jumlahPertemuan: 3
@@ -150,6 +155,7 @@ const ManajemenKursus: React.FC = () => {
       kategori: mk.kategori || 'Beginner',
       statusPendaftaran: mk.statusPendaftaran || 'Aktif',
       tipeKursus: mk.tipeKursus || 'Online',
+      createdAt: mk.createdAt,
       isDummy: false
     };
   }) : dummyCourses.map(c => ({
@@ -164,18 +170,79 @@ const ManajemenKursus: React.FC = () => {
     kategori: c.level,
     statusPendaftaran: 'Aktif',
     tipeKursus: 'Online',
+    createdAt: c.createdAt || new Date().toISOString(),
     isDummy: true
   }));
 
-  // Filter based on search query and status filter
+  // Format creation date for display
+  const formatCourseDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return '';
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setDateFilter('terbaru');
+    setSelectedDate('');
+  };
+
+  // Filter based on search query, status filter, and creation date
   const filteredCourses = displayCourses.filter(c => {
     const matchesSearch = c.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.kode.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (statusFilter === 'all') return matchesSearch;
-    if (statusFilter === 'aktif') return matchesSearch && c.published;
-    if (statusFilter === 'draft') return matchesSearch && !c.published;
-    return matchesSearch;
+    if (!matchesSearch) return false;
+    if (statusFilter === 'aktif' && !c.published) return false;
+    if (statusFilter === 'draft' && c.published) return false;
+
+    if (c.createdAt) {
+      const courseDate = new Date(c.createdAt);
+      const now = new Date();
+
+      if (dateFilter === 'today') {
+        const isToday = courseDate.getFullYear() === now.getFullYear() &&
+          courseDate.getMonth() === now.getMonth() &&
+          courseDate.getDate() === now.getDate();
+        if (!isToday) return false;
+      } else if (dateFilter === 'week') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(now.getDate() - 7);
+        if (courseDate < sevenDaysAgo) return false;
+      } else if (dateFilter === 'month') {
+        const isThisMonth = courseDate.getFullYear() === now.getFullYear() &&
+          courseDate.getMonth() === now.getMonth();
+        if (!isThisMonth) return false;
+      } else if (dateFilter === 'custom' && selectedDate) {
+        const localYear = courseDate.getFullYear();
+        const localMonth = String(courseDate.getMonth() + 1).padStart(2, '0');
+        const localDay = String(courseDate.getDate()).padStart(2, '0');
+        const localDateStr = `${localYear}-${localMonth}-${localDay}`;
+        const utcDateStr = courseDate.toISOString().split('T')[0];
+        if (localDateStr !== selectedDate && utcDateStr !== selectedDate) return false;
+      }
+    }
+
+    return true;
+  }).sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    if (dateFilter === 'terlama') {
+      return timeA - timeB; // Oldest first
+    }
+    // Default 'terbaru' or when date ranges are active: newest first
+    return timeB - timeA; // Newest first
   });
 
   // Pagination calculation
@@ -246,8 +313,6 @@ const ManajemenKursus: React.FC = () => {
       pengajarId: course.pengajarId || '',
       kapasitas: course.kapasitas || 29,
       deskripsi: course.deskripsi || '',
-      kategori: course.kategori || 'Beginner',
-      level: course.level || 'Beginner',
       statusPendaftaran: course.statusPendaftaran || 'Aktif',
       tipeKursus: course.tipeKursus || 'Online',
       jumlahPertemuan: course.jumlahPertemuan || 14
@@ -288,8 +353,6 @@ const ManajemenKursus: React.FC = () => {
           pengajarId: finalPengajarId || undefined,
           kapasitas: formData.kapasitas,
           deskripsi: formData.deskripsi,
-          kategori: formData.kategori,
-          level: formData.level,
           statusPendaftaran: formData.statusPendaftaran,
           tipeKursus: finalTipeKursus,
           jumlahPertemuan: formData.jumlahPertemuan
@@ -304,8 +367,6 @@ const ManajemenKursus: React.FC = () => {
         pengajarId: finalPengajarId || undefined,
         kapasitas: formData.kapasitas,
         deskripsi: formData.deskripsi,
-        kategori: formData.kategori,
-        level: formData.level,
         statusPendaftaran: formData.statusPendaftaran,
         tipeKursus: finalTipeKursus,
         published: false,
@@ -410,8 +471,6 @@ const ManajemenKursus: React.FC = () => {
               pengajarId: '',
               kapasitas: 29,
               deskripsi: '',
-              kategori: 'Beginner',
-              level: 'Beginner',
               statusPendaftaran: 'Aktif',
               tipeKursus: 'Online',
               jumlahPertemuan: 3
@@ -429,7 +488,7 @@ const ManajemenKursus: React.FC = () => {
           <HiOutlinePlus className="mr-1.5 text-sm" /> Buat Course Map
         </Button>
 
-        <div className="relative w-72 ml-auto">
+        <div className="relative w-64 ml-auto">
           <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
           <Input
             placeholder="Cari Kursus"
@@ -439,16 +498,88 @@ const ManajemenKursus: React.FC = () => {
           />
         </div>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        {/* Filter Tanggal & Sort: Terbaru / Terlama / By Date */}
+        <div className="flex items-center gap-2">
+          <Select value={dateFilter} onValueChange={(val) => {
+            if (val) setDateFilter(val);
+            if (val !== 'custom') {
+              setSelectedDate('');
+            }
+          }}>
+            <SelectTrigger className="h-8 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold rounded-lg text-xs px-3 shadow-xs flex items-center gap-1.5 min-w-[145px]">
+              <HiOutlineCalendar className="text-[#5850ec] text-sm shrink-0" />
+              <SelectValue>
+                {dateFilter === 'terbaru' ? 'Urutan: Terbaru' :
+                 dateFilter === 'terlama' ? 'Urutan: Terlama' :
+                 dateFilter === 'today' ? 'Dibuat Hari Ini' :
+                 dateFilter === 'week' ? '7 Hari Terakhir' :
+                 dateFilter === 'month' ? 'Bulan Ini' :
+                 selectedDate ? `Tgl: ${selectedDate}` : 'Set By Date'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="rounded-xl bg-white border border-gray-200 shadow-md">
+              <SelectItem value="terbaru">Terbaru (Tanggal Dibuat)</SelectItem>
+              <SelectItem value="terlama">Terlama (Tanggal Dibuat)</SelectItem>
+              <SelectItem value="today">Dibuat Hari Ini</SelectItem>
+              <SelectItem value="week">Dibuat 7 Hari Terakhir</SelectItem>
+              <SelectItem value="month">Dibuat Bulan Ini</SelectItem>
+              <SelectItem value="custom">Set By Date (Pilih Tanggal)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date Picker Input when Set By Date is chosen */}
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 h-8 shadow-xs">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="text-xs text-gray-700 border-none outline-none bg-transparent cursor-pointer"
+                title="Pilih tanggal kursus dibuat"
+              />
+              {selectedDate && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate('')}
+                  className="text-gray-400 hover:text-gray-600 text-xs p-0.5"
+                  title="Hapus tanggal"
+                >
+                  <HiOutlineXMark className="text-sm" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Filter Status */}
+        <Select value={statusFilter} onValueChange={(val) => {
+          if (val) setStatusFilter(val);
+        }}>
           <SelectTrigger className="w-24 h-8 bg-[#5850ec] text-white hover:bg-[#4f46e5] font-semibold rounded-lg text-xs px-3 shadow-sm border-none flex items-center justify-between">
-            <SelectValue placeholder="Status" />
+            <SelectValue>
+              {statusFilter === 'all' ? 'Status' : statusFilter === 'aktif' ? 'Aktif' : 'Draft'}
+            </SelectValue>
           </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="all">Status</SelectItem>
+          <SelectContent className="rounded-xl bg-white border border-gray-200 shadow-md">
+            <SelectItem value="all">Semua Status</SelectItem>
             <SelectItem value="aktif">Aktif</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Reset Filter Button */}
+        {(searchQuery || statusFilter !== 'all' || dateFilter !== 'terbaru' || selectedDate) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResetFilters}
+            className="h-8 px-2.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1 transition-all"
+            title="Reset semua filter"
+          >
+            <HiOutlineArrowPathRoundedSquare className="text-sm" />
+            <span>Reset</span>
+          </Button>
+        )}
       </div>
 
       {/* Table Card */}
@@ -497,8 +628,18 @@ const ManajemenKursus: React.FC = () => {
                                   : 'bg-[#3b82f6]'
                               }`}></div>
                             <div>
-                              <p className="text-xs font-semibold text-gray-800 leading-none mb-0.5">{item.nama}</p>
-                              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{item.kode}</p>
+                              <p className="text-xs font-semibold text-gray-800 leading-none mb-1">{item.nama}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{item.kode}</span>
+                                {item.createdAt && (
+                                  <>
+                                    <span className="text-gray-300 text-[9px]">•</span>
+                                    <span className="text-[9px] text-gray-400 font-medium">
+                                      Dibuat: {formatCourseDate(item.createdAt)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
@@ -542,7 +683,7 @@ const ManajemenKursus: React.FC = () => {
                 {!isLoading && filteredCourses.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={9} className="h-32 text-center text-gray-400 italic text-xs font-bold uppercase tracking-widest">
-                      Tidak ditemukan data kursus.
+                      Tidak ditemukan data kursus sesuai filter.
                     </TableCell>
                   </TableRow>
                 )}
@@ -641,7 +782,7 @@ const ManajemenKursus: React.FC = () => {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-500 block">Pilih Pengajar</label>
               <Select
-                onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val }))}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, pengajarId: val || '' }))}
                 value={formData.pengajarId}
               >
                 <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
@@ -698,39 +839,23 @@ const ManajemenKursus: React.FC = () => {
               />
             </div>
 
-            {/* Kategori & Status Pendaftaran */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 block">Kategori</label>
-                <Select
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, kategori: val, level: val }))}
-                  value={formData.kategori}
-                >
-                  <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
-                    <SelectValue placeholder="Pilih Kategori" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="Dasar">Dasar</SelectItem>
-                    <SelectItem value="Lanjutan">Lanjutan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 block">Status Pendaftaran</label>
-                <Select
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, statusPendaftaran: val }))}
-                  value={formData.statusPendaftaran}
-                >
-                  <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
-                    <SelectValue placeholder="Status Pendaftaran" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="Aktif">Aktif</SelectItem>
-                    <SelectItem value="Segera">Segera</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Status Pendaftaran */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Status Pendaftaran</label>
+              <Select
+                onValueChange={(val) => {
+                  if (val) setFormData(prev => ({ ...prev, statusPendaftaran: val }));
+                }}
+                value={formData.statusPendaftaran}
+              >
+                <SelectTrigger className="rounded-full border-gray-200 bg-white h-11 text-xs font-semibold px-5 text-gray-600">
+                  <SelectValue placeholder="Status Pendaftaran" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="Aktif">Aktif</SelectItem>
+                  <SelectItem value="Segera">Segera</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Tipe Kursus */}

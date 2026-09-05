@@ -23,6 +23,19 @@ interface PaketState {
     hargaAsli: string;
     courses: string[];
   }) => Promise<void>;
+  updatePaket: (
+    id: string,
+    paketData: Partial<{
+      nama: string;
+      deskripsi?: string;
+      hargaPaket: string;
+      hargaAsli: string;
+      courses: string[];
+    }>
+  ) => Promise<Paket>;
+  addCourseToPaket: (paketId: string, courseId: string) => Promise<Paket>;
+  addCoursesToPaket: (paketId: string, courseIds: string[]) => Promise<Paket>;
+  removeCourseFromPaket: (paketId: string, courseId: string) => Promise<Paket>;
   removePaket: (id: string) => Promise<void>;
 }
 
@@ -50,6 +63,54 @@ export const usePaketStore = create<PaketState>()(
           set((state) => ({ paketList: [response.data, ...state.paketList] }));
         } catch (error) {
           console.error('Failed to add paket', error);
+          throw error;
+        }
+      },
+      updatePaket: async (id, paketData) => {
+        try {
+          const response = await api.put(`/paket/${id}`, paketData);
+          set((state) => ({
+            paketList: state.paketList.map((p) => (p.id === id ? response.data : p)),
+          }));
+          return response.data;
+        } catch (error) {
+          console.error('Failed to update paket', error);
+          throw error;
+        }
+      },
+      addCourseToPaket: async (paketId, courseId) => {
+        try {
+          const response = await api.post(`/paket/${paketId}/courses`, { courseId });
+          set((state) => ({
+            paketList: state.paketList.map((p) => (p.id === paketId ? response.data : p)),
+          }));
+          return response.data;
+        } catch (error) {
+          console.error('Failed to add course to paket', error);
+          throw error;
+        }
+      },
+      addCoursesToPaket: async (paketId, courseIds) => {
+        try {
+          const response = await api.post(`/paket/${paketId}/courses`, { courseIds });
+          set((state) => ({
+            paketList: state.paketList.map((p) => (p.id === paketId ? response.data : p)),
+          }));
+          return response.data;
+        } catch (error) {
+          console.error('Failed to add courses to paket', error);
+          throw error;
+        }
+      },
+      removeCourseFromPaket: async (paketId, courseId) => {
+        try {
+          const response = await api.delete(`/paket/${paketId}/courses/${courseId}`);
+          set((state) => ({
+            paketList: state.paketList.map((p) => (p.id === paketId ? response.data : p)),
+          }));
+          return response.data;
+        } catch (error) {
+          console.error('Failed to remove course from paket', error);
           throw error;
         }
       },

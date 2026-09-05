@@ -4,16 +4,7 @@ const getAllPaket = async (req, res) => {
   try {
     const pakets = await prisma.paket.findMany({
       include: {
-        courses: {
-          select: {
-            id: true,
-            nama: true,
-            kode: true,
-            warna: true,
-            level: true,
-            published: true
-          }
-        }
+        courses: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -58,6 +49,89 @@ const createPaket = async (req, res) => {
   }
 };
 
+const updatePaket = async (req, res) => {
+  const { id } = req.params;
+  const { nama, deskripsi, hargaPaket, hargaAsli, courses } = req.body;
+  try {
+    const dataToUpdate = {};
+    if (nama !== undefined) dataToUpdate.nama = nama;
+    if (deskripsi !== undefined) dataToUpdate.deskripsi = deskripsi;
+    if (hargaPaket !== undefined) dataToUpdate.hargaPaket = hargaPaket;
+    if (hargaAsli !== undefined) dataToUpdate.hargaAsli = hargaAsli;
+    if (courses !== undefined && Array.isArray(courses)) {
+      dataToUpdate.courses = {
+        set: courses.map(courseId => ({ id: courseId }))
+      };
+    }
+
+    const updatedPaket = await prisma.paket.update({
+      where: { id },
+      data: dataToUpdate,
+      include: {
+        courses: true
+      }
+    });
+
+    res.json(updatedPaket);
+  } catch (error) {
+    console.error("Error in updatePaket:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const addCourseToPaket = async (req, res) => {
+  const { id } = req.params;
+  const { courseId, courseIds } = req.body;
+  try {
+    const idsToAdd = courseIds && Array.isArray(courseIds)
+      ? courseIds
+      : (courseId ? [courseId] : []);
+
+    if (idsToAdd.length === 0) {
+      return res.status(400).json({ message: 'courseId atau courseIds harus diisi' });
+    }
+
+    const updatedPaket = await prisma.paket.update({
+      where: { id },
+      data: {
+        courses: {
+          connect: idsToAdd.map(cId => ({ id: cId }))
+        }
+      },
+      include: {
+        courses: true
+      }
+    });
+
+    res.json(updatedPaket);
+  } catch (error) {
+    console.error("Error in addCourseToPaket:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const removeCourseFromPaket = async (req, res) => {
+  const { id, courseId } = req.params;
+  try {
+    const updatedPaket = await prisma.paket.update({
+      where: { id },
+      data: {
+        courses: {
+          disconnect: { id: courseId }
+        }
+      },
+      include: {
+        courses: true
+      }
+    });
+
+    res.json(updatedPaket);
+  } catch (error) {
+    console.error("Error in removeCourseFromPaket:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
 const deletePaket = async (req, res) => {
   const { id } = req.params;
   try {
@@ -74,5 +148,8 @@ const deletePaket = async (req, res) => {
 module.exports = {
   getAllPaket,
   createPaket,
+  updatePaket,
+  addCourseToPaket,
+  removeCourseFromPaket,
   deletePaket
 };

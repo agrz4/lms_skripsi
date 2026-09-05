@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMataKuliahStore } from '../../store/useMataKuliahStore';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { HiOutlineMagnifyingGlass, HiOutlineXMark } from 'react-icons/hi2';
 import { useNavigate } from 'react-router-dom';
 
 const ManajemenMateri: React.FC = () => {
   const navigate = useNavigate();
   const { mataKuliahList, fetchMataKuliah } = useMataKuliahStore();
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [courseSearch, setCourseSearch] = useState('');
+  const [courseStatusFilter, setCourseStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
 
   useEffect(() => {
     fetchMataKuliah();
@@ -21,6 +25,25 @@ const ManajemenMateri: React.FC = () => {
   }, [mataKuliahList, selectedCourseId]);
 
   const selectedCourse = mataKuliahList.find(mk => mk.id === selectedCourseId);
+
+  // Filtered courses for search & status filter
+  const filteredMataKuliahList = useMemo(() => {
+    return mataKuliahList.filter((mk) => {
+      const q = courseSearch.trim().toLowerCase();
+      const matchesSearch = !q || 
+        mk.nama.toLowerCase().includes(q) || 
+        (mk.kode && mk.kode.toLowerCase().includes(q));
+
+      const matchesStatus = courseStatusFilter === 'all'
+        ? true
+        : courseStatusFilter === 'published' ? mk.published : !mk.published;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [mataKuliahList, courseSearch, courseStatusFilter]);
+
+  const publishedCount = useMemo(() => mataKuliahList.filter(m => m.published).length, [mataKuliahList]);
+  const draftCount = useMemo(() => mataKuliahList.filter(m => !m.published).length, [mataKuliahList]);
 
   // Real materials logic based on pertemuan data
   const meetings = selectedCourse?.pertemuan || [];
@@ -91,28 +114,147 @@ const ManajemenMateri: React.FC = () => {
       </div>
 
       {/* Pilih Kursus Card */}
-      <Card className="rounded-xl border border-gray-200 shadow-sm bg-white mb-8">
+      <Card className="rounded-xl border border-gray-200 shadow-sm bg-white mb-8 overflow-hidden">
         <CardContent className="p-6">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">Pilih Kursus</h2>
-          <div className="flex flex-wrap gap-3">
-            {mataKuliahList.map((mk) => {
-              const isSelected = selectedCourseId === mk.id;
-              return (
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-bold text-gray-900">Pilih Kursus</h2>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                  {filteredMataKuliahList.length} dari {mataKuliahList.length} kursus
+                </span>
+              </div>
+              {selectedCourse && (
+                <p className="text-xs text-gray-500 mt-1.5 font-medium">
+                  Kursus aktif: <span className="font-bold text-[#5850ec]">{selectedCourse.nama}</span>
+                  {selectedCourse.published ? (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                      Published
+                    </span>
+                  ) : (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
+                      Draft
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {/* Search & Filter Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-64 md:w-72">
+                <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                <Input
+                  placeholder="Cari nama atau kode kursus..."
+                  value={courseSearch}
+                  onChange={(e) => setCourseSearch(e.target.value)}
+                  className="pl-9 pr-8 h-9 rounded-lg border-gray-200 bg-gray-50/80 text-xs font-medium text-gray-800 placeholder:text-gray-400 focus:bg-white focus-visible:ring-[#5850ec] focus-visible:border-[#5850ec] transition-all"
+                />
+                {courseSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCourseSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/60 transition-all"
+                    title="Hapus pencarian"
+                  >
+                    <HiOutlineXMark className="text-sm" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center bg-gray-100/90 p-1 rounded-lg gap-1">
                 <button
-                  key={mk.id}
-                  onClick={() => setSelectedCourseId(mk.id)}
-                  className={`px-5 py-3 rounded-lg transition-all border font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
-                    isSelected 
-                      ? "bg-[#efeefd] border-[#c5c0f9] text-[#5850ec] shadow-sm font-extrabold" 
-                      : "bg-white border-gray-250 text-gray-400 hover:bg-gray-50 hover:border-gray-300"
+                  type="button"
+                  onClick={() => setCourseStatusFilter('all')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    courseStatusFilter === 'all'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  <span>{mk.nama}</span>
-                  {isSelected && <span className="font-semibold">✓</span>}
+                  Semua ({mataKuliahList.length})
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => setCourseStatusFilter('published')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    courseStatusFilter === 'published'
+                      ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-emerald-700'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Published ({publishedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCourseStatusFilter('draft')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    courseStatusFilter === 'draft'
+                      ? 'bg-white text-amber-700 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-amber-700'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  Draft ({draftCount})
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Alert if active course is hidden by filter */}
+          {selectedCourse && !filteredMataKuliahList.some(mk => mk.id === selectedCourseId) && (
+            <div className="mb-4 text-xs bg-amber-50/90 border border-amber-200 text-amber-900 px-4 py-2 rounded-lg flex items-center justify-between">
+              <span>
+                Kursus terpilih saat ini <strong>{selectedCourse.nama}</strong> disembunyikan oleh filter/pencarian aktif.
+              </span>
+              <button
+                type="button"
+                onClick={() => { setCourseSearch(''); setCourseStatusFilter('all'); }}
+                className="text-[11px] font-bold text-amber-900 underline hover:no-underline ml-2 cursor-pointer"
+              >
+                Reset Filter & Tampilkan
+              </button>
+            </div>
+          )}
+
+          {/* Course Pills Container */}
+          {filteredMataKuliahList.length === 0 ? (
+            <div className="py-8 text-center bg-gray-50/70 rounded-xl border border-dashed border-gray-200">
+              <p className="text-xs font-medium text-gray-500">
+                Tidak ditemukan kursus yang cocok dengan pencarian <span className="font-bold text-gray-700">"{courseSearch}"</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => { setCourseSearch(''); setCourseStatusFilter('all'); }}
+                className="mt-2 text-xs font-bold text-[#5850ec] hover:underline cursor-pointer"
+              >
+                Reset Filter & Pencarian
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2.5 max-h-56 overflow-y-auto pr-1">
+              {filteredMataKuliahList.map((mk) => {
+                const isSelected = selectedCourseId === mk.id;
+                return (
+                  <button
+                    key={mk.id}
+                    onClick={() => setSelectedCourseId(mk.id)}
+                    className={`px-4 py-2.5 rounded-lg transition-all border font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
+                      isSelected 
+                        ? "bg-[#efeefd] border-[#c5c0f9] text-[#5850ec] shadow-sm font-extrabold" 
+                        : "bg-white border-gray-250 text-gray-400 hover:bg-gray-50 hover:border-gray-300"
+                    }`}
+                  >
+                    <span>{mk.nama}</span>
+                    {isSelected && <span className="font-semibold">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

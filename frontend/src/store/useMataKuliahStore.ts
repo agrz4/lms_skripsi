@@ -41,7 +41,7 @@ interface MataKuliahState {
   isLoading: boolean;
   fetchMataKuliah: () => Promise<void>;
   fetchPublishedMataKuliah: () => Promise<void>;
-  addMataKuliah: (mk: Omit<MataKuliah, 'id' | 'createdAt' | 'prerequisites' | 'prerequisiteFor'>) => Promise<void>;
+  addMataKuliah: (mk: Omit<MataKuliah, 'id' | 'createdAt' | 'prerequisites' | 'prerequisiteFor'>) => Promise<MataKuliah>;
   removeMataKuliah: (id: string) => Promise<void>;
   updateMataKuliah: (id: string, updatedData: Partial<MataKuliah>) => Promise<void>;
 }
@@ -80,6 +80,7 @@ export const useMataKuliahStore = create<MataKuliahState>()(
         try {
           const response = await api.post('/matakuliah', mk);
           set((state) => ({ mataKuliahList: [...state.mataKuliahList, response.data] }));
+          return response.data;
         } catch (error) {
           console.error('Failed to add mata kuliah', error);
           throw error;

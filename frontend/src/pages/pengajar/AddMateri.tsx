@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   HiOutlinePlayCircle,
-  HiOutlinePlus,
-  HiOutlineTrash,
-  HiOutlineArrowLeft,
   HiOutlineFolder,
   HiOutlineCheck,
   HiOutlineDocumentText,
-  HiOutlineArrowUpTray
+  HiOutlineArrowUpTray,
+  HiOutlineMagnifyingGlass,
+  HiOutlineXMark,
+  HiOutlineBookOpen
 } from 'react-icons/hi2';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BulkImportSoalModal } from '@/components/BulkImportSoalModal';
+import { useAuthStore } from '../../store/useAuthStore';
 import api from '../../lib/api';
 
 interface VideoItem {
@@ -37,8 +38,12 @@ const AddMateri: React.FC = () => {
   const [searchParams] = useSearchParams();
   const pertemuanId = searchParams.get('pertemuanId');
 
+  const { user, fetchMe } = useAuthStore();
   const [allMeetings, setAllMeetings] = useState<any[]>([]);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [courseSearch, setCourseSearch] = useState<string>('');
+  const [courseFilterTab, setCourseFilterTab] = useState<'my' | 'all'>('my');
   const [meeting, setMeeting] = useState<any>(null);
 
   const [videos, setVideos] = useState<VideoItem[]>([
@@ -57,6 +62,12 @@ const AddMateri: React.FC = () => {
   const [tugasCoding, setTugasCoding] = useState<string>(
     'Buatlah program sesuai instruksi pada modul ajar, kemudian unggah screenshot hasil run dan file source code (.zip) sebagai bukti praktikum.'
   );
+
+  useEffect(() => {
+    if (!user) {
+      fetchMe();
+    }
+  }, [user, fetchMe]);
 
   const handleBulkImport = (newQuestions: string[], mode: 'append' | 'replace') => {
     if (mode === 'replace') {
@@ -94,6 +105,9 @@ const AddMateri: React.FC = () => {
         setSelectedMeetingId(pertemuanId);
         const currentMeeting = sortedPertemuan.find((p: any) => p.id === pertemuanId);
         setMeeting(currentMeeting || null);
+        if (currentMeeting?.mataKuliahId || currentMeeting?.mataKuliah?.id) {
+          setSelectedCourseId(currentMeeting.mataKuliahId || currentMeeting.mataKuliah?.id);
+        }
 
         const materiRes = await api.get(`/materi?pertemuanId=${pertemuanId}`);
         const existingMateri = materiRes.data || [];
@@ -194,6 +208,95 @@ const AddMateri: React.FC = () => {
       console.error('Error fetching meeting/materi details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const coursesList = useMemo(() => {
+    const map = new Map<string, {
+      id: string;
+      nama: string;
+      kode?: string;
+      isAssignedToMe: boolean;
+      meetings: any[];
+    }>();
+
+    allMeetings.forEach((p) => {
+      const mkId = p.mataKuliahId || p.mataKuliah?.id;
+      if (!mkId) return;
+
+      const isAssigned = Boolean(
+        user && (
+          p.dosenId === user.id || 
+          p.mataKuliah?.pengajarId === user.id || 
+          p.asistenId === user.id
+        )
+      );
+
+      if (!map.has(mkId)) {
+        map.set(mkId, {
+          id: mkId,
+          nama: p.mataKuliah?.nama || 'Kursus Tanpa Nama',
+          kode: p.mataKuliah?.kode || '',
+          isAssignedToMe: isAssigned,
+          meetings: []
+        });
+      }
+
+      const existing = map.get(mkId)!;
+      if (isAssigned) {
+        existing.isAssignedToMe = true;
+      }
+      existing.meetings.push(p);
+    });
+
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.isAssignedToMe && !b.isAssignedToMe) return -1;
+      if (!a.isAssignedToMe && b.isAssignedToMe) return 1;
+      return a.nama.localeCompare(b.nama);
+    });
+  }, [allMeetings, user]);
+
+  const myCoursesCount = useMemo(() => coursesList.filter(c => c.isAssignedToMe).length, [coursesList]);
+  const allCoursesCount = coursesList.length;
+
+  useEffect(() => {
+    if (coursesList.length > 0 && myCoursesCount === 0 && courseFilterTab === 'my') {
+      setCourseFilterTab('all');
+    }
+  }, [coursesList, myCoursesCount, courseFilterTab]);
+
+  useEffect(() => {
+    if (meeting?.mataKuliahId || meeting?.mataKuliah?.id) {
+      setSelectedCourseId(meeting.mataKuliahId || meeting.mataKuliah?.id);
+    } else if (!selectedCourseId && coursesList.length > 0) {
+      const preferredCourse = coursesList.find(c => c.isAssignedToMe) || coursesList[0];
+      setSelectedCourseId(preferredCourse.id);
+    }
+  }, [meeting, coursesList, selectedCourseId]);
+
+  const filteredCourses = useMemo(() => {
+    return coursesList.filter((c) => {
+      const q = courseSearch.trim().toLowerCase();
+      const matchesSearch = !q || c.nama.toLowerCase().includes(q) || (c.kode && c.kode.toLowerCase().includes(q));
+      const matchesTab = courseFilterTab === 'my' ? c.isAssignedToMe : true;
+      return matchesSearch && matchesTab;
+    });
+  }, [coursesList, courseSearch, courseFilterTab]);
+
+  const selectedCourse = coursesList.find(c => c.id === selectedCourseId);
+  const currentCourseMeetings = useMemo(() => {
+    if (!selectedCourse) return [];
+    return [...selectedCourse.meetings].sort((a, b) => a.urutan - b.urutan);
+  }, [selectedCourse]);
+
+  const handleSelectCourse = (courseId: string) => {
+    setSelectedCourseId(courseId);
+    const course = coursesList.find(c => c.id === courseId);
+    if (course && course.meetings.length > 0) {
+      const isCurrentInCourse = course.meetings.some(m => m.id === selectedMeetingId);
+      if (!isCurrentInCourse) {
+        handleMeetingChange(course.meetings[0].id);
+      }
     }
   };
 
@@ -472,21 +575,180 @@ const AddMateri: React.FC = () => {
         <p className="text-xs text-gray-500 font-medium">Bisa tambah banyak video · Sub materi dalam satu pertemuan</p>
       </div>
 
-      {/* Dropdown Selector */}
-      <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6">
-        <select
-          value={selectedMeetingId}
-          onChange={(e) => handleMeetingChange(e.target.value)}
-          className="w-full bg-transparent border-none text-xs font-bold text-gray-700 focus:outline-none cursor-pointer p-2"
-        >
-          <option value="">-- Pilih Pertemuan --</option>
-          {allMeetings.map((p: any) => (
-            <option key={p.id} value={p.id}>
-              {p.mataKuliah ? `[${p.mataKuliah.nama}] ` : ''}P{p.urutan} - {p.topik || 'Tanpa Topik'}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Course & Meeting Selector */}
+      <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white mb-6 overflow-hidden">
+        <CardContent className="p-6 space-y-5">
+          {/* Top Bar: Heading, Count, and Search Controls */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <HiOutlineBookOpen className="text-base text-[#5850ec]" />
+                  Pilih Kursus & Pertemuan
+                </h2>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-[#5850ec] border border-indigo-100">
+                  {filteredCourses.length} Kursus Ditemukan
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1 font-medium">
+                Pilih kursus yang Anda ampu, lalu tentukan nomor pertemuan untuk mengelola modul materi
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-64">
+                <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                <Input
+                  placeholder="Cari kursus terdaftar..."
+                  value={courseSearch}
+                  onChange={(e) => setCourseSearch(e.target.value)}
+                  className="pl-9 pr-8 h-9 rounded-xl border-gray-200 bg-gray-50/80 text-xs font-medium text-gray-800 placeholder:text-gray-400 focus:bg-white focus-visible:ring-[#5850ec] transition-all"
+                />
+                {courseSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCourseSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/50"
+                    title="Hapus pencarian"
+                  >
+                    <HiOutlineXMark className="text-sm" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Tabs: Kursus Saya vs Semua */}
+              <div className="flex items-center bg-gray-100/90 p-1 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCourseFilterTab('my')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    courseFilterTab === 'my'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Kursus Saya ({myCoursesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCourseFilterTab('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    courseFilterTab === 'all'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Semua ({allCoursesCount})
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Langkah 1: Pil Kursus */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                Langkah 1: Pilih Kursus
+              </label>
+              {selectedCourse && (
+                <span className="text-xs text-gray-500">
+                  Kursus aktif: <strong className="text-[#5850ec]">{selectedCourse.nama}</strong>
+                </span>
+              )}
+            </div>
+
+            {filteredCourses.length === 0 ? (
+              <div className="py-6 text-center bg-gray-50/70 rounded-xl border border-dashed border-gray-200">
+                <p className="text-xs text-gray-500 font-medium">
+                  Tidak ditemukan kursus yang cocok dengan filter atau pencarian "{courseSearch}".
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setCourseSearch(''); setCourseFilterTab('all'); }}
+                  className="mt-2 text-xs font-bold text-[#5850ec] hover:underline cursor-pointer"
+                >
+                  Tampilkan Semua Kursus
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto pr-1">
+                {filteredCourses.map((c) => {
+                  const isSelected = selectedCourseId === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => handleSelectCourse(c.id)}
+                      className={`px-4 py-2 rounded-xl transition-all border text-xs flex items-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99] ${
+                        isSelected
+                          ? "bg-[#efeefd] border-[#5850ec] text-[#5850ec] shadow-xs font-black ring-1 ring-[#5850ec]/30"
+                          : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-semibold"
+                      }`}
+                    >
+                      <span>{c.nama}</span>
+                      {c.isAssignedToMe && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">
+                          Diampu
+                        </span>
+                      )}
+                      <span className="text-[10px] text-gray-400 font-medium">({c.meetings.length} Sesi)</span>
+                      {isSelected && <span className="font-black">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Langkah 2: Pil Pertemuan (Sesi Kursus) */}
+          {selectedCourse && currentCourseMeetings.length > 0 && (
+            <div className="pt-3 border-t border-gray-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                  Langkah 2: Pilih Sesi Pertemuan — {selectedCourse.nama}
+                </label>
+                {meeting && (
+                  <span className="text-xs text-gray-600 font-medium">
+                    Sedang Mengedit: <strong className="text-gray-900">Pertemuan {meeting.urutan} - {meeting.topik || 'Tanpa Topik'}</strong>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+                {currentCourseMeetings.map((p: any) => {
+                  const isSelected = selectedMeetingId === p.id;
+                  const hasMateri = p.materi && p.materi.length > 0;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleMeetingChange(p.id)}
+                      className={`px-4 py-2 rounded-xl transition-all border text-xs flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
+                        isSelected
+                          ? "bg-[#5850ec] border-[#5850ec] text-white shadow-sm font-bold"
+                          : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium"
+                      }`}
+                    >
+                      <span className={`font-black ${isSelected ? "text-white" : "text-[#5850ec]"}`}>
+                        P{p.urutan}
+                      </span>
+                      <span className="max-w-[220px] truncate">{p.topik || `Pertemuan ${p.urutan}`}</span>
+                      {hasMateri && (
+                        <span
+                          className={`w-2 h-2 rounded-full ${isSelected ? "bg-emerald-300" : "bg-emerald-500"}`}
+                          title="Sudah ada materi"
+                        />
+                      )}
+                      {isSelected && <span className="font-extrabold">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {!selectedMeetingId ? (
         <Card className="rounded-xl border border-gray-200 shadow-sm bg-white p-16 text-center">
