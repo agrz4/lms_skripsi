@@ -7,11 +7,13 @@ import {
   HiOutlineArrowLeft,
   HiOutlineFolder,
   HiOutlineCheck,
-  HiOutlineDocumentText
+  HiOutlineDocumentText,
+  HiOutlineArrowUpTray
 } from 'react-icons/hi2';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BulkImportSoalModal } from '@/components/BulkImportSoalModal';
 import api from '../../lib/api';
 
 interface VideoItem {
@@ -49,11 +51,23 @@ const AddMateri: React.FC = () => {
 
   const [pgQuestions, setPgQuestions] = useState<string>('');
   const [newQuestion, setNewQuestion] = useState<string>('');
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [tugasCoding, setTugasCoding] = useState<string>(
     'Buatlah program sesuai instruksi pada modul ajar, kemudian unggah screenshot hasil run dan file source code (.zip) sebagai bukti praktikum.'
   );
+
+  const handleBulkImport = (newQuestions: string[], mode: 'append' | 'replace') => {
+    if (mode === 'replace') {
+      setPgQuestions(newQuestions.join('\n'));
+    } else {
+      const updated = pgQuestions.trim()
+        ? `${pgQuestions.trim()}\n${newQuestions.join('\n')}`
+        : newQuestions.join('\n');
+      setPgQuestions(updated);
+    }
+  };
 
   useEffect(() => {
     fetchAllMeetingsAndInit();
@@ -795,9 +809,11 @@ const AddMateri: React.FC = () => {
                     </Button>
                     <Button
                       type="button"
-                      className="bg-[#f3f4f6] hover:bg-[#e5e7eb] text-gray-700 border border-gray-300 rounded-lg h-9 text-xs font-bold px-4"
+                      onClick={() => setIsBulkImportOpen(true)}
+                      className="bg-[#f3f4f6] hover:bg-[#e5e7eb] text-gray-700 border border-gray-300 rounded-lg h-9 text-xs font-bold px-3.5 flex items-center gap-1.5 cursor-pointer transition-colors"
                     >
-                      Import
+                      <HiOutlineArrowUpTray className="text-sm text-emerald-600" />
+                      Import Bulk
                     </Button>
                   </div>
                 </div>
@@ -868,7 +884,13 @@ const AddMateri: React.FC = () => {
         </div>
       )}
 
-
+      {/* Bulk Import Modal */}
+      <BulkImportSoalModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onImport={handleBulkImport}
+        existingCount={questionsList.length}
+      />
 
     </div>
   );

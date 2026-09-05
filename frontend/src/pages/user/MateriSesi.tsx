@@ -289,36 +289,71 @@ const MateriSesi: React.FC = () => {
       // Fetch Latihan PG
       api.get(`/materi/latihan-pg?pertemuanId=${pertemuanId}`)
         .then(res => {
-          const parsedSoal = (res.data || []).map((s: any) => {
+          const rawData = res.data || [];
+          const parsedSoal = rawData.map((s: any) => {
             try {
-              if (s.pertanyaan && (s.pertanyaan.trim().startsWith('{') || s.pertanyaan.trim().startsWith('['))) {
-                const parsed = JSON.parse(s.pertanyaan);
-                return {
-                  ...s,
-                  pertanyaan: parsed.pertanyaan || s.pertanyaan,
-                  options: parsed.options || {},
-                  correctAnswer: parsed.correctAnswer || 'A'
-                };
+              if (s.pertanyaan) {
+                const trimmed = s.pertanyaan.trim();
+                // 1. JSON Format
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                  const parsed = JSON.parse(trimmed);
+                  return {
+                    ...s,
+                    pertanyaan: parsed.pertanyaan || parsed.soal || s.pertanyaan,
+                    options: parsed.options || {},
+                    correctAnswer: parsed.correctAnswer || parsed.jawaban || 'A'
+                  };
+                }
+                // 2. Pipe Format (Soal | A | B | C | D | Kunci)
+                if (trimmed.includes('|')) {
+                  const parts = trimmed.split('|').map((p: string) => p.trim());
+                  if (parts.length >= 6) {
+                    return {
+                      ...s,
+                      pertanyaan: parts[0],
+                      options: {
+                        A: parts[1],
+                        B: parts[2],
+                        C: parts[3],
+                        D: parts[4]
+                      },
+                      correctAnswer: (parts[5].toUpperCase() || 'A')
+                    };
+                  }
+                }
               }
             } catch (e) {
-              console.error('Failed to parse question JSON:', e);
+              console.error('Failed to parse question:', e);
             }
             return s;
           });
           setPgSoalList(parsedSoal);
+
+          // Restore quiz from LocalStorage only if questions match current list
+          const savedAnswers = localStorage.getItem(`pgAnswers_${pertemuanId}`);
+          if (savedAnswers && parsedSoal.length > 0) {
+            try {
+              const parsedAns = JSON.parse(savedAnswers);
+              const matchesCurrent = parsedSoal.some((q: any) => parsedAns[q.id]);
+              if (matchesCurrent) {
+                setPgAnswers(parsedAns);
+                const savedScore = localStorage.getItem(`pgScore_${pertemuanId}`);
+                if (savedScore) {
+                  setPgScore(parseInt(savedScore, 10));
+                  setPgSubmitted(true);
+                }
+              } else {
+                // Questions were updated / re-imported! Clear stale cache so user can answer
+                localStorage.removeItem(`pgScore_${pertemuanId}`);
+                localStorage.removeItem(`pgAnswers_${pertemuanId}`);
+                setPgScore(null);
+                setPgSubmitted(false);
+                setPgAnswers({});
+              }
+            } catch (e) { }
+          }
         })
         .catch(err => console.error('Failed to fetch pg questions', err));
-
-      // Restore quiz from LocalStorage
-      const savedScore = localStorage.getItem(`pgScore_${pertemuanId}`);
-      if (savedScore) {
-        setPgScore(parseInt(savedScore, 10));
-        setPgSubmitted(true);
-      }
-      const savedAnswers = localStorage.getItem(`pgAnswers_${pertemuanId}`);
-      if (savedAnswers) {
-        setPgAnswers(JSON.parse(savedAnswers));
-      }
     }
   }, [pertemuanId, fetchMateriByPertemuan]);
 
@@ -463,6 +498,16 @@ const MateriSesi: React.FC = () => {
     const newAnswers = { ...pgAnswers, [soalId]: optionKey };
     setPgAnswers(newAnswers);
     localStorage.setItem(`pgAnswers_${pertemuanId}`, JSON.stringify(newAnswers));
+  };
+
+  const handleResetQuiz = () => {
+    localStorage.removeItem(`pgScore_${pertemuanId}`);
+    localStorage.removeItem(`pgAnswers_${pertemuanId}`);
+    setPgScore(null);
+    setPgSubmitted(false);
+    setPgAnswers({});
+    setActivePgIdx(0);
+    showBanner('success', 'Kuis berhasil di-reset. Anda dapat memilih jawaban kembali.');
   };
 
   const handleQuizSubmit = async () => {
@@ -923,9 +968,19 @@ const MateriSesi: React.FC = () => {
                     <p className="text-[10px] font-bold text-gray-400 uppercase mt-2">Pilih salah satu jawaban yang menurut Anda paling tepat</p>
                   </div>
                   {pgSubmitted ? (
-                    <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-xs px-4 py-1.5 uppercase tracking-wider rounded-full">
-                       Skor: {pgScore}/100
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-100 text-emerald-600 border-none font-black text-xs px-4 py-1.5 uppercase tracking-wider rounded-full">
+                         Skor: {pgScore}/100
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={handleResetQuiz}
+                        className="text-xs font-bold text-gray-600 hover:text-emerald-700 bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 px-3 py-1.5 rounded-full transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                        title="Reset jawaban untuk mencoba kuis kembali"
+                      >
+                        🔄 Ulangi Kuis
+                      </button>
+                    </div>
                   ) : (
                     <Badge className="bg-amber-100 text-amber-600 border-none font-black text-xs px-4 py-1.5 uppercase tracking-wider rounded-full animate-pulse">
                        Menunggu Jawaban
@@ -982,22 +1037,44 @@ const MateriSesi: React.FC = () => {
                           <div className="grid grid-cols-1 gap-3">
                             {Object.entries(currentQ.options || {}).map(([key, optText]) => {
                               const isSelected = currentSelected === key;
+                              const isCorrect = currentQ.correctAnswer === key;
+
+                              let btnClass = 'bg-white border-gray-200 hover:border-blue-300 text-gray-700 cursor-pointer';
+                              if (pgSubmitted) {
+                                if (isCorrect) {
+                                  btnClass = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold';
+                                } else if (isSelected && !isCorrect) {
+                                  btnClass = 'bg-red-50 border-red-400 text-red-950 font-bold';
+                                } else {
+                                  btnClass = 'bg-gray-50 border-gray-200 text-gray-400 opacity-60';
+                                }
+                              } else if (isSelected) {
+                                btnClass = 'bg-blue-50 border-blue-500 text-blue-950 font-bold cursor-pointer';
+                              }
+
                               return (
                                 <button
                                   key={key}
+                                  type="button"
+                                  disabled={pgSubmitted}
                                   onClick={() => handleSelectAnswer(currentQ.id, key)}
-                                  className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left w-full ${
-                                    isSelected 
-                                      ? 'bg-blue-50 border-blue-500 text-blue-950 font-bold' 
-                                      : 'bg-white border-gray-200 hover:border-blue-300 text-gray-700'
-                                  }`}
+                                  className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left w-full ${btnClass}`}
                                 >
                                   <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs transition-colors shrink-0 ${
-                                    isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
+                                    pgSubmitted
+                                      ? isCorrect
+                                        ? 'bg-emerald-600 text-white'
+                                        : isSelected ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'
+                                      : isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
                                   }`}>
                                     {key}
                                   </div>
                                   <span className="text-xs font-bold">{optText}</span>
+                                  {pgSubmitted && isCorrect && (
+                                    <span className="ml-auto text-[10px] font-black uppercase text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full shrink-0">
+                                      Kunci Benar ✓
+                                    </span>
+                                  )}
                                 </button>
                               );
                             })}

@@ -135,10 +135,35 @@ const createLatihanPG = async (req, res) => {
 
     const { indexSoal } = require('../services/ragService');
     const createdSoalList = [];
+
+    const normalizeQuestionText = (input) => {
+      if (!input) return '';
+      if (typeof input === 'object') return JSON.stringify(input);
+      const trimmed = input.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) return trimmed;
+      if (trimmed.includes('|')) {
+        const parts = trimmed.split('|').map(p => p.trim());
+        if (parts.length >= 6) {
+          const qObj = {
+            pertanyaan: parts[0],
+            options: {
+              A: parts[1],
+              B: parts[2],
+              C: parts[3],
+              D: parts[4]
+            },
+            correctAnswer: (parts[5].toUpperCase() || 'A')
+          };
+          return JSON.stringify(qObj);
+        }
+      }
+      return trimmed;
+    };
     
     if (soalList && Array.isArray(soalList)) {
       for (const item of soalList) {
-        const qText = typeof item.pertanyaan === 'object' ? JSON.stringify(item.pertanyaan) : item.pertanyaan;
+        const rawInput = item && typeof item === 'object' && item.pertanyaan !== undefined ? item.pertanyaan : item;
+        const qText = normalizeQuestionText(rawInput);
         const soal = await prisma.soal.create({
           data: {
             pertanyaan: qText,
@@ -161,7 +186,7 @@ const createLatihanPG = async (req, res) => {
         return res.status(400).json({ message: 'pertanyaan atau soalList wajib diisi' });
       }
       
-      const qText = typeof pertanyaan === 'object' ? JSON.stringify(pertanyaan) : pertanyaan;
+      const qText = normalizeQuestionText(pertanyaan);
       const soal = await prisma.soal.create({
         data: {
           pertanyaan: qText,

@@ -1,0 +1,11 @@
+Pertanyaan,Pilihan A,Pilihan B,Pilihan C,Pilihan D,Kunci Jawaban
+"Apa kepanjangan dari HTML?","Hyper Text Markup Language","High Text Marking Language","Hyperlink Text Mode","Home Tool Markup","A"
+"Properti CSS apa yang digunakan untuk mengatur warna latar belakang?","color","bgcolor","background-color","fill","C"
+"Manakah tag HTML yang digunakan untuk membuat tautan hyperlink?","<link>","<a>","<href>","<url>","B"
+"Di JavaScript, kata kunci mana yang mendeklarasikan variabel yang tidak dapat diubah (immutable)?","var","let","static","const","D"
+"Properti Flexbox mana yang digunakan untuk mengatur perataan item di sumbu utama (main axis)?","align-items","justify-content","align-content","flex-direction","B"
+"Tag HTML manakah yang benar untuk menampilkan gambar di halaman web?","<image src=""..."">","<picture>","<img src=""..."">","<photo>","C"
+"Properti CSS apa yang digunakan untuk mengubah ukuran teks?","font-style","text-size","font-weight","font-size","D"
+"Manakah metode HTTP yang paling tepat digunakan untuk mengirim data formulir yang aman ke server?","GET","POST","FETCH","OPTIONS","B"
+"Unit satuan CSS mana yang bersifat relatif terhadap ukuran font elemen induk (root/html)?","px","rem","em","vh","B"
+"Fungsi JavaScript apa yang digunakan untuk mencetak pesan ke konsol browser?","console.print()","console.log()","print()","system.out()","B"

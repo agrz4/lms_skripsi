@@ -8,11 +8,13 @@ import {
   HiOutlineFolder,
   HiOutlinePlayCircle,
   HiOutlineDocumentText,
-  HiOutlineLink
+  HiOutlineLink,
+  HiOutlineArrowUpTray
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BulkImportSoalModal } from '@/components/BulkImportSoalModal';
 import api from '../../lib/api';
 
 const AddMateriAdmin: React.FC = () => {
@@ -35,6 +37,7 @@ const AddMateriAdmin: React.FC = () => {
   const [refleksi, setRefleksi] = useState('');
   const [pgQuestions, setPgQuestions] = useState<string>('');
   const [newQuestion, setNewQuestion] = useState<string>('');
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [uploadingZoomVideo, setUploadingZoomVideo] = useState<boolean>(false);
   const [uploadingMicroVideo, setUploadingMicroVideo] = useState<boolean>(false);
@@ -42,6 +45,17 @@ const AddMateriAdmin: React.FC = () => {
   const [tugasCoding, setTugasCoding] = useState<string>(
     'Buatlah program sesuai instruksi pada modul ajar, kemudian unggah screenshot hasil run dan file source code (.zip) sebagai bukti praktikum.'
   );
+
+  const handleBulkImport = (newQuestions: string[], mode: 'append' | 'replace') => {
+    if (mode === 'replace') {
+      setPgQuestions(newQuestions.join('\n'));
+    } else {
+      const updated = pgQuestions.trim()
+        ? `${pgQuestions.trim()}\n${newQuestions.join('\n')}`
+        : newQuestions.join('\n');
+      setPgQuestions(updated);
+    }
+  };
 
   useEffect(() => {
     if (pertemuanId) {
@@ -315,9 +329,34 @@ const AddMateriAdmin: React.FC = () => {
 
   const handleAddQuestion = () => {
     if (!newQuestion.trim()) return;
-    const updated = pgQuestions ? `${pgQuestions}\n${newQuestion.trim()}` : newQuestion.trim();
+    const parts = newQuestion.split('|').map(p => p.trim());
+    let formatted = newQuestion.trim();
+    if (parts.length >= 6) {
+      const qObj = {
+        pertanyaan: parts[0],
+        options: {
+          A: parts[1],
+          B: parts[2],
+          C: parts[3],
+          D: parts[4]
+        },
+        correctAnswer: parts[5].toUpperCase()
+      };
+      formatted = JSON.stringify(qObj);
+    }
+    const updated = pgQuestions ? `${pgQuestions}\n${formatted}` : formatted;
     setPgQuestions(updated);
     setNewQuestion('');
+  };
+
+  const getQuestionDisplay = (qStr: string) => {
+    try {
+      if (qStr.trim().startsWith('{')) {
+        const parsed = JSON.parse(qStr);
+        return `${parsed.pertanyaan} (Kunci: ${parsed.correctAnswer || 'A'})`;
+      }
+    } catch (e) { }
+    return qStr;
   };
 
   const handleRemoveQuestion = (indexToRemove: number) => {
@@ -678,7 +717,7 @@ const AddMateriAdmin: React.FC = () => {
                     {questionsList.map((q, qidx) => (
                       <div key={qidx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-150 rounded-xl group hover:border-slate-200 transition-colors">
                         <span className="text-xs font-bold text-gray-700 truncate pr-2">
-                          Soal Tes Formatif {qidx + 1} — {q}
+                          Soal Tes Formatif {qidx + 1} — {getQuestionDisplay(q)}
                         </span>
                         <button 
                           type="button"
@@ -705,7 +744,7 @@ const AddMateriAdmin: React.FC = () => {
                         }
                       }}
                       className="bg-slate-50 border-slate-200 rounded-xl py-5 pl-4 pr-12 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                      placeholder="Masukkan Soal Tes Formatif..."
+                      placeholder="Format: Soal | A | B | C | D | Kunci"
                     />
                     <div className="absolute right-4 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
                       <HiOutlineCheck className="text-xs stroke-[3px]" />
@@ -714,13 +753,23 @@ const AddMateriAdmin: React.FC = () => {
                   <p className="text-[10px] font-bold text-gray-400 text-right mt-1 italic">... hingga 10 soal</p>
                 </div>
 
-                <Button 
-                  type="button"
-                  onClick={handleAddQuestion}
-                  className="w-full bg-[#047857] hover:bg-[#065F46] text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md"
-                >
-                  + Soal Tes Formatif
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button"
+                    onClick={handleAddQuestion}
+                    className="flex-1 bg-[#047857] hover:bg-[#065F46] text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                  >
+                    + Soal Tes Formatif
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setIsBulkImportOpen(true)}
+                    className="bg-[#f3f4f6] hover:bg-[#e5e7eb] text-gray-700 border border-gray-300 rounded-xl px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+                  >
+                    <HiOutlineArrowUpTray className="text-sm text-emerald-600" />
+                    Import Bulk
+                  </Button>
+                </div>
               </div>
 
               {/* Tugas Coding (Indigo/Blue Dot) */}
@@ -827,6 +876,14 @@ const AddMateriAdmin: React.FC = () => {
 
         </div>
       )}
+
+      {/* Bulk Import Modal */}
+      <BulkImportSoalModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onImport={handleBulkImport}
+        existingCount={questionsList.length}
+      />
 
     </div>
   );
