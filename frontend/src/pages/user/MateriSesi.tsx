@@ -23,7 +23,9 @@ import {
   HiOutlineCheck,
   HiOutlineDocument,
   HiOutlinePaperClip,
-  HiOutlinePencil
+  HiOutlinePencil,
+  HiOutlineInformationCircle,
+  HiOutlineArrowUpTray
 } from 'react-icons/hi2';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -553,6 +555,34 @@ const MateriSesi: React.FC = () => {
 
   // Display status strings
   const hasUploadedFiles = screenshotUrl || programUrl;
+
+  const getTaskInstruction = () => {
+    const urutan = pertemuanDetail?.urutan || session?.urutan || 1;
+    const topik = (pertemuanDetail?.topik || session?.topik || '').trim();
+
+    // Check custom instruction if provided in materi
+    const customTugasMateri = materiList.find(m => 
+      m.refleksi && (
+        (m.nama && (m.nama.includes('Latihan Upload') || m.nama.includes('Tugas Praktik'))) ||
+        m.refleksi.toLowerCase().includes('buatlah program') ||
+        m.refleksi.toLowerCase().includes('screenshot') ||
+        m.refleksi.toLowerCase().includes('source code')
+      )
+    );
+
+    const defaultDeskripsi = 'Buatlah program sesuai instruksi pada modul ajar, kemudian unggah screenshot hasil run dan file source code (.zip) sebagai bukti praktikum.';
+    const deskripsi = customTugasMateri?.refleksi?.trim() || defaultDeskripsi;
+
+    return {
+      judul: `Latihan Upload (Screenshot/File) — Pertemuan ${urutan}${topik ? `: ${topik}` : ''}`,
+      deskripsi,
+      keterangan: 'Peserta akan upload screenshot coding / file program sebagai bukti latihan',
+      ketentuanScreenshot: 'Screenshot coding / tangkapan layar hasil running program (.png, .jpg, atau .pdf).',
+      ketentuanProgram: 'File source code project yang dikompresi (.zip) atau berkas program (.pdf).'
+    };
+  };
+
+  const taskInstruction = getTaskInstruction();
 
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-screen pb-20 text-left">
@@ -1119,13 +1149,85 @@ const MateriSesi: React.FC = () => {
           {/* TAB 5: Upload Tugas (Moodle-style table) */}
           {activeTab === 'upload_tugas' && (
             <div className="space-y-6 w-full">
+              {/* Card Instruksi Latihan Upload (Screenshot/File) */}
+              <Card className="rounded-[2.5rem] border border-indigo-100 shadow-md bg-white p-8 md:p-10 text-left space-y-6 relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+                      <HiOutlineArrowUpTray className="text-2xl text-indigo-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">
+                          LATIHAN UPLOAD (SCREENSHOT/FILE)
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          • {pertemuanDetail?.mataKuliah?.nama || session?.mataKuliah?.nama || 'Pemrograman Web'}
+                        </span>
+                      </div>
+                      <h2 className="text-xl font-black text-gray-900 mt-1">
+                        {taskInstruction.judul}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <Badge className="bg-indigo-600 text-white font-black text-[10px] px-4 py-2 rounded-full uppercase tracking-wider self-start md:self-auto shadow-sm">
+                    Pertemuan P{pertemuanDetail?.urutan || session?.urutan || '1'}
+                  </Badge>
+                </div>
+
+                {/* Box Instruksi Pengerjaan (Persis seperti di AddMateri) */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-3">
+                  <div className="flex items-center gap-2 text-indigo-900 font-black text-xs uppercase tracking-wider">
+                    <HiOutlineInformationCircle className="text-base text-indigo-600" /> Instruksi Latihan Upload:
+                  </div>
+                  <p className="text-sm text-gray-800 font-semibold leading-relaxed whitespace-pre-line">
+                    {taskInstruction.deskripsi}
+                  </p>
+                  <p className="text-[11px] font-medium text-gray-400 pt-2 border-t border-slate-200/60 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                    {taskInstruction.keterangan}
+                  </p>
+                </div>
+
+                {/* Ketentuan Berkas Upload */}
+                <div className="pt-2 border-t border-gray-100">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-700 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Ketentuan Berkas yang Wajib Diunggah:
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex items-start gap-3.5">
+                      <span className="text-2xl shrink-0">📸</span>
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-amber-950">Berkas 1: Screenshot Coding / Bukti Run</p>
+                        <p className="text-[11px] text-amber-900/80 font-medium leading-relaxed">
+                          {taskInstruction.ketentuanScreenshot}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex items-start gap-3.5">
+                      <span className="text-2xl shrink-0">🗜️</span>
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-indigo-950">Berkas 2: File Source Code (.zip / .pdf)</p>
+                        <p className="text-[11px] text-indigo-900/80 font-medium leading-relaxed">
+                          {taskInstruction.ketentuanProgram}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
               {(!hasUploadedFiles || isEditingUpload) ? (
                 /* Drag-and-drop / selector fields for uploading files */
                 <Card className="rounded-[2.5rem] border border-gray-200 shadow-sm bg-white p-10">
                    <div className="flex justify-between items-center mb-8">
                       <div>
-                         <h2 className="text-xl font-black text-gray-900 text-left">Upload In-Text Activity P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
-                         <p className="text-xs font-bold text-gray-400 mt-1 text-left">Silakan unggah screenshot/PDF hasil pengerjaan coding dan folder zip project atau file PDF tugas Anda.</p>
+                         <h2 className="text-xl font-black text-gray-900 text-left">Upload Berkas Latihan (Screenshot/File)</h2>
+                         <p className="text-xs font-bold text-gray-400 mt-1 text-left">Silakan unggah screenshot coding/hasil run dan file program (.zip) sebagai bukti praktikum sesuai instruksi di atas.</p>
                       </div>
                       <Button 
                         variant="outline"
@@ -1231,8 +1333,13 @@ const MateriSesi: React.FC = () => {
                 /* Moodle-style Submission Status Table */
                 <Card className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white p-8">
                   <div className="mb-6">
-                    <h2 className="text-xl font-black text-gray-950 text-left">In-Text Activity P{pertemuanDetail?.urutan || session?.urutan || '1'}</h2>
-                    <p className="text-xs text-gray-400 font-bold mt-1 text-left">Buat layout CSS sederhana dan upload screenshot hasilnya + file zip project / PDF</p>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">LATIHAN UPLOAD (SCREENSHOT/FILE)</span>
+                    </div>
+                    <h2 className="text-xl font-black text-gray-950 text-left">{taskInstruction.judul}</h2>
+                    <p className="text-xs text-gray-500 font-semibold mt-1 text-left">{taskInstruction.deskripsi}</p>
+                    <p className="text-[11px] font-medium text-gray-400 mt-1 italic">{taskInstruction.keterangan}</p>
                   </div>
 
                   <h3 className="text-lg font-bold text-gray-900 mb-4 text-left border-b border-gray-100 pb-2">Submission status</h3>
@@ -1358,19 +1465,35 @@ const MateriSesi: React.FC = () => {
                 <div className="lg:col-span-8 space-y-6">
                   <div className="bg-[#E9F7F2] p-6 rounded-[2rem] border border-emerald-100 text-left space-y-3">
                      <span className="text-emerald-900 block font-black text-sm">Pertanyaan Refleksi:</span>
-                     {materiList.filter(m => m.refleksi && m.refleksi.trim()).length > 0 ? (
-                        materiList
-                           .filter(m => m.refleksi && m.refleksi.trim())
-                           .map((m, idx, arr) => (
-                              <p key={m.id || idx} className="bg-white/60 p-3 rounded-xl border border-emerald-150 text-xs font-semibold text-emerald-950 leading-relaxed">
-                                 {arr.length > 1 ? `${idx + 1}. ` : ''}{m.refleksi}
-                              </p>
-                           ))
-                     ) : (
-                        <p className="bg-white/60 p-3 rounded-xl border border-emerald-150 text-xs font-semibold text-emerald-950 leading-relaxed">
-                           Jelaskan apa yang kamu pelajari pada pertemuan ini dan bagaimana penerapannya dalam layout web?
-                        </p>
-                     )}
+                     {(() => {
+                        const refleksiMateri = materiList.filter(m => {
+                          if (!m.refleksi || !m.refleksi.trim()) return false;
+                          const namaLower = (m.nama || '').toLowerCase();
+                          const refLower = m.refleksi.toLowerCase();
+                          // Pastikan tugas coding / upload tidak masuk ke refleksi
+                          if (namaLower.includes('latihan upload') || namaLower.includes('tugas praktik')) return false;
+                          if (refLower.includes('buatlah program sesuai instruksi') || refLower.includes('unggah screenshot hasil run') || refLower.includes('source code (.zip)')) return false;
+                          return true;
+                        });
+
+                        const questions = refleksiMateri.flatMap(m => 
+                          (m.refleksi || '').split('\n').map((line: string) => line.trim()).filter(Boolean)
+                        );
+
+                        if (questions.length > 0) {
+                          return questions.map((qText: string, idx: number) => (
+                            <p key={idx} className="bg-white/60 p-3 rounded-xl border border-emerald-150 text-xs font-semibold text-emerald-950 leading-relaxed">
+                              {qText.match(/^\d+[\.\)]/) ? qText : `${questions.length > 1 ? `${idx + 1}. ` : ''}${qText}`}
+                            </p>
+                          ));
+                        }
+
+                        return (
+                          <p className="bg-white/60 p-3 rounded-xl border border-emerald-150 text-xs font-semibold text-emerald-950 leading-relaxed">
+                            Jelaskan apa yang kamu pelajari pada pertemuan ini dan bagaimana evaluasi pemahaman Anda?
+                          </p>
+                        );
+                     })()}
                   </div>
 
                   <textarea 

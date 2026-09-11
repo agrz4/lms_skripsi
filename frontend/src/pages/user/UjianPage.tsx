@@ -50,6 +50,14 @@ const UjianPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState('');
+  const [progressList, setProgressList] = useState<any[]>([]);
+  const [validationModal, setValidationModal] = useState<{
+    open: boolean;
+    courseName: string;
+    courseId: string;
+    completed: number;
+    total: number;
+  } | null>(null);
   
   const [ujianId, setUjianId] = useState('');
   const [soalList, setSoalList] = useState<SoalItem[]>([]);
@@ -68,7 +76,14 @@ const UjianPage: React.FC = () => {
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
-      await fetchMyPendaftaran();
+      try {
+        await fetchMyPendaftaran();
+        const progRes = await api.get('/student/status/progres');
+        setProgressList(progRes.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch initial progress:', err);
+      }
+
       if (courseId) {
         await fetchUjianData();
       } else {
@@ -98,9 +113,8 @@ const UjianPage: React.FC = () => {
   const fetchUjianData = async () => {
     setLoading(true);
     try {
-      // Panggil API dengan bypass=true jika untuk mempermudah testing, atau biarkan normal
-      // Di sini kita coba panggil biasa. Jika 403, kita tangkap dan set Locked.
-      const response = await api.get(`/ujian/soal?mataKuliahId=${courseId}&bypass=true`);
+      // Panggil API tanpa bypass agar validasi penyelesaian sesi pertemuan berjalan
+      const response = await api.get(`/ujian/soal?mataKuliahId=${courseId}`);
       setUjianId(response.data.ujianId);
       const rawSoal = response.data.soal || [];
       const parsedSoal = rawSoal.map((s: any) => {
@@ -131,7 +145,7 @@ const UjianPage: React.FC = () => {
       console.error('Failed to fetch exam:', error);
       if (error.response?.status === 403) {
         setLocked(true);
-        setLockMessage(error.response?.data?.message || 'Ujian terkunci.');
+        setLockMessage(error.response?.data?.message || 'Ujian terkunci. Anda belum menyelesaikan seluruh sesi pertemuan.');
       } else {
         alert('Gagal mengambil data ujian: ' + (error.response?.data?.message || error.message));
         navigate('/user/kursus-saya');
@@ -189,6 +203,73 @@ const UjianPage: React.FC = () => {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const renderValidationModal = () => {
+    if (!validationModal || !validationModal.open) return null;
+
+    const percent = validationModal.total > 0 
+      ? Math.min(Math.round((validationModal.completed / validationModal.total) * 100), 100) 
+      : 0;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl border border-gray-100 text-center space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="w-20 h-20 bg-rose-50 border-4 border-rose-100 rounded-3xl flex items-center justify-center mx-auto text-rose-500 shadow-lg shadow-rose-100">
+            <HiOutlineLockClosed className="text-4xl" />
+          </div>
+
+          <div className="space-y-3">
+            <span className="px-3 py-1 bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-widest rounded-full">
+              Ujian Belum Terbuka
+            </span>
+            <h3 className="text-2xl font-black text-gray-900">
+              Belum Dapat Mengerjakan Ujian
+            </h3>
+            <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+              Anda belum dapat mengerjakan ujian untuk mata kuliah <span className="font-bold text-gray-900">{validationModal.courseName}</span> karena belum menyelesaikan seluruh sesi pertemuan.
+            </p>
+          </div>
+
+          {/* Progress status card */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 text-left space-y-2">
+            <div className="flex justify-between items-center text-xs font-black text-gray-700">
+              <span>Progres Pertemuan Anda</span>
+              <span className="text-indigo-600 font-bold">{validationModal.completed} dari {validationModal.total} Selesai</span>
+            </div>
+            <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                style={{ width: `${percent}%` }}
+              ></div>
+            </div>
+            <p className="text-[11px] text-gray-500 font-medium pt-1">
+              Harap selesaikan seluruh sesi pertemuan beserta materi bacaan, video, kuis test formatif, dan refleksi terlebih dahulu.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2.5 pt-2">
+            <Button 
+              onClick={() => {
+                const targetId = validationModal.courseId;
+                setValidationModal(null);
+                navigate(`/user/detail-kursus?id=${targetId}`);
+              }}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-indigo-200 border-none cursor-pointer"
+            >
+              Lanjutkan Belajar Pertemuan
+            </Button>
+            <Button 
+              onClick={() => setValidationModal(null)}
+              variant="outline"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider border-none cursor-pointer"
+            >
+              Tutup
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="p-10 bg-slate-50 min-h-screen flex items-center justify-center">
@@ -226,18 +307,6 @@ const UjianPage: React.FC = () => {
       );
     }
 
-    if (pendaftaranList.length === 1) {
-      // Return a temporary loader while the redirect takes effect
-      return (
-        <div className="p-10 bg-slate-50 min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Mengalihkan ke halaman ujian...</p>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="p-8 bg-[#dcdcdc] min-h-screen pb-20">
         <div className="max-w-[1400px] mx-auto space-y-8">
@@ -251,12 +320,33 @@ const UjianPage: React.FC = () => {
               const mk = p.mataKuliah;
               if (!mk) return null;
               
+              const completedMeetings = progressList.filter(
+                (pr) => pr.pertemuan?.mataKuliahId === p.mataKuliahId && pr.isCompleted
+              ).length;
+              const totalMeetings = mk.jumlahPertemuan || mk._count?.pertemuan || 3;
+              const isUnlocked = completedMeetings >= totalMeetings && totalMeetings > 0;
+              const percent = totalMeetings > 0 ? Math.min(Math.round((completedMeetings / totalMeetings) * 100), 100) : 0;
               const imageUrl = getCourseImageUrl(mk.kode);
+
+              const handleItemClick = () => {
+                if (!isUnlocked) {
+                  setValidationModal({
+                    open: true,
+                    courseName: mk.nama,
+                    courseId: p.mataKuliahId,
+                    completed: completedMeetings,
+                    total: totalMeetings
+                  });
+                  return;
+                }
+                navigate(`/user/ujian?courseId=${p.mataKuliahId}`);
+              };
+
               return (
                 <Card 
                   key={p.id}
                   className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300 group cursor-pointer"
-                  onClick={() => navigate(`/user/ujian?courseId=${p.mataKuliahId}`)}
+                  onClick={handleItemClick}
                 >
                   <div className="relative w-full h-48 overflow-hidden select-none">
                     <img 
@@ -273,6 +363,19 @@ const UjianPage: React.FC = () => {
                         {mk.kode}
                       </span>
                     </div>
+
+                    {/* Status Badge */}
+                    <div className="absolute top-4 right-4">
+                      {isUnlocked ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-500/90 backdrop-blur-sm text-white font-extrabold text-[10px] rounded-full uppercase tracking-wider shadow-sm">
+                          <HiOutlineCheckCircle className="text-xs" /> Siap Ujian
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/90 backdrop-blur-sm text-white font-extrabold text-[10px] rounded-full uppercase tracking-wider shadow-sm">
+                          <HiOutlineLockClosed className="text-xs" /> Terkunci
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="p-6 flex-1 flex flex-col justify-between">
@@ -283,15 +386,49 @@ const UjianPage: React.FC = () => {
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">
                         {mk.kode}
                       </p>
-                      <p className="text-xs text-slate-500 font-semibold leading-relaxed mt-3 mb-6">
+                      <p className="text-xs text-slate-500 font-semibold leading-relaxed mt-3 mb-4">
                         {mk.deskripsi || 'Mata kuliah pembelajaran sistem LMS Hybrid.'}
                       </p>
+
+                      {/* Progress Indicator */}
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-1.5 mb-2">
+                        <div className="flex justify-between items-center text-[11px] font-bold">
+                          <span className="text-slate-500">Progres Pertemuan</span>
+                          <span className={isUnlocked ? "text-emerald-600 font-extrabold" : "text-amber-600 font-extrabold"}>
+                            {completedMeetings}/{totalMeetings} Selesai ({percent}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all ${isUnlocked ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                            style={{ width: `${percent}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="pt-4 border-t border-gray-100 flex justify-start">
-                      <Button className="bg-[#1b62b7] hover:bg-[#154c8f] text-white font-extrabold text-xs px-6 py-2.5 rounded-lg flex items-center justify-center border-none shadow-sm transition-all">
-                        Ambil Ujian
-                      </Button>
+                      {isUnlocked ? (
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleItemClick();
+                          }}
+                          className="bg-[#1b62b7] hover:bg-[#154c8f] text-white font-extrabold text-xs px-6 py-2.5 rounded-lg flex items-center justify-center border-none shadow-sm transition-all cursor-pointer"
+                        >
+                          Ambil Ujian
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleItemClick();
+                          }}
+                          className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-xs px-5 py-2.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <HiOutlineLockClosed className="text-amber-600" /> Ujian Terkunci
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -299,6 +436,8 @@ const UjianPage: React.FC = () => {
             })}
           </div>
         </div>
+
+        {renderValidationModal()}
       </div>
     );
   }
@@ -307,7 +446,7 @@ const UjianPage: React.FC = () => {
     return (
       <div className="p-10 bg-slate-50 min-h-screen flex items-center justify-center">
         <Card className="rounded-[2.5rem] border-none shadow-sm bg-white p-12 text-center max-w-lg space-y-6">
-          <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-500">
+          <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-500 shadow-inner">
             <HiOutlineLockClosed className="text-4xl animate-bounce" />
           </div>
           <div className="space-y-2">
@@ -316,12 +455,23 @@ const UjianPage: React.FC = () => {
               {lockMessage || 'Anda harus menyelesaikan seluruh sesi pertemuan untuk membuka ujian akhir.'}
             </p>
           </div>
-          <Button 
-            onClick={() => navigate('/user/kursus-saya')}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs px-8 py-5 uppercase tracking-wider shadow-lg"
-          >
-            Kembali ke Kursus Saya
-          </Button>
+          <div className="flex flex-col gap-3 pt-2">
+            {courseId && (
+              <Button 
+                onClick={() => navigate(`/user/detail-kursus?id=${courseId}`)}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs py-4 uppercase tracking-wider shadow-lg shadow-indigo-100"
+              >
+                Lanjutkan Belajar Pertemuan
+              </Button>
+            )}
+            <Button 
+              onClick={() => navigate('/user/kursus-saya')}
+              variant="outline"
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl text-xs py-3.5 uppercase tracking-wider border-none"
+            >
+              Kembali ke Kursus Saya
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -356,13 +506,20 @@ const UjianPage: React.FC = () => {
       ? new Date(currentPendaftaran.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
       : '19 Mar 2025';
 
+    const currentCompletedMeetings = progressList.filter(
+      (pr) => pr.pertemuan?.mataKuliahId === courseId && pr.isCompleted
+    ).length;
+    const currentTotalMeetings = currentPendaftaran?.mataKuliah?.jumlahPertemuan || currentPendaftaran?.mataKuliah?._count?.pertemuan || 3;
+    const isReadyToStart = currentCompletedMeetings >= currentTotalMeetings && currentTotalMeetings > 0;
+    const progressPercent = currentTotalMeetings > 0 ? Math.min(Math.round((currentCompletedMeetings / currentTotalMeetings) * 100), 100) : 0;
+
     return (
       <div className="p-8 bg-[#dcdcdc] min-h-screen pb-20">
         <div className="max-w-[1400px] mx-auto space-y-6">
           {/* Breadcrumb Back link */}
           <button 
             onClick={() => navigate('/user/ujian')}
-            className="flex items-center gap-2 text-xs font-black text-slate-600 hover:text-slate-900 transition-all uppercase tracking-wider text-left border-none bg-transparent p-0"
+            className="flex items-center gap-2 text-xs font-black text-slate-600 hover:text-slate-900 transition-all uppercase tracking-wider text-left border-none bg-transparent p-0 cursor-pointer"
           >
             <HiOutlineChevronLeft className="text-base stroke-[3]" /> List Ujian Akhir — {courseName}
           </button>
@@ -380,31 +537,77 @@ const UjianPage: React.FC = () => {
           {/* Start Exam Card */}
           <Card className="rounded-[1.5rem] border border-gray-200 shadow-sm bg-white p-10 text-left space-y-6">
              <div>
-                <h2 className="text-2xl font-black text-slate-800">
-                   Ujian Akhir — {courseName}
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-black text-slate-800">
+                     Ujian Akhir — {courseName}
+                  </h2>
+                  {isReadyToStart ? (
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-extrabold text-[10px] rounded-full uppercase tracking-wider">
+                      ✓ Siap Ujian
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 bg-amber-100 text-amber-800 font-extrabold text-[10px] rounded-full uppercase tracking-wider flex items-center gap-1">
+                      <HiOutlineLockClosed className="text-xs" /> Terkunci
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-wider">
                    {soalList.length} soal
                 </p>
              </div>
 
              {/* Info alert box */}
-             <div className="bg-[#ebf8ff] border border-[#bee3f8] p-5 rounded-xl flex items-center gap-3 text-slate-700 text-xs font-semibold">
-                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full shrink-0"></span>
-                <span>
-                   Kamu Telah Menyelesaikan Semua Materi Silahkan Mulai Ujian Akhir Sebagai Syarat Mendapatkan Sertifikat.
-                </span>
-             </div>
+             {isReadyToStart ? (
+               <div className="bg-[#ebf8ff] border border-[#bee3f8] p-5 rounded-xl flex items-center gap-3 text-slate-700 text-xs font-semibold">
+                  <span className="w-2.5 h-2.5 bg-blue-500 rounded-full shrink-0"></span>
+                  <span>
+                     Kamu Telah Menyelesaikan Semua Materi. Silahkan Mulai Ujian Akhir Sebagai Syarat Mendapatkan Sertifikat.
+                  </span>
+               </div>
+             ) : (
+               <div className="bg-amber-50 border border-amber-200 p-5 rounded-xl flex flex-col gap-2 text-amber-900 text-xs font-semibold">
+                  <div className="flex items-center gap-2">
+                    <HiOutlineLockClosed className="text-lg text-amber-600 shrink-0" />
+                    <span>
+                       Perhatian: Anda baru menyelesaikan {currentCompletedMeetings} dari {currentTotalMeetings} pertemuan ({progressPercent}%). Selesaikan seluruh sesi pertemuan terlebih dahulu sebelum dapat mengerjakan ujian ini.
+                    </span>
+                  </div>
+                  <div className="w-full bg-amber-200/60 h-2 rounded-full overflow-hidden mt-1">
+                    <div className="bg-amber-500 h-full rounded-full transition-all" style={{ width: `${progressPercent}%` }}></div>
+                  </div>
+               </div>
+             )}
 
              {/* Action Button */}
              <Button 
-                onClick={() => setExamStarted(true)}
-                className="w-full bg-[#10b981] hover:bg-[#059669] text-white font-black py-7 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-none"
+                onClick={() => {
+                  if (!isReadyToStart) {
+                    setValidationModal({
+                      open: true,
+                      courseName,
+                      courseId,
+                      completed: currentCompletedMeetings,
+                      total: currentTotalMeetings
+                    });
+                    return;
+                  }
+                  setExamStarted(true);
+                }}
+                className={isReadyToStart
+                  ? "w-full bg-[#10b981] hover:bg-[#059669] text-white font-black py-7 rounded-xl shadow-lg shadow-emerald-100 uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-none cursor-pointer"
+                  : "w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-7 rounded-xl shadow-lg shadow-amber-200 uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-none cursor-pointer"
+                }
              >
-                Mulai Ujian Akhir →
+                {isReadyToStart ? (
+                  <>Mulai Ujian Akhir →</>
+                ) : (
+                  <><HiOutlineLockClosed className="text-base" /> Ujian Terkunci (Selesaikan Pertemuan Dulu)</>
+                )}
              </Button>
           </Card>
         </div>
+
+        {renderValidationModal()}
       </div>
     );
   }

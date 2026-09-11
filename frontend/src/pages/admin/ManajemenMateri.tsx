@@ -81,11 +81,17 @@ const ManajemenMateri: React.FC = () => {
     const hasMateri = p.materi && p.materi.length > 0;
     if (!hasMateri) return '—';
     
+    const jenis = getJenisPembelajaran(p);
     const videoCount = p.materi ? p.materi.filter((m: any) => m.videoUrl).length : 0;
+    const hasPdf = p.materi && p.materi.some((m: any) => m.fileUrl);
     const hasRef = p.materi && p.materi.some((m: any) => m.refleksi && m.refleksi.trim().length > 0);
     const soalCount = p.soal ? p.soal.length : 0;
     
-    const isComplete = videoCount > 0 && hasRef && soalCount > 0;
+    // Khusus metode PDF, tidak memerlukan video. Syarat lengkap: materi/PDF ada, latihan/refleksi ada, dan soal tes formatif ada.
+    const isComplete = jenis === 'PDF' 
+      ? ((hasPdf || hasMateri) && hasRef && soalCount > 0)
+      : (videoCount > 0 && hasRef && soalCount > 0);
+
     return isComplete ? 'Lengkap' : 'Kurang';
   };
 

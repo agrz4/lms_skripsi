@@ -332,11 +332,15 @@ const getCourseSummary = async (req, res) => {
     });
 
     // 3. Get total meetings configuration
+    const countPertemuan = await prisma.pertemuan.count({
+      where: { mataKuliahId: courseId }
+    });
+
     const course = await prisma.mataKuliah.findUnique({
       where: { id: courseId },
       select: { jumlahPertemuan: true }
     });
-    const totalMeetings = course ? course.jumlahPertemuan : 14;
+    const totalMeetings = countPertemuan > 0 ? countPertemuan : (course ? course.jumlahPertemuan : 14);
 
     // 4. Get exam status / score if any
     const ujian = await prisma.ujian.findUnique({

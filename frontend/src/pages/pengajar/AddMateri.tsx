@@ -163,9 +163,19 @@ const AddMateri: React.FC = () => {
           });
         });
 
+        let loadedTugasCoding = '';
         existingMateri.forEach((m: any) => {
+          if (m.nama && (m.nama.includes('Latihan Upload') || m.nama.includes('Tugas Praktik'))) {
+            if (m.refleksi) loadedTugasCoding = m.refleksi;
+            return;
+          }
           if (m.refleksi && !loadedRefleksi) {
-            loadedRefleksi = m.refleksi;
+            const rLower = m.refleksi.toLowerCase();
+            if (!rLower.includes('buatlah program sesuai instruksi') && !rLower.includes('unggah screenshot hasil run')) {
+              loadedRefleksi = m.refleksi;
+            } else if (!loadedTugasCoding) {
+              loadedTugasCoding = m.refleksi;
+            }
           }
           if (m.fileUrl) {
             loadedSubMateri.push({
@@ -175,6 +185,10 @@ const AddMateri: React.FC = () => {
             });
           }
         });
+
+        if (loadedTugasCoding) {
+          setTugasCoding(loadedTugasCoding);
+        }
 
         // Initialize defaults if empty
         if (loadedVideos.length === 0) {
@@ -478,6 +492,16 @@ const AddMateri: React.FC = () => {
 
       // Attach reflection text to the first record
       payloads[0].refleksi = refleksi || null;
+
+      // Attach Latihan Upload (Screenshot/File) record
+      if (tugasCoding && tugasCoding.trim()) {
+        payloads.push({
+          nama: `${meeting?.topik || 'Pertemuan'} (Latihan Upload)`,
+          videoUrl: null,
+          fileUrl: null,
+          refleksi: tugasCoding.trim()
+        });
+      }
 
       // 3. Post to backend
       for (const p of payloads) {

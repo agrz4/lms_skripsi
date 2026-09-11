@@ -30,13 +30,17 @@ const getUjianSoal = async (req, res) => {
         }
       });
 
+      const countPertemuan = await prisma.pertemuan.count({
+        where: { mataKuliahId }
+      });
+
       const targetCourse = await prisma.mataKuliah.findUnique({
         where: { id: mataKuliahId },
         select: { jumlahPertemuan: true }
       });
-      const requiredCount = targetCourse ? targetCourse.jumlahPertemuan : 14;
+      const requiredCount = countPertemuan > 0 ? countPertemuan : (targetCourse ? targetCourse.jumlahPertemuan : 14);
 
-      if (progressCount < requiredCount) {
+      if (progressCount < requiredCount || requiredCount === 0) {
         return res.status(403).json({
           success: false,
           message: `Ujian terkunci. Anda baru menyelesaikan ${progressCount} dari ${requiredCount} sesi pertemuan. Selesaikan semua sesi untuk membuka ujian.`
@@ -221,6 +225,34 @@ const submitUjian = async (req, res) => {
 
     if (!ujian) {
       return res.status(404).json({ success: false, message: 'Ujian tidak ditemukan' });
+    }
+
+    // Validasi penyelesaian seluruh sesi pertemuan sebelum submit ujian
+    const progressCount = await prisma.studentProgress.count({
+      where: {
+        userId,
+        isCompleted: true,
+        pertemuan: {
+          mataKuliahId: ujian.mataKuliahId
+        }
+      }
+    });
+
+    const countPertemuan = await prisma.pertemuan.count({
+      where: { mataKuliahId: ujian.mataKuliahId }
+    });
+
+    const targetCourse = await prisma.mataKuliah.findUnique({
+      where: { id: ujian.mataKuliahId },
+      select: { jumlahPertemuan: true }
+    });
+    const requiredCount = countPertemuan > 0 ? countPertemuan : (targetCourse ? targetCourse.jumlahPertemuan : 14);
+
+    if (progressCount < requiredCount || requiredCount === 0) {
+      return res.status(403).json({
+        success: false,
+        message: `Ujian terkunci. Anda baru menyelesaikan ${progressCount} dari ${requiredCount} sesi pertemuan. Selesaikan semua sesi untuk membuka ujian.`
+      });
     }
 
     // Ambil kunci jawaban asli dari database untuk akurasi penilaian AI

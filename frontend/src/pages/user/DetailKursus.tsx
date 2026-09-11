@@ -53,9 +53,10 @@ const DetailKursus: React.FC = () => {
   }, [hasCheckedEnrollment, isPendaftaranLoading, pendaftaranList, courseId, navigate]);
 
   const course = mataKuliahList.find(mk => mk.id === courseId);
-  const completedSessions = summary ? summary.completedMeetings : jadwalList.filter(s => s.tgl && s.topik).length;
-  const totalSessionsCount = summary ? summary.totalMeetings : (course?.jumlahPertemuan || 3);
+  const completedSessions = summary ? summary.completedMeetings : 0;
+  const totalSessionsCount = summary ? summary.totalMeetings : (jadwalList.length > 0 ? jadwalList.length : (course?.jumlahPertemuan || 3));
   const progressPercent = totalSessionsCount > 0 ? Math.round((completedSessions / totalSessionsCount) * 100) : 0;
+  const [showExamLockModal, setShowExamLockModal] = useState(false);
 
   const getSessionDescription = (pertemuan: any, isActive: boolean, isCompleted: boolean) => {
     if (!pertemuan.materi || pertemuan.materi.length === 0) {
@@ -220,7 +221,7 @@ const DetailKursus: React.FC = () => {
              <h3 className="text-lg font-black text-indigo-900 mb-2">Ujian AI</h3>
              <p className="text-xs text-indigo-700/60 font-bold mb-8">Tersedia setelah semua {totalSessionsCount} pertemuan selesai</p>
              
-             {completedSessions >= totalSessionsCount ? (
+             {completedSessions >= totalSessionsCount && totalSessionsCount > 0 ? (
                <Button 
                  onClick={() => navigate(`/user/ujian?courseId=${courseId}`)}
                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-8 rounded-2xl flex flex-col gap-1 shadow-lg shadow-indigo-200 transition-all cursor-pointer"
@@ -230,15 +231,71 @@ const DetailKursus: React.FC = () => {
                  </div>
                </Button>
              ) : (
-               <Button disabled className="w-full bg-gray-400 text-white font-black py-8 rounded-2xl flex flex-col gap-1 grayscale opacity-50 cursor-not-allowed">
-                  <div className="flex items-center gap-2">
-                     <HiOutlineLockClosed /> <span>Selesaikan semua pertemuan dulu</span>
+               <Button 
+                 onClick={() => setShowExamLockModal(true)}
+                 className="w-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-black py-7 rounded-2xl flex flex-col gap-1 shadow-sm transition-all cursor-pointer group"
+               >
+                  <div className="flex items-center gap-2 text-sm font-black">
+                     <HiOutlineLockClosed className="text-amber-600 group-hover:scale-110 transition-transform" /> 
+                     <span>Ujian Terkunci ({completedSessions}/{totalSessionsCount} Pertemuan)</span>
                   </div>
+                  <span className="text-[10px] text-amber-700/80 font-bold uppercase tracking-wider">
+                     Klik untuk info & syarat pengerjaan
+                  </span>
                </Button>
              )}
           </div>
         </div>
       </div>
+
+      {/* Validation Modal for Locked Exam */}
+      {showExamLockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl border border-gray-100 text-center space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="w-20 h-20 bg-rose-50 border-4 border-rose-100 rounded-3xl flex items-center justify-center mx-auto text-rose-500 shadow-lg shadow-rose-100">
+              <HiOutlineLockClosed className="text-4xl" />
+            </div>
+
+            <div className="space-y-3">
+              <span className="px-3 py-1 bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-widest rounded-full">
+                Ujian Belum Terbuka
+              </span>
+              <h3 className="text-2xl font-black text-gray-900">
+                Belum Dapat Mengerjakan Ujian
+              </h3>
+              <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+                Anda belum dapat mengikuti Ujian Akhir untuk mata kuliah <span className="font-bold text-gray-900">{course?.nama || 'ini'}</span> karena belum menyelesaikan seluruh sesi pertemuan.
+              </p>
+            </div>
+
+            {/* Progress status card inside modal */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 text-left space-y-2">
+              <div className="flex justify-between items-center text-xs font-black text-gray-700">
+                <span>Progres Pertemuan Anda</span>
+                <span className="text-indigo-600">{completedSessions} dari {totalSessionsCount} Selesai</span>
+              </div>
+              <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-indigo-600 rounded-full transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                ></div>
+              </div>
+              <p className="text-[11px] text-gray-500 font-medium pt-1">
+                Harap selesaikan modul video, materi bacaan, latihan test formatif, dan refleksi pada setiap sesi pertemuan terlebih dahulu.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              <Button 
+                onClick={() => setShowExamLockModal(false)}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-indigo-200 border-none"
+              >
+                Lanjutkan Belajar Pertemuan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

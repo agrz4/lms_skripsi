@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   HiOutlineUserGroup, 
   HiOutlineBookOpen, 
@@ -12,12 +12,14 @@ import {
   HiOutlinePlus,
   HiOutlineQueueList,
   HiOutlineUser,
+  HiOutlineAcademicCap,
 } from 'react-icons/hi2';
 import { useAuthStore } from '../store/useAuthStore';
 import logoImg from '../assets/logo.png';
 
 const Sidebar: React.FC = () => {
   const { user } = useAuthStore();
+  const location = useLocation();
   const role = localStorage.getItem('userRole') || 'admin';
   const isAdmin = role.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
 
@@ -45,6 +47,7 @@ const Sidebar: React.FC = () => {
       title: 'MENU UTAMA',
       items: [
         { name: 'Kursus Tersedia', icon: <HiOutlineSquares2X2 />, path: '/user/dashboard' },
+        { name: 'Enroll Paket', icon: <HiOutlineAcademicCap />, path: '/user/dashboard?tab=paket' },
         { name: 'My courses', icon: <HiOutlineBookOpen />, path: '/user/kursus-saya' },
         { name: 'Ujian', icon: <HiOutlineCpuChip />, path: '/user/ujian' },
       ]
@@ -200,16 +203,28 @@ const Sidebar: React.FC = () => {
             <div key={section.title} className="mb-8">
               <p className={`text-[11px] font-bold uppercase tracking-wider mb-2.5 px-4 ${isBlueTheme ? 'text-white/40' : 'text-slate-400'}`}>{section.title}</p>
               <nav className="space-y-1.5">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.name}
-                    to={item.path}
-                    className={({ isActive }) => getLinkClass(isActive)}
-                  >
-                    <span className="text-xl text-slate-400 group-hover:text-slate-600">{item.icon}</span>
-                    {item.name}
-                  </NavLink>
-                ))}
+                {section.items.map((item) => {
+                  const isQueryActive = (() => {
+                    if (item.path === '/user/dashboard?tab=paket') {
+                      return location.pathname === '/user/dashboard' && location.search.includes('tab=paket');
+                    }
+                    if (item.path === '/user/dashboard') {
+                      return location.pathname === '/user/dashboard' && !location.search.includes('tab=paket');
+                    }
+                    return location.pathname === item.path;
+                  })();
+
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.path}
+                      className={() => getLinkClass(isQueryActive)}
+                    >
+                      <span className="text-xl text-slate-400 group-hover:text-slate-600">{item.icon}</span>
+                      {item.name}
+                    </NavLink>
+                  );
+                })}
               </nav>
             </div>
           ))

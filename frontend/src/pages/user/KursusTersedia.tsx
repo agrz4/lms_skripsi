@@ -179,7 +179,7 @@ const KursusTersedia: React.FC = () => {
   const { user } = useAuthStore();
   const activePath = user?.pelatihan || 'Web Development';
 
-  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Free' | 'Berbayar' | 'Course map' | 'Referall'>('Semua');
+  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Free' | 'Berbayar' | 'Enroll Paket' | 'Course map' | 'Referall'>('Semua');
   const [courseMapMode, setCourseMapMode] = useState<'individual' | 'paket'>('individual');
   const [progressData, setProgressData] = useState<any[]>([]);
   const [selectedPaketId, setSelectedPaketId] = useState<string>('');
@@ -240,6 +240,7 @@ const KursusTersedia: React.FC = () => {
   // Enrollment & Payment Simulation Modal States
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState<any | null>(null);
+  const [selectedPaketToEnroll, setSelectedPaketToEnroll] = useState<any | null>(null);
   const [referralInput, setReferralInput] = useState("");
   const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -262,6 +263,8 @@ const KursusTersedia: React.FC = () => {
     const tab = params.get('tab');
     if (tab === 'referral') {
       setActiveFilter('Referall');
+    } else if (tab === 'paket' || tab === 'enroll-paket') {
+      setActiveFilter('Enroll Paket');
     }
   }, [location]);
 
@@ -325,55 +328,77 @@ const KursusTersedia: React.FC = () => {
     }
   };
 
-  const handleBeliPaket = async (paketNama: string, targetCodes: string[]) => {
-    if (!window.confirm(`Apakah Anda yakin ingin membeli paket "${paketNama}"? Anda akan otomatis terdaftar ke semua kelas dalam paket ini.`)) {
-      return;
-    }
-
-    const coursesToEnroll = publishedMataKuliahList.filter(c => 
-      targetCodes.some(code => c.kode?.toLowerCase().includes(code.toLowerCase()))
-    );
-
-    if (coursesToEnroll.length === 0) {
-      alert('Maaf, kelas-kelas di dalam paket ini belum dipublikasikan oleh admin.');
-      return;
-    }
-
-    let enrolledCount = 0;
-    let alreadyEnrolledCount = 0;
-
-    let splitPrice = '0';
-    if (paketNama === 'Web Dev Full Path') splitPrice = '199800';
-    else if (paketNama === 'Front-End Specialist') splitPrice = '174750';
-    else if (paketNama === 'Back-End Engineer') splitPrice = '199666';
-
+  const handleBeliPaket = async (
+    paket: any, 
+    referralCode?: string, 
+    customPrice?: string, 
+    customInvoice?: string, 
+    customMethod?: string
+  ) => {
     try {
+      setIsEnrolling(true);
+      
+      // Determine which courses belong to this package
+      let coursesToEnroll: any[] = [];
+      if (paket.courses && paket.courses.length > 0) {
+        coursesToEnroll = paket.courses.map((c: any) => {
+          const fullCourse = mataKuliahList.find(m => m.id === c.id || (m.kode && c.kode && m.kode.toLowerCase() === c.kode.toLowerCase())) || c;
+          return fullCourse;
+        });
+      }
+
+      if (coursesToEnroll.length === 0 && paket.targetCodes) {
+        coursesToEnroll = publishedMataKuliahList.filter(c =>
+          paket.targetCodes.some((code: string) => c.kode?.toLowerCase().includes(code.toLowerCase()))
+        );
+      }
+
+      if (coursesToEnroll.length === 0) {
+        alert('Maaf, kelas-kelas di dalam paket ini belum dipublikasikan oleh admin.');
+        return;
+      }
+
+      const totalCourses = coursesToEnroll.length;
+      const totalNumPrice = customPrice !== undefined 
+        ? parseInt(customPrice, 10) 
+        : parseInt((paket.hargaPaket || '0').replace(/[^0-9]/g, ''), 10);
+      const splitPrice = totalCourses > 0 ? Math.round(totalNumPrice / totalCourses).toString() : '0';
+
+      const invoice = customInvoice || `INV/PK/${Date.now()}`;
+      const method = customMethod || 'Mandiri Virtual Account';
+
+      let newlyEnrolled = 0;
       for (const course of coursesToEnroll) {
         const isAlreadyEnrolled = pendaftaranList.some(p => p.mataKuliahId === course.id);
-        if (isAlreadyEnrolled) {
-          alreadyEnrolledCount++;
-        } else {
+        if (!isAlreadyEnrolled && course.id) {
           await enrollKursus(course.id, {
+            referralCode: referralCode || undefined,
             harga: splitPrice,
-            invoiceNo: `INV/PK/${Date.now()}`,
-            method: 'Mandiri Virtual Account',
+            invoiceNo: invoice,
+            method: method,
             status: 'Lunas'
           });
-          enrolledCount++;
+          newlyEnrolled++;
         }
       }
-      
+
       await fetchMyPendaftaran();
       await fetchProgress();
 
-      if (enrolledCount > 0) {
-        alert(`Selamat! Anda berhasil membeli paket "${paketNama}" dan didaftarkan ke ${enrolledCount} kelas baru!`);
-      } else if (alreadyEnrolledCount > 0) {
-        alert(`Anda sudah terdaftar di semua kelas yang ada di dalam paket "${paketNama}".`);
+      if (isEnrollModalOpen) {
+        setPaymentStep('success');
+      } else {
+        if (newlyEnrolled > 0) {
+          alert(`Selamat! Anda berhasil mendaftar ke paket "${paket.nama}" (${newlyEnrolled} kelas baru berhasil ditambahkan).`);
+        } else {
+          alert(`Anda sudah terdaftar di semua kelas yang ada di dalam paket "${paket.nama}".`);
+        }
       }
     } catch (err) {
       console.error('Failed to purchase package courses:', err);
-      alert('Gagal memproses pendaftaran beberapa kelas pada paket.');
+      alert('Gagal memproses pendaftaran kelas pada paket.');
+    } finally {
+      setIsEnrolling(false);
     }
   };
 
@@ -725,6 +750,7 @@ const KursusTersedia: React.FC = () => {
                       const priceInfo = getPriceDisplay(course.warna);
                       const isPaid = priceInfo.current !== 'Gratis';
                       if (isPaid) {
+                        setSelectedPaketToEnroll(null);
                         setSelectedCourseToEnroll(course);
                         setReferralInput("");
                         setIsEnrollModalOpen(true);
@@ -1021,111 +1047,204 @@ const KursusTersedia: React.FC = () => {
     );
   };
 
+  const handleOpenPaketEnroll = (paket: any) => {
+    setSelectedCourseToEnroll(null);
+    setSelectedPaketToEnroll(paket);
+    setReferralInput("");
+    setCopiedVA(false);
+    setPaymentStep('details');
+    setIsEnrollModalOpen(true);
+  };
+
   const renderPaketSection = () => {
+    const listToRender = (dbPaketList && dbPaketList.length > 0) ? dbPaketList : [
+      {
+        id: 'pkg-fe',
+        nama: 'Front-End Specialist',
+        deskripsi: 'Fokus menguasai pengembangan antarmuka web modern dengan HTML, CSS, JS & React.',
+        hargaPaket: '699000',
+        hargaAsli: '1148000',
+        courses: mataKuliahList.filter(c => ['wd-01', 'wd-02', 'wd-03'].some(k => c.kode?.toLowerCase().includes(k)))
+      },
+      {
+        id: 'pkg-be',
+        nama: 'Back-End Engineer',
+        deskripsi: 'Fokus membangun REST API performa tinggi, database SQL/NoSQL, dan container.',
+        hargaPaket: '599000',
+        hargaAsli: '698000',
+        courses: mataKuliahList.filter(c => ['wd-04', 'wd-05'].some(k => c.kode?.toLowerCase().includes(k)))
+      },
+      {
+        id: 'pkg-golang',
+        nama: 'Golang Full Path Bundle',
+        deskripsi: 'Kuasai arsitektur microservices, backend Go, dan concurrency tingkat lanjut.',
+        hargaPaket: '799000',
+        hargaAsli: '1298000',
+        courses: mataKuliahList.filter(c => ['gol', 'lin', 'ai'].some(k => c.kode?.toLowerCase().includes(k)))
+      },
+      {
+        id: 'pkg-ds',
+        nama: 'Data Science Track',
+        deskripsi: 'Kuasai analisis data, statistika terapan, deep learning & NLP modern.',
+        hargaPaket: '899000',
+        hargaAsli: '1346000',
+        courses: mataKuliahList.filter(c => ['ds', 'nlp', 'vision'].some(k => c.kode?.toLowerCase().includes(k)))
+      }
+    ];
+
     return (
       <div className="mt-2 text-left">
         {/* Info Alert Box */}
-        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] px-4 py-3.5 rounded-xl flex items-center gap-2 mb-8 shadow-sm text-sm">
-          <HiOutlineInformationCircle className="w-5 h-5 shrink-0 text-[#16a34a]" />
-          <span>Beli paket lebih hemat dibanding beli kursus satuan. Paket sudah termasuk semua kursus dalam bundle.</span>
+        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] px-5 py-4 rounded-2xl flex items-center justify-between gap-3 mb-8 shadow-sm">
+          <div className="flex items-center gap-3">
+            <HiOutlineInformationCircle className="w-6 h-6 shrink-0 text-[#16a34a]" />
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-emerald-800">Paket Bundling Kurikulum</p>
+              <p className="text-xs text-emerald-700 font-medium mt-0.5">Beli paket lebih hemat dibanding beli kursus satuan. Paket sudah mencakup akses penuh ke semua kursus dalam bundle.</p>
+            </div>
+          </div>
+          <span className="bg-emerald-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shrink-0 hidden sm:inline-block shadow-sm">
+            Hemat hingga 40%
+          </span>
         </div>
 
         {/* Packages Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {(dbPaketList || []).map((paket) => {
-            const isAllEnrolled = (paket.courses || []).every((c: any) =>
-              pendaftaranList.some(p => p.mataKuliahId === c.id)
-            );
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {listToRender.map((paket: any) => {
+            const coursesInPaket = (paket.courses || []).map((c: any) => {
+              const fullCourse = mataKuliahList.find(m => m.id === c.id || (m.kode && c.kode && m.kode.toLowerCase() === c.kode.toLowerCase())) || c;
+              return fullCourse;
+            });
 
-            const tags = (paket.courses || []).map((c: any) => {
-              const nameParts = c.nama.split(' ');
-              return nameParts[0] + (nameParts[1] ? ' ' + nameParts[1].substring(0, 1) : '');
-            }).slice(0, 5);
+            const enrolledCount = coursesInPaket.filter((c: any) => userEnrolledCourseIds.has(c.id)).length;
+            const totalCount = coursesInPaket.length;
+            const isAllEnrolled = totalCount > 0 && enrolledCount === totalCount;
 
-            const isPopular = paket.nama.toLowerCase().includes('full path');
+            const isPopular = (paket.nama || '').toLowerCase().includes('specialist') || (paket.nama || '').toLowerCase().includes('full path');
+            
+            const hargaPaketNum = parseInt((paket.hargaPaket || '0').replace(/[^0-9]/g, ''), 10);
+            const hargaAsliNum = parseInt((paket.hargaAsli || '0').replace(/[^0-9]/g, ''), 10);
+            const hemat = hargaAsliNum > hargaPaketNum ? hargaAsliNum - hargaPaketNum : 0;
 
             return (
               <div 
                 key={paket.id}
-                className={`relative bg-[#133c66] text-white p-8 rounded-[2rem] border-2 shadow-xl flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300 min-h-[520px] ${
-                  isPopular ? 'border-blue-500' : 'border-slate-700 bg-[#0e2c4c]'
+                className={`relative text-white p-7 rounded-[2.2rem] border-2 shadow-xl flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300 min-h-[560px] ${
+                  isPopular ? 'border-sky-400 bg-[#0f3459]' : 'border-slate-700 bg-[#0c2642]'
                 }`}
               >
                 {isPopular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#38bdf8] text-[#0f2a47] font-black text-[9px] px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#38bdf8] text-[#0a233d] font-black text-[9px] px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">
                     Paling Populer
                   </div>
                 )}
 
                 <div>
-                  <h3 className="text-xl font-black mb-1">{paket.nama}</h3>
-                  <p className="text-xs font-bold text-sky-200/70 mb-5">{paket.courses?.length || 0} kursus lengkap</p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag, idx) => (
-                      <span key={idx} className="bg-white/10 text-white text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
-                        {tag}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="text-xl font-black text-white leading-snug">{paket.nama}</h3>
+                    {hemat > 0 && (
+                      <span className="bg-emerald-500 text-white font-black text-[8px] px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 shadow-sm">
+                        Hemat Rp {hemat.toLocaleString('id-ID')}
                       </span>
-                    ))}
+                    )}
+                  </div>
+                  
+                  <p className="text-xs font-bold text-sky-200/80 mb-4 flex items-center gap-1.5">
+                    <HiOutlineBookOpen className="text-sm" />
+                    <span>{totalCount} Kursus Komprehensif</span>
+                    {enrolledCount > 0 && (
+                      <span className="text-[10px] text-emerald-300 font-bold ml-1">
+                        ({enrolledCount}/{totalCount} aktif)
+                      </span>
+                    )}
+                  </p>
+
+                  <p className="text-[11px] text-sky-100/70 mb-4 leading-relaxed line-clamp-2">
+                    {paket.deskripsi || 'Paket komprehensif untuk menguasai alur belajar secara terstruktur dari dasar hingga mahir.'}
+                  </p>
+
+                  {/* Course List inside package */}
+                  <div className="space-y-2 mb-5 bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                    <span className="text-[9px] font-black uppercase text-sky-300 tracking-wider block">
+                      Kursus Dalam Paket
+                    </span>
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                      {coursesInPaket.map((c: any, cIdx: number) => {
+                        const isEnrolled = userEnrolledCourseIds.has(c.id);
+                        return (
+                          <div key={cIdx} className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-none">
+                            <span className="truncate text-sky-100 font-medium pr-2 text-[11px]">{c.nama}</span>
+                            {isEnrolled ? (
+                              <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full shrink-0 border border-emerald-400/30 flex items-center gap-1">
+                                <HiOutlineCheck className="w-2.5 h-2.5" /> Aktif
+                              </span>
+                            ) : (
+                              <span className="text-[8px] bg-sky-500/20 text-sky-200 font-bold px-2 py-0.5 rounded-full shrink-0 border border-sky-400/20">
+                                Termasuk
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Features List */}
-                  <ul className="space-y-3.5 my-8">
+                  <ul className="space-y-2.5 mb-6">
                     {[
-                      paket.deskripsi || 'Akses selamanya ke semua kursus',
-                      'Sertifikat resmi per kursus',
-                      'Komunitas eksklusif',
-                      '1-on-1 mentoring session'
-                    ].slice(0, 4).map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-2.5 text-xs text-sky-100/90 font-semibold">
-                        <span className="w-4 h-4 rounded-full bg-sky-500/20 text-[#38bdf8] flex items-center justify-center text-[10px] shrink-0">✓</span>
-                        <span>{feat}</span>
+                      'Akses selamanya ke seluruh materi & video',
+                      'Sertifikat kelulusan terverifikasi per kursus',
+                      'Akses ke ujian sertifikasi online',
+                      'Pendampingan asisten & dosen pengajar'
+                    ].map((feat, idx) => (
+                      <li key={idx} className="flex items-center gap-2 text-xs text-sky-100/90 font-medium">
+                        <span className="w-4 h-4 rounded-full bg-sky-500/20 text-[#38bdf8] flex items-center justify-center text-[9px] font-black shrink-0">✓</span>
+                        <span className="text-[11px]">{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 {/* Price & Buy Button */}
-                <div className="mt-auto border-t border-white/10 pt-6">
-                  <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-2xl font-black">
-                      Rp {parseInt(paket.hargaPaket || '0', 10).toLocaleString('id-ID')}
+                <div className="mt-auto border-t border-white/10 pt-5">
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-2xl font-black text-white">
+                      Rp {hargaPaketNum.toLocaleString('id-ID')}
                     </span>
-                    {paket.hargaAsli && paket.hargaAsli !== '0' && (
-                      <span className="text-xs text-sky-200/50 line-through font-bold">
-                        Rp {parseInt(paket.hargaAsli || '0', 10).toLocaleString('id-ID')}
+                    {hargaAsliNum > 0 && (
+                      <span className="text-xs text-sky-300/50 line-through font-bold">
+                        Rp {hargaAsliNum.toLocaleString('id-ID')}
                       </span>
                     )}
                   </div>
                   <Button 
                     disabled={isAllEnrolled}
-                    onClick={() => handleBeliPaket(paket.nama, (paket.courses || []).map((c: any) => c.kode))}
-                    className={`font-black text-xs uppercase tracking-widest py-6 rounded-2xl w-full transition-all border-none cursor-pointer ${
+                    onClick={() => handleOpenPaketEnroll(paket)}
+                    className={`font-black text-xs uppercase tracking-widest py-6 rounded-2xl w-full transition-all border-none cursor-pointer flex items-center justify-center gap-2 ${
                       isAllEnrolled
                         ? 'bg-emerald-600 hover:bg-emerald-600 text-white cursor-not-allowed opacity-80'
                         : isPopular
-                        ? 'bg-[#3b82f6] hover:bg-blue-600 text-white shadow-md'
-                        : 'bg-[#475569] hover:bg-[#334155] text-white'
+                        ? 'bg-[#3b82f6] hover:bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                        : 'bg-white/15 hover:bg-white/25 text-white'
                     }`}
                   >
-                    {isAllEnrolled ? 'Sudah Dimiliki' : 'Beli Paket'}
+                    {isAllEnrolled ? (
+                      <>
+                        <HiOutlineCheck className="w-4 h-4" />
+                        <span>Semua Kelas Dimiliki</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Enroll Paket</span>
+                        <HiOutlineArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
             );
           })}
         </div>
-
-        {(!dbPaketList || dbPaketList.length === 0) && (
-          <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-200 max-w-xl mx-auto shadow-sm mt-8">
-            <HiOutlineCreditCard className="text-5xl text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Tidak Ada Paket Tersedia</h3>
-            <p className="text-gray-500 text-sm max-w-xs mx-auto">
-              Admin belum mempublikasikan paket bundling untuk kurikulum ini.
-            </p>
-          </div>
-        )}
       </div>
     );
   };
@@ -1517,7 +1636,7 @@ const KursusTersedia: React.FC = () => {
 
       {/* Filter Row */}
       <div className="flex flex-wrap gap-2 mb-8">
-        {(['Semua', 'Free', 'Berbayar', 'Course map'] as const).map((filterName) => (
+        {(['Semua', 'Free', 'Berbayar', 'Enroll Paket', 'Course map'] as const).map((filterName) => (
           <button
             key={filterName}
             onClick={() => setActiveFilter(filterName)}
@@ -1563,6 +1682,8 @@ const KursusTersedia: React.FC = () => {
       {/* Grouped Course Lists or Course Map Roadmap or Paket Bundling or Referral Section */}
       {activeFilter === 'Course map' ? (
         courseMapMode === 'individual' ? renderRoadmapTimeline() : renderPaketSection()
+      ) : activeFilter === 'Enroll Paket' ? (
+        renderPaketSection()
       ) : activeFilter === 'Referall' ? (
         renderReferralSection()
       ) : (
@@ -1571,7 +1692,7 @@ const KursusTersedia: React.FC = () => {
         </div>
       )}
       
-      {activeFilter !== 'Course map' && activeFilter !== 'Referall' && filteredCourses.length === 0 && (
+      {activeFilter !== 'Course map' && activeFilter !== 'Enroll Paket' && activeFilter !== 'Referall' && filteredCourses.length === 0 && (
         <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-200 max-w-xl mx-auto shadow-sm">
           <HiOutlineBookOpen className="text-5xl text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-2">Tidak Ada Kursus</h3>
@@ -1588,6 +1709,8 @@ const KursusTersedia: React.FC = () => {
           setPaymentStep('details');
           setReferralInput("");
           setCopiedVA(false);
+          setSelectedPaketToEnroll(null);
+          setSelectedCourseToEnroll(null);
         }
       }}>
         <DialogContent className={`rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white transition-all duration-300 ${paymentStep === 'success' ? 'sm:max-w-xl' : 'sm:max-w-md'}`}>
@@ -1600,17 +1723,23 @@ const KursusTersedia: React.FC = () => {
               <div className="text-left">
                 <h2 className="text-lg font-black tracking-wide leading-tight text-white">Pembayaran Berhasil</h2>
                 <p className="text-[11px] text-white/95 font-bold mt-1 leading-snug">
-                  Kursus <strong className="font-black text-white">{selectedCourseToEnroll?.nama || 'Nama Kursus'}</strong> sudah aktif di akun kamu.
+                  {selectedPaketToEnroll ? (
+                    <>Paket <strong className="font-black text-white">{selectedPaketToEnroll.nama}</strong> sudah aktif di akun kamu.</>
+                  ) : (
+                    <>Kursus <strong className="font-black text-white">{selectedCourseToEnroll?.nama || 'Nama Kursus'}</strong> sudah aktif di akun kamu.</>
+                  )}
                 </p>
               </div>
             </div>
           ) : (
-            <div className="bg-[#1d75d3] px-6 py-5 text-white">
+            <div className="bg-[#1d75d3] px-6 py-5 text-white text-left">
               <h2 className="text-lg font-black tracking-wide leading-none">
-                {paymentStep === 'details' ? 'Enroll Kursus' : paymentStep === 'simulate' ? 'Simulasi Pembayaran' : 'Pembayaran Sukses'}
+                {selectedPaketToEnroll 
+                  ? (paymentStep === 'details' ? 'Enroll Paket Bundling' : paymentStep === 'simulate' ? 'Simulasi Pembayaran Paket' : 'Pembayaran Sukses')
+                  : (paymentStep === 'details' ? 'Enroll Kursus' : paymentStep === 'simulate' ? 'Simulasi Pembayaran' : 'Pembayaran Sukses')}
               </h2>
               <p className="text-xs text-blue-100 font-bold mt-2 tracking-wide uppercase">
-                {selectedCourseToEnroll?.nama || 'Nama Kursus'}
+                {selectedPaketToEnroll?.nama || selectedCourseToEnroll?.nama || 'Enroll'}
               </p>
             </div>
           )}
@@ -1619,44 +1748,70 @@ const KursusTersedia: React.FC = () => {
             /* Step 1: Details & Bank Selection */
             <div className="p-6 space-y-6">
               {(() => {
-                if (!selectedCourseToEnroll) return null;
-                const priceInfo = getPriceDisplay(selectedCourseToEnroll.warna);
-                const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                const itemToEnroll = selectedPaketToEnroll || selectedCourseToEnroll;
+                if (!itemToEnroll) return null;
+                const rawPrice = selectedPaketToEnroll 
+                  ? (selectedPaketToEnroll.hargaPaket || '0')
+                  : (selectedCourseToEnroll.warna || '0');
+                const priceInfo = getPriceDisplay(rawPrice);
+                const priceNum = parseInt(rawPrice.replace(/[^0-9]/g, '') || '0', 10);
                 
                 const hasReferral = referralInput.trim().length > 0;
                 const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
                 const finalPrice = priceNum - discountAmount;
 
                 return (
-                  <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60">
-                    <div className="flex justify-between items-center px-5 py-4">
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Harga kursus</span>
-                      <span className="text-sm font-black text-gray-800">
-                        {priceInfo.current}
-                      </span>
-                    </div>
-                    {hasReferral && (
-                      <div className="flex justify-between items-center px-5 py-3 bg-emerald-50/50">
-                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
-                          <HiOutlineSparkles className="w-3.5 h-3.5" /> Diskon Referral (10%)
+                  <div className="space-y-4">
+                    {selectedPaketToEnroll && (
+                      <div className="bg-sky-50 border border-sky-100 rounded-2xl p-4 text-left">
+                        <span className="text-[10px] font-black uppercase text-sky-800 tracking-wider block mb-2">
+                          Kursus Termasuk ({selectedPaketToEnroll.courses?.length || 0})
                         </span>
-                        <span className="text-xs font-bold text-emerald-600">
-                          - Rp {discountAmount.toLocaleString('id-ID')}
-                        </span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                          {(selectedPaketToEnroll.courses || []).map((c: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                              <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[9px] font-black shrink-0">
+                                {i + 1}
+                              </span>
+                              <span className="truncate">{c.nama}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <div className="flex justify-between items-center px-5 py-4 bg-gray-50/50">
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total bayar</span>
-                      <span className="text-base font-black text-red-500">
-                        Rp {finalPrice.toLocaleString('id-ID')}
-                      </span>
+
+                    <div className="border border-gray-150 rounded-2xl bg-gray-50 overflow-hidden divide-y divide-gray-150/60 text-left">
+                      <div className="flex justify-between items-center px-5 py-4">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          {selectedPaketToEnroll ? 'Harga Paket' : 'Harga Kursus'}
+                        </span>
+                        <span className="text-sm font-black text-gray-800">
+                          {priceInfo.current}
+                        </span>
+                      </div>
+                      {hasReferral && (
+                        <div className="flex justify-between items-center px-5 py-3 bg-emerald-50/50">
+                          <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                            <HiOutlineSparkles className="w-3.5 h-3.5" /> Diskon Referral (10%)
+                          </span>
+                          <span className="text-xs font-bold text-emerald-600">
+                            - Rp {discountAmount.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center px-5 py-4 bg-gray-50/50">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total bayar</span>
+                        <span className="text-base font-black text-red-500">
+                          Rp {finalPrice.toLocaleString('id-ID')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
               })()}
 
               {/* Referral Code input */}
-              <div className="space-y-2">
+              <div className="space-y-2 text-left">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <HiOutlineTag className="text-sm text-gray-400 shrink-0" />
                   <span>Kode Referral</span>
@@ -1674,7 +1829,7 @@ const KursusTersedia: React.FC = () => {
               </div>
 
               {/* Bank Selection */}
-              <div className="space-y-3">
+              <div className="space-y-3 text-left">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <HiOutlineCreditCard className="text-sm text-gray-400 shrink-0" />
                   <span>Pilih Bank Virtual Account</span>
@@ -1721,7 +1876,7 @@ const KursusTersedia: React.FC = () => {
                     const bankPrefix = selectedBank === 'Mandiri' ? '88008' : selectedBank === 'BCA' ? '3901' : '126';
                     const randomDigits = Math.floor(10000000 + Math.random() * 90000000).toString();
                     setGeneratedVA(bankPrefix + randomDigits);
-                    setGeneratedInvoice(`INV/MK/${Date.now()}`);
+                    setGeneratedInvoice(selectedPaketToEnroll ? `INV/PK/${Date.now()}` : `INV/MK/${Date.now()}`);
                     setPaymentStep('simulate');
                   }}
                   className="flex-1 py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
@@ -1786,8 +1941,12 @@ const KursusTersedia: React.FC = () => {
                   <span className="font-bold text-gray-450 uppercase tracking-wider text-[10px]">Total Tagihan</span>
                   <span className="font-black text-red-500 text-sm">
                     {(() => {
-                      if (!selectedCourseToEnroll) return 'Rp 0';
-                      const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                      const itemToEnroll = selectedPaketToEnroll || selectedCourseToEnroll;
+                      if (!itemToEnroll) return 'Rp 0';
+                      const rawPrice = selectedPaketToEnroll 
+                        ? (selectedPaketToEnroll.hargaPaket || '0')
+                        : (selectedCourseToEnroll.warna || '0');
+                      const priceNum = parseInt(rawPrice.replace(/[^0-9]/g, '') || '0', 10);
                       const hasReferral = referralInput.trim().length > 0;
                       const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
                       const finalPrice = priceNum - discountAmount;
@@ -1817,19 +1976,34 @@ const KursusTersedia: React.FC = () => {
                   type="button"
                   disabled={isEnrolling}
                   onClick={async () => {
-                    if (!selectedCourseToEnroll) return;
-                    const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
-                    const hasReferral = referralInput.trim().length > 0;
-                    const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
-                    const finalPrice = priceNum - discountAmount;
-                    
-                    await handleEnroll(
-                      selectedCourseToEnroll.id, 
-                      referralInput.trim() || undefined, 
-                      finalPrice.toString(),
-                      generatedInvoice,
-                      `${selectedBank} Virtual Account`
-                    );
+                    if (selectedPaketToEnroll) {
+                      const rawPrice = selectedPaketToEnroll.hargaPaket || '0';
+                      const priceNum = parseInt(rawPrice.replace(/[^0-9]/g, '') || '0', 10);
+                      const hasReferral = referralInput.trim().length > 0;
+                      const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                      const finalPrice = priceNum - discountAmount;
+
+                      await handleBeliPaket(
+                        selectedPaketToEnroll,
+                        referralInput.trim() || undefined,
+                        finalPrice.toString(),
+                        generatedInvoice,
+                        `${selectedBank} Virtual Account`
+                      );
+                    } else if (selectedCourseToEnroll) {
+                      const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                      const hasReferral = referralInput.trim().length > 0;
+                      const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
+                      const finalPrice = priceNum - discountAmount;
+                      
+                      await handleEnroll(
+                        selectedCourseToEnroll.id, 
+                        referralInput.trim() || undefined, 
+                        finalPrice.toString(),
+                        generatedInvoice,
+                        `${selectedBank} Virtual Account`
+                      );
+                    }
                   }}
                   className="flex-1 py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2"
                 >
@@ -1867,8 +2041,12 @@ const KursusTersedia: React.FC = () => {
                     </span>
                     <span className="font-black text-gray-900 text-sm">
                       {(() => {
-                        if (!selectedCourseToEnroll) return 'Rp 0';
-                        const priceNum = parseInt(selectedCourseToEnroll.warna?.replace(/[^0-9]/g, '') || '0', 10);
+                        const itemToEnroll = selectedPaketToEnroll || selectedCourseToEnroll;
+                        if (!itemToEnroll) return 'Rp 0';
+                        const rawPrice = selectedPaketToEnroll 
+                          ? (selectedPaketToEnroll.hargaPaket || '0')
+                          : (selectedCourseToEnroll.warna || '0');
+                        const priceNum = parseInt(rawPrice.replace(/[^0-9]/g, '') || '0', 10);
                         const hasReferral = referralInput.trim().length > 0;
                         const discountAmount = hasReferral ? Math.round(priceNum * 0.1) : 0;
                         const finalPrice = priceNum - discountAmount;
@@ -1887,10 +2065,12 @@ const KursusTersedia: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="border border-gray-150 bg-gray-50/20 rounded-2xl p-4">
                     <span className="text-xl font-black text-blue-600 block mb-1">
-                      {selectedCourseToEnroll?.jumlahPertemuan || 12}
+                      {selectedPaketToEnroll 
+                        ? (selectedPaketToEnroll.courses?.length || 3) 
+                        : (selectedCourseToEnroll?.jumlahPertemuan || 12)}
                     </span>
                     <span className="text-[10px] text-gray-500 font-bold leading-tight block">
-                      modul terbuka penuh
+                      {selectedPaketToEnroll ? 'kursus aktif dibuka' : 'modul terbuka penuh'}
                     </span>
                   </div>
                   <div className="border border-gray-150 bg-gray-50/20 rounded-2xl p-4">
@@ -1903,10 +2083,10 @@ const KursusTersedia: React.FC = () => {
                   </div>
                   <div className="border border-gray-150 bg-gray-50/20 rounded-2xl p-4">
                     <span className="text-xl font-black text-blue-600 block mb-1">
-                      1
+                      {selectedPaketToEnroll ? (selectedPaketToEnroll.courses?.length || 3) : 1}
                     </span>
                     <span className="text-[10px] text-gray-500 font-bold leading-tight block">
-                      sertifikat saat lulus
+                      sertifikat kelulusan
                     </span>
                   </div>
                 </div>
@@ -1919,24 +2099,25 @@ const KursusTersedia: React.FC = () => {
                   onClick={() => {
                     setIsEnrollModalOpen(false);
                     setPaymentStep('details');
-                    if (selectedCourseToEnroll?.id) {
-                      navigate(`/user/detail-kursus?id=${selectedCourseToEnroll.id}`);
-                    }
+                    setSelectedPaketToEnroll(null);
+                    setSelectedCourseToEnroll(null);
+                    navigate('/user/kursus-saya');
                   }}
                   className="flex-[2.5] py-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-blue-200 transition-all"
                 >
-                  Mulai Belajar Sekarang
+                  Lihat Kursus Saya
                 </Button>
                 <Button
                   type="button"
                   onClick={() => {
                     setIsEnrollModalOpen(false);
                     setPaymentStep('details');
-                    navigate('/user/dashboard');
+                    setSelectedPaketToEnroll(null);
+                    setSelectedCourseToEnroll(null);
                   }}
                   className="flex-[1.5] py-6 bg-gray-100 hover:bg-gray-250 border-none text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all"
                 >
-                  Lihat Kursus Saya
+                  Selesai
                 </Button>
               </div>
 

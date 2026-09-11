@@ -218,13 +218,24 @@ const AddMateriAdmin: React.FC = () => {
             let zLink = '';
             let mainTopik = '';
             let mainRefleksi = '';
+            let savedTugas = '';
 
             existingMateri.forEach((m: any) => {
+              if (m.nama && (m.nama.includes('Latihan Upload') || m.nama.includes('Tugas Praktik'))) {
+                if (m.refleksi) savedTugas = m.refleksi;
+                return;
+              }
+
               if (m.nama && !mainTopik) {
                 mainTopik = m.nama;
               }
               if (m.refleksi && !mainRefleksi) {
-                mainRefleksi = m.refleksi;
+                const rLower = m.refleksi.toLowerCase();
+                if (!rLower.includes('buatlah program sesuai instruksi') && !rLower.includes('unggah screenshot hasil run')) {
+                  mainRefleksi = m.refleksi;
+                } else if (!savedTugas) {
+                  savedTugas = m.refleksi;
+                }
               }
 
               if (m.fileUrl) {
@@ -252,6 +263,9 @@ const AddMateriAdmin: React.FC = () => {
             // Set states
             setTopik(mainTopik);
             setRefleksi(mainRefleksi);
+            if (savedTugas) {
+              setTugasCoding(savedTugas);
+            }
             setZoomLink(zLink);
             setZoomVideos(zoomVids);
             setMicroLearningItems(microItems);
@@ -415,6 +429,16 @@ const AddMateriAdmin: React.FC = () => {
 
       // Attach reflection text to the first record
       payloads[0].refleksi = refleksi || null;
+
+      // Attach Latihan Upload (Screenshot/File) record
+      if (tugasCoding && tugasCoding.trim()) {
+        payloads.push({
+          nama: `${topik || 'Pertemuan'} (Latihan Upload)`,
+          videoUrl: null,
+          fileUrl: null,
+          refleksi: tugasCoding.trim()
+        });
+      }
 
       // 3. Post all new records to backend
       for (const p of payloads) {
